@@ -2,7 +2,7 @@
 // The generator keeps one "safe" lane per row that only ever needs a lane change or a jump, so every run is fair.
 import * as THREE from 'three';
 import { Builder, C, makeRng, pick, plankTexture, sliceZ } from './kit.js';
-import { CHUNK, DECK_HALF, LANE_W, laneX, PLAT_H, ZONE_CHUNKS, ZONE_LEN, zoneOfLevel, JUMP_H, speedAt, diffAt, jumpTimeAt, lerp, clamp } from './config.js';
+import { CHUNK, DECK_HALF, LANE_W, laneX, PLAT_H, ZONE_CHUNKS, ZONE_LEN, zoneOfLevel, JUMP_H, speedAt, diffAt, jumpTimeAt, lerp, clamp, ROOFED } from './config.js';
 import { obtain, release, obstacleDef, portalMat, LOW_TYPES, LOW_BY_ZONE, TALL_TYPES } from './obstacles.js';
 import { populate, animate } from './scenery.js';
 
@@ -53,7 +53,7 @@ export class Track {
     this.underMat = new THREE.MeshLambertMaterial({ vertexColors: true });
     this.chunks = new Map();
     this.obstacles = []; this.holes = []; this.platforms = []; this.coins = []; this.powerups = []; this.decos = []; this.rows = [];
-    this.pads = []; this.portals = []; this.letters = []; this.ufos = [];
+    this.pads = []; this.portals = []; this.letters = []; this.ufos = []; this.waves = [];
     this.wantLetter = 0;      // index into LETTERS of the next letter to offer, or -1 for none (set by the game)
     this.rng = makeRng((Math.random() * 1e9) | 0);
     this.genEnabled = false; this.runStart = 0; this.noGapBefore = 0;
@@ -61,11 +61,11 @@ export class Track {
     this.t = 0;
   }
 
-  newGen(s) { return { s, safe: 0, last: '', plat: null, clear: null, nextPower: s + 200 + this.rng() * 120, lastPower: '', nextLetter: s + 60 + this.rng() * 60, portalLevel: -1, laserLevel: -1, laserWant: false }; }
+  newGen(s) { return { s, safe: 0, last: '', plat: null, clear: null, nextPower: s + 200 + this.rng() * 120, lastPower: '', nextLetter: s + 60 + this.rng() * 60, portalLevel: -1, laserLevel: -1, laserWant: false, waveLevel: -1 }; }
   clearObjects() {
     for (const o of this.obstacles) { o.mesh.position.y = 0; release(o.mesh); }
     for (const a of [this.pads, this.portals, this.letters, this.ufos]) for (const p of a) release(p.mesh);
-    this.pads = []; this.portals = []; this.letters = []; this.ufos = [];
+    this.pads = []; this.portals = []; this.letters = []; this.ufos = []; this.waves = [];
     for (const c of this.coins) release(c.mesh);
     for (const p of this.powerups) release(p.mesh);
     for (const d of this.decos) release(d.mesh);
@@ -155,6 +155,19 @@ export class Track {
     if (g.clear && s > g.clear.until) g.clear = null;
     if (g.plat && s > g.plat.s2 + 0.5) { g.clear = { lane: g.plat.lane, until: g.plat.s2 + v * 1.0, s2: g.plat.s2 }; g.plat = null; }
 
+    // alien invaders: at most one wave a level, early on so that it is over well before the next gateway.
+    // Space Pier always gets one; other open-air levels get one now and then.
+    const lvl0 = Math.floor(s / ZONE_LEN);
+    if (g.waveLevel !== lvl0) {
+      g.waveLevel = lvl0;
+      if (!ROOFED(zone) && run > 200 && (zone === 9 || this.waveAlways || rng() < 0.5)) {
+        const s0 = s + 14, len = Math.min(v * 7.5, 215);
+        if (s0 + len < (lvl0 + 1) * ZONE_LEN - 6) this.waves.push({ s0, s1: s0 + len, done: false });
+      }
+    }
+    // while a wave is overhead its bombs take the place of rollers and flying attackers
+    const inWave = this.waves.some((w) => s > w.s0 + 4 && s < w.s1 - 22);
+
     let type = 'scatter';
     if (!g.plat) {
       const early = run < 110, cl = !!g.clear;
@@ -164,7 +177,7 @@ export class Track {
         barrier: early || g.last === 'barrier' || cl ? 0 : 7 + 6 * diff,
         gap: early || s < this.noGapBefore || g.last === 'gap' || cl ? 0 : (9 + 5 * diff) * (zone === 4 || zone === 6 ? 1.3 : 1),
         platform: run < 170 || g.last === 'platform' || cl ? 0 : 9,
-        roller: run < 150 || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 9 ? 5 : zone === 3 ? 1.6 : 2.6),
+        roller: run < 150 || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 9 || inWave ? 5 : zone === 3 ? 1.6 : 2.6),
         trolley: run < 260 || g.last === 'trolley' || cl ? 0 : (5 + 4 * diff) * (zone === 8 ? 2 : 1.4),
         pad: run < 150 || g.last === 'pad' || g.last === 'gap' || cl ? 0 : zone === 3 || zone === 5 ? 9 : 4.5,
       };
@@ -258,7 +271,11 @@ export class Track {
         const lanes = free.length > 1 && count === 1 ? [pick(rng, free)] : free.slice(0, count);
         lanes.forEach((l, k) => {
           const [kind, chance] = ATTACKER[zone];
-          if (rng() < chance) {
+          if (inWave) {
+            // a bomb from the invaders overhead: it falls to the deck and skims along the lane
+            const o = this.spawnObstacle('plasma', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6, on: false, range: 32, shot: true, plasma: true, bomb: true, drop: 7, age: 0 } });
+            o.mesh.visible = false;
+          } else if (rng() < chance) {
             // a flying attacker waits over the lane and lets fly as Robyn comes into range (in space it is always a UFO)
             const F = FLYERS[kind];
             const o = this.spawnObstacle(F.shot, l, s + 2 + k * 3, { mover: { type: 'roll', v: 6, on: false, range: 34, shot: true, plasma: F.crackle, drop: F.y - 1.2, age: 0 } });
@@ -405,6 +422,7 @@ export class Track {
     const back = dist - 14;
     const keep = (arr, test, drop) => { let k = 0; for (let i = 0; i < arr.length; i++) { const a = arr[i]; if (test(a)) arr[k++] = a; else drop(a); } arr.length = k; };
     keep(this.obstacles, (o) => o.s + o.d / 2 > back && !(o.flung && o.flung.t > 1.6) && !(o.zap && o.zap.t > 0.2), (o) => { o.mesh.position.y = 0; release(o.mesh); });
+    keep(this.waves, (w) => w.s1 > back - 60, () => {});
     keep(this.ufos, (u) => u.s > back - 4 && !(u.zap && u.zap.t > 0.9), (u) => release(u.mesh));
     keep(this.coins, (c) => c.s > back && !c.gone, (c) => release(c.mesh));
     keep(this.powerups, (p) => p.s > back && !p.gone, (p) => release(p.mesh));

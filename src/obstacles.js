@@ -629,6 +629,54 @@ def('spark', 'low', 1.05, 1.0, 1.0, (b) => {
   for (let i = 0; i < 8; i++) { const a = i * 0.785, t = i % 2 ? 0.5 : -0.4; b.cone(0.07, 0.3, i % 2 ? 0x8ff0ff : 0xfff6c2, Math.cos(a) * 0.5, Math.sin(a) * 0.5 * Math.cos(t), Math.sin(t) * 0.4, t, 0, a - PI / 2, { seg: 4, glow: true, grad: 1 }); }
 }, { center: true });
 
+// ---------- alien invaders ----------
+// Tide Rush's own little invaders: three kinds, one for each row of the formation. Each rides a glowing hover-jet.
+// They are lit partly by their own colours so that they stand out against a night sky.
+const INV_MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
+INV_MAT.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * 0.6;'); };
+INV_MAT.customProgramCacheKey = () => 'invader';
+function hoverJet(b, col = 0x58e6ff) { b.cyl(0.24, 0.13, 0.09, col, 0, -0.52, 0, 0, 0, 0, { seg: 10, glow: true, grad: 0.7 }).cone(0.1, 0.22, 0xffffff, 0, -0.66, 0, PI, 0, 0, { seg: 6, glow: true, grad: 1 }); }
+def('invTop', 'deco', 1.2, 1.1, 0.9, (b) => {
+  // Peeper: a one-eyed purple ball with golden horns and a toothy grin
+  const P = 0xa56bff, D = 0x7443d6;
+  b.sph(0.44, P, 0, 0, 0, 1, 0.95, 0.9, { seg: 14 }).sph(0.3, 0xc7a3ff, 0, -0.16, 0.12, 1, 0.7, 0.8, { seg: 10 });
+  b.sph(0.23, 0xffffff, 0, 0.1, 0.29, 1, 1, 0.6, { seg: 10, grad: 1 }).sph(0.125, 0x22c7d6, 0, 0.1, 0.41, 1, 1, 0.5, { seg: 8, grad: 1 }).sph(0.06, 0x15151f, 0, 0.1, 0.46, 1, 1, 0.5, { seg: 6, grad: 1 });
+  b.tor(0.14, 0.022, 0x15151f, 0, -0.17, 0.35, 0, 0, PI, { arc: PI, seg: 8 });
+  for (const sx of [-1, 1]) {
+    b.cone(0.09, 0.36, 0xffe27a, sx * 0.3, 0.47, 0, 0, 0, sx * -0.6, { seg: 6 });
+    b.box(0.055, 0.06, 0.03, 0xffffff, sx * 0.05, -0.215, 0.375);
+    b.cap(0.055, 0.16, D, sx * 0.52, -0.02, 0.05, 0, 0, sx * 0.9).sph(0.085, 0xffe27a, sx * 0.66, 0.08, 0.05, 1, 1, 1, { seg: 6 });
+  }
+  hoverJet(b);
+}, { mat: INV_MAT });
+def('invMid', 'deco', 1.2, 1.1, 0.9, (b) => {
+  // Boxbot: a teal box-headed robot with eyes on stalks and a spring aerial
+  const T = 0x2fc7b0, D = 0x1d8f80;
+  b.box(0.74, 0.62, 0.6, T, 0, 0, 0).box(0.78, 0.1, 0.64, D, 0, -0.28, 0).box(0.5, 0.2, 0.05, 0x15323a, 0, -0.08, 0.3);
+  for (let i = 0; i < 4; i++) b.box(0.07, 0.12, 0.03, i % 2 ? 0xffe27a : 0xff7ad9, -0.165 + i * 0.11, -0.08, 0.33, 0, 0, 0, { glow: true, grad: 1 });      // a row of lights for a mouth
+  for (const sx of [-1, 1]) {
+    b.cyl(0.03, 0.03, 0.22, D, sx * 0.2, 0.41, 0.1).sph(0.12, 0xffffff, sx * 0.2, 0.56, 0.12, 1, 1, 1, { seg: 8, grad: 1 }).sph(0.055, 0x15151f, sx * 0.2, 0.56, 0.22, 1, 1, 0.5, { seg: 6, grad: 1 });
+    b.cap(0.05, 0.18, D, sx * 0.5, -0.08, 0.05, 0, 0, sx * 1.2).tor(0.09, 0.03, 0xffb347, sx * 0.66, -0.16, 0.05, 0, 0, sx * 0.6, { arc: PI * 1.3, seg: 8 });   // clamp hands
+  }
+  for (let i = 0; i < 3; i++) b.tor(0.05, 0.014, 0xc9d2e0, 0, 0.36 + i * 0.07, -0.12, PI / 2, 0, 0, { seg: 8 });
+  b.sph(0.07, 0xff5a5a, 0, 0.6, -0.12, 1, 1, 1, { seg: 6, glow: true, grad: 1 });
+  hoverJet(b, 0xffb347);
+}, { mat: INV_MAT });
+def('invLow', 'deco', 1.2, 1.1, 0.9, (b) => {
+  // Blobby: an orange gumdrop with three eyes, a wide smile and little boots
+  const O = 0xff8a3c, D = 0xd9601c;
+  b.sph(0.46, O, 0, -0.06, 0, 1, 0.8, 0.9, { seg: 14 }).sph(0.34, O, 0, 0.2, 0, 1, 1, 0.9, { seg: 12 }).sph(0.3, 0xffc48a, 0, -0.14, 0.14, 1, 0.6, 0.8, { seg: 10 });
+  for (const [x, y, r] of [[-0.2, 0.2, 0.1], [0, 0.32, 0.12], [0.2, 0.2, 0.1]]) b.sph(r, 0xffffff, x, y, 0.27, 1, 1, 0.6, { seg: 8, grad: 1 }).sph(r * 0.48, 0x15151f, x, y, 0.33, 1, 1, 0.5, { seg: 6, grad: 1 });
+  b.tor(0.2, 0.024, 0x15151f, 0, 0.02, 0.36, 0.15, 0, PI, { arc: PI, seg: 10 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.07, 0xf5a9b0, sx * 0.3, 0.0, 0.34, 1, 0.7, 0.4, { seg: 6, grad: 1 });
+    b.cap(0.05, 0.14, D, sx * 0.5, 0.0, 0.05, 0, 0, sx * -0.8).sph(0.075, D, sx * 0.6, 0.13, 0.05, 1, 1, 1, { seg: 6 });
+    b.sph(0.13, 0x3f7fe0, sx * 0.2, -0.44, 0.06, 1, 0.7, 1.3, { seg: 8 });
+  }
+  b.cyl(0.012, 0.012, 0.22, D, 0, 0.6, 0).sph(0.06, 0x8dff5a, 0, 0.73, 0, 1, 1, 1, { seg: 6, glow: true, grad: 1 });
+  hoverJet(b, 0x8dff5a);
+}, { mat: INV_MAT });
+
 // ---------- platform pieces ----------
 function platBlockDef(name, col, dark) {
   def(name, 'plat', 2.1, PLAT_H, 3.0, (b) => {
@@ -810,7 +858,7 @@ export function obtain(name) {
     else if (name.startsWith('letter:')) obj = buildLetter(name.slice(7));
     else if (name.startsWith('pw:')) obj = buildPower(name.slice(3));
     else {
-      const d = DEF[name], b = new Builder(0.8); d.fn(b); obj = b.build({ cast: true });
+      const d = DEF[name], b = new Builder(0.8); d.fn(b); obj = b.build({ cast: !d.mat, material: d.mat });
       // flapping wings are separate meshes hung on the body
       if (d.wings) for (const sx of [-1, 1]) { const wb = new Builder(0.8); d.wings(wb, sx); const w = wb.build({ cast: true }); w.position.set(sx * d.wingAt[0], d.wingAt[1], d.wingAt[2]); w.userData.wing = sx; obj.add(w); }
     }

@@ -316,6 +316,14 @@ export class GameAudio {
     else if (kind === 'bat') { this.squeak(3, 1.7); this.tone('sine', 900, t, 0.4, 0.07, null, { slide: 2400 }); }
     else { this.noise(t, 0.45, 0.16, { type: 'bandpass', f: 500, fTo: 2400, q: 0.8 }); this.tone('sine', 300, t, 0.3, 0.09, null, { slide: 900 }); }
   }
+  // the alien invaders: a two-note bleep for each step of their march, and sounds for a wave arriving, dropping a bomb,
+  // losing one of its number (each a note higher than the last), being cleared, and giving up
+  invStep(n) { if (this.ok) { const t = this.ctx.currentTime, f = n % 2 ? 370 : 277; this.tone('square', f, t, 0.07, 0.05, null, { lp: 1500 }); this.tone('triangle', f * 2, t, 0.05, 0.035); } }
+  invArrive() { if (this.ok) { const t = this.ctx.currentTime; [83, 80, 76, 73, 69, 64].forEach((n, i) => this.tone('square', midi(n), t + i * 0.07, 0.09, 0.06, null, { lp: 3200 })); this.wobble('sine', 180, 420, t + 0.45, 0.6, 0.09, 13, 50, { att: 0.2 }); } }
+  invBomb() { if (this.ok) { const t = this.ctx.currentTime; this.tone('sine', 1700, t, 0.35, 0.07, null, { slide: 260 }); this.tone('square', 850, t, 0.3, 0.025, null, { slide: 130, lp: 2400 }); } }
+  invPop(n = 1) { if (this.ok) { const t = this.ctx.currentTime, m = 72 + [0, 2, 4, 7, 9][(n - 1) % 5] + 12 * Math.min(2, Math.floor((n - 1) / 5)); this.tone('triangle', midi(m), t, 0.12, 0.13); this.tone('sine', midi(m + 12), t + 0.04, 0.14, 0.07); this.noise(t, 0.09, 0.07, { type: 'bandpass', f: 1400, fTo: 500, q: 0.8 }); } }
+  invClear() { if (this.ok) { const t = this.ctx.currentTime + 0.1; [[76, 0], [80, 0.09], [83, 0.18], [88, 0.27], [92, 0.4], [95, 0.5], [100, 0.62]].forEach(([n, d], i) => { this.tone('square', midi(n), t + d, i === 6 ? 0.55 : 0.12, 0.06, null, { lp: 4200, vib: i === 6 }); this.tone('triangle', midi(n), t + d, i === 6 ? 0.55 : 0.12, 0.09); }); } }
+  invFlee() { if (this.ok) { const t = this.ctx.currentTime; this.wobble('sine', 400, 2400, t, 0.6, 0.08, 18, 120); this.noise(t, 0.6, 0.1, { type: 'bandpass', f: 600, fTo: 4000, q: 1.2, att: 0.3 }); } }
   laserUp() { if (this.ok) { const t = this.ctx.currentTime + 0.3; this.tone('sawtooth', 180, t, 0.4, 0.09, null, { slide: 2000, lp: 3400 }); for (let i = 0; i < 3; i++) this.tone('square', 1900, t + 0.42 + i * 0.07, 0.06, 0.06, null, { slide: 700, lp: 5200 }); } }
   megaUp() {
     if (!this.ok) return;

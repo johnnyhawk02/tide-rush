@@ -13,6 +13,7 @@ import { prewarm } from './obstacles.js';
 import { zoneName } from './scenery.js';
 import { SkyLife } from './skylife.js';
 import { Pets } from './pets.js';
+import { Invaders } from './invaders.js';
 
 const POWER_TIME = { magnet: 9, shield: 22, boots: 10, gem: 10, rocket: 6.5, board: 12, laser: 13 };
 const POWER_KEYS = Object.keys(POWER_TIME);
@@ -89,6 +90,15 @@ class Game {
     };
     // Izzi the border collie and Pixel the cat, who join the run every so often
     this.pets = new Pets(this.scene);
+    // alien invader waves
+    this.invaders = new Invaders(this.scene);
+    this.invaders.onEvent = (what, n) => {
+      if (what === 'step') this.audio.invStep(n);
+      else if (what === 'cleared') {
+        const bonus = 1500 * this.x2; this.score += bonus; this.addCombo(0.4);
+        this.ui.popup('Wave cleared! +' + fmt(bonus), 'gold'); this.audio.invClear(); this.celebrate(4);
+      } else if (what === 'fled' && this.mode === 'run') { this.ui.popup('The invaders zoomed off!'); this.audio.invFlee(); }
+    };
     this.pets.onEvent = (kind, what) => {
       if (what === 'join') { this.ui.popup(PET_POP[kind][0], 'gold'); if (kind === 'izzi') this.audio.bark(); else this.audio.meow(); }
       else { this.ui.power(kind, 0); if (this.mode === 'run' && !this.warp && this.pw.rocket <= 0) { this.ui.popup(PET_POP[kind][1]); if (kind === 'izzi') this.audio.whine(); else this.audio.mew(); } }
@@ -96,7 +106,7 @@ class Game {
     // laser bolts in flight
     this.bolts = [];
     const boltGeo = new THREE.CapsuleGeometry(0.07, 1.2, 2, 6).rotateX(Math.PI / 2);
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 12; i++) {
       const m = new THREE.Mesh(boltGeo, new THREE.MeshBasicMaterial({ color: 0x6ff6ff, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
       m.visible = false; m.renderOrder = 4; this.scene.add(m); this.bolts.push({ mesh: m, live: false });
     }
@@ -132,6 +142,7 @@ class Game {
     this.pw = { magnet: 0, shield: 0, boots: 0, gem: 0, rocket: 0, board: 0, laser: 0 };
     this.laserT = 0; this.laserLv = 0; this.zapPopT = 0; if (this.bolts) for (const b of this.bolts) { b.live = false; b.mesh.visible = false; }
     if (this.pets) this.pets.reset(); this.robyn.setBlaster(false);
+    if (this.invaders) this.invaders.clear(); this.invT = 0; this.invN = 0;
     this.robyn.setBoots(false); this.robyn.setShield(false); this.robyn.setRocket(false); this.robyn.setBoard(false);
     if (this.skylife) this.skylife.reset();
     this.robyn.root.visible = true; this.robyn.root.rotation.set(0, 0, 0); this.robyn.root.position.set(0, 0, 0);
@@ -518,7 +529,8 @@ class Game {
       if (this.pw.laser <= 0) { this.ui.popup('Mega laser!', 'gold'); this.audio.megaUp(); }
       this.pw.laser = Math.max(this.pw.laser, 1.2); this.ui.power('laser', 0); this.ui.power('mega', 1);
     } else this.ui.power('mega', 0);
-    this.robyn.setBlaster(this.pw.laser > 0 && !fly && !this.warp, mega, LASER_LV[this.laserLv || 1].size);
+    this.updateInvaders(dt, fly, mega);
+    this.robyn.setBlaster((this.pw.laser > 0 || this.invaders.active) && !fly && !this.warp, mega, LASER_LV[this.laserLv || 1].size);
     this.updateLaser(dt, mega);
     if (this.pw.shield > 0) this.robyn.shield.material.uniforms.uA.value = this.pw.shield < 3 ? 0.55 + 0.45 * Math.sin(this.time * 14) : 1;
     if (hover && !fly) for (let i = 0; i < 2; i++) this.fx.emit({ x: P.x + rnd(0.25), y: P.y + 0.08, z: 0.5 + Math.random() * 0.5, vx: rnd(1.2), vy: 0.3 + Math.random() * 0.8, vz: 3 + Math.random() * 3, life: 0.3 + Math.random() * 0.25, size: 0.2, grow: 1.2, color: i ? 0x7ff6ff : 0xffffff, g: 1, a: 0.5, world: false });
@@ -595,6 +607,36 @@ class Game {
     }
   }
 
+  // ---------- alien invaders ----------
+  // A wave starts when Robyn reaches the stretch of coast the track set aside for it. While it is overhead she
+  // shoots the invaders down by herself, whether or not she has a laser pickup.
+  updateInvaders(dt, fly, mega) {
+    const iv = this.invaders, tr = this.track, s = this.dist, P = this.p, busy = !!this.warp;      // she can shoot from the rocket too
+    if (!iv.active && !busy) {
+      const w = tr.waves.find((q) => !q.done && s >= q.s0 - 6 && s < q.s0 + 25);
+      if (w) { w.done = true; iv.begin(w); this.invN = 0; this.invT = 0.5; this.ui.popup('Alien invaders!', 'warn'); this.audio.invArrive(); }
+    }
+    // a bomb from the formation: mark where it came from with a flash
+    for (const o of tr.obstacles) { const m = o.mover; if (m && m.bomb && m.on && !m.flashed) { m.flashed = true; this.audio.invBomb(); for (let i = 0; i < 6; i++) this.fx.emit({ x: o.x + rnd(0.3), y: 6.5, z: -(o.s - s), vx: rnd(1.5), vy: -2 - Math.random() * 2, vz: rnd(1.5), life: 0.35, size: 0.24, color: i % 2 ? 0xff5ae0 : 0xffffff, g: 0 }); } }
+    iv.update(dt, this.time, s, busy);
+    if (!iv.active || busy) return;
+    if ((this.invT -= dt) > 0) return;
+    const a = iv.target(P.x), b = a && this.bolts.find((q) => !q.live);
+    if (!b) return;
+    a.aimed = true; this.invT = clamp(((iv.wave.s1 - iv.wave.s0) / Math.max(this.speed, 8)) * 0.036, 0.16, 0.3);      // paced to clear the wave a little past half way
+    const L = LASER_LV[this.laserLv || 1];
+    Object.assign(b, { live: true, inv: true, target: a, ufo: false, x: P.x + 0.3, y: P.y + 1.05, z: -0.75, t: 0, mega });
+    b.mesh.material.color.set(mega ? 0xff5ae0 : L.col); b.mesh.scale.set(mega ? 2.6 : 1.7, mega ? 2.6 : 1.7, mega ? 2.2 : 1.8);
+    this.robyn.fire(); this.audio.zap(mega);
+  }
+  invaderZapped(a) {
+    const pts = 60 * this.mult * this.x2; this.score += pts; this.invN++;
+    this.audio.invPop(this.invN);
+    const cols = [[0xa56bff, 0xffe27a, 0xffffff], [0x2fc7b0, 0xffb347, 0xffffff], [0xff8a3c, 0x8dff5a, 0xffffff]][a.r];
+    for (let i = 0; i < 14; i++) { const an = Math.random() * 6.28, u = Math.random() * 3.14, sp = 2 + Math.random() * 4; this.fx.emit({ x: a.wx, y: a.wy, z: a.wz, vx: Math.cos(an) * Math.sin(u) * sp, vy: Math.cos(u) * sp + 1, vz: Math.sin(an) * Math.sin(u) * sp, life: 0.4 + Math.random() * 0.3, size: i % 3 ? 0.22 : 0.4, color: cols[i % 3], g: 3, world: false }); }
+    this.invaders.hit(a);
+  }
+
   // ---------- laser zapper ----------
   // Picks the nearest rat or UFO ahead and fires a bolt at it. UFOs are only in range once they have had time to shoot.
   updateLaser(dt, mega) {
@@ -616,7 +658,7 @@ class Game {
     const b = this.bolts.find((q) => !q.live);
     if (!b) return;
     best.aimed = true; this.laserT = mega ? 0.14 : L.gap;
-    Object.assign(b, { live: true, target: best, ufo: best.ball !== undefined, x: P.x + 0.3, y: P.y + 1.05, z: -0.75, t: 0, mega });
+    Object.assign(b, { live: true, inv: false, target: best, ufo: best.ball !== undefined, x: P.x + 0.3, y: P.y + 1.05, z: -0.75, t: 0, mega });
     b.mesh.material.color.set(mega ? 0xff5ae0 : L.col); b.mesh.scale.set(mega ? 2.6 : 1.5, mega ? 2.6 : 1.5, mega ? 2.2 : 1.7);
     this.robyn.fire(); this.audio.zap(mega);
   }
@@ -625,6 +667,15 @@ class Game {
     for (const b of this.bolts) {
       if (!b.live) continue;
       const tg = b.target; b.t += dt;
+      if (b.inv) {
+        // a shot at one of the invaders, which are placed in the world rather than on the track
+        const dx = tg.wx - b.x, dy = tg.wy - b.y, dz = tg.wz - b.z, len = Math.hypot(dx, dy, dz), step = 70 * dt;
+        if (this.mode !== 'run' || b.t > 1.2 || !tg.alive || this.invaders.flee) { b.live = false; b.mesh.visible = false; tg.aimed = false; continue; }
+        if (len <= step + 0.6) { b.live = false; b.mesh.visible = false; this.invaderZapped(tg); continue; }
+        b.x += (dx / len) * step; b.y += (dy / len) * step; b.z += (dz / len) * step;
+        b.mesh.visible = true; b.mesh.position.set(b.x, b.y, b.z); b.mesh.lookAt(tg.wx, tg.wy, tg.wz);
+        continue;
+      }
       const gone = this.mode !== 'run' || b.t > 1.2 || tg.flung || tg.zap || (b.ufo ? !this.track.ufos.includes(tg) : !this.track.obstacles.includes(tg));
       if (gone) { b.live = false; b.mesh.visible = false; tg.aimed = false; continue; }
       const tx = tg.x, ty = b.ufo ? tg.mesh.position.y : tg.y + (tg.y ? 0 : tg.h * 0.55), tz = -(tg.s - s);
