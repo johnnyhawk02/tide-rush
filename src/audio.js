@@ -290,6 +290,32 @@ export class GameAudio {
   // UFOs: a warbling hum as one swoops in, and a wobbly dive when it is zapped
   ufoHum() { if (this.ok) { const t = this.ctx.currentTime; this.wobble('sine', 520, 760, t, 1.1, 0.07, 11, 90, { att: 0.3 }); this.wobble('triangle', 262, 380, t, 1.1, 0.04, 11, 40, { att: 0.3 }); } }
   ufoDown() { if (this.ok) { const t = this.ctx.currentTime; this.wobble('sawtooth', 1100, 110, t, 0.7, 0.09, 17, 160, { lp: 2600 }); this.noise(t + 0.5, 0.3, 0.14, { type: 'lowpass', f: 900, fTo: 200 }); } }
+  // the other flying attackers: a sound as each comes close, when it lets fly, and when it is zapped
+  flyerNear(kind) {
+    if (!this.ok) return;
+    const t = this.ctx.currentTime;
+    if (kind === 'ufo') this.ufoHum();
+    else if (kind === 'gull') for (let i = 0; i < 3; i++) this.tone('sawtooth', 1350, t + i * 0.17, 0.14, 0.07, null, { slide: 820, lp: 2800, att: 0.02 });
+    else if (kind === 'bat') { this.squeak(4, 1.5); this.noise(t, 0.5, 0.05, { type: 'bandpass', f: 900, q: 1, att: 0.2 }); }
+    else { this.noise(t, 1.1, 0.16, { type: 'lowpass', f: 160, fTo: 320, att: 0.5 }); this.tone('sine', 70, t, 1.0, 0.1, null, { slide: 95, att: 0.4 }); }
+  }
+  attack(kind) {
+    if (!this.ok) return;
+    const t = this.ctx.currentTime;
+    if (kind === 'ufo') this.ufoShot();
+    else if (kind === 'gull') { this.tone('sawtooth', 1500, t, 0.12, 0.09, null, { slide: 900, lp: 2800 }); this.tone('sine', 1300, t + 0.1, 0.4, 0.09, null, { slide: 320 }); }
+    else if (kind === 'bat') { this.tone('sine', 700, t, 0.3, 0.1, null, { slide: 180 }); this.noise(t, 0.18, 0.1, { type: 'bandpass', f: 1200, fTo: 400, q: 1.5 }); }
+    else if (kind === 'stormcloud') { this.noise(t, 0.12, 0.2, { type: 'highpass', f: 2600 }); this.tone('sawtooth', 900, t, 0.25, 0.08, null, { slide: 140, lp: 3000 }); }
+    else { this.noise(t, 0.3, 0.12, { type: 'bandpass', f: 1800, fTo: 700, q: 1 }); this.tone('sine', 900, t, 0.3, 0.07, null, { slide: 300 }); }
+  }
+  flyerDown(kind) {
+    if (!this.ok) return;
+    const t = this.ctx.currentTime;
+    if (kind === 'ufo') this.ufoDown();
+    else if (kind === 'gull') this.wobble('sawtooth', 1500, 500, t, 0.5, 0.08, 20, 180, { lp: 2800 });
+    else if (kind === 'bat') { this.squeak(3, 1.7); this.tone('sine', 900, t, 0.4, 0.07, null, { slide: 2400 }); }
+    else { this.noise(t, 0.45, 0.16, { type: 'bandpass', f: 500, fTo: 2400, q: 0.8 }); this.tone('sine', 300, t, 0.3, 0.09, null, { slide: 900 }); }
+  }
   laserUp() { if (this.ok) { const t = this.ctx.currentTime + 0.3; this.tone('sawtooth', 180, t, 0.4, 0.09, null, { slide: 2000, lp: 3400 }); for (let i = 0; i < 3; i++) this.tone('square', 1900, t + 0.42 + i * 0.07, 0.06, 0.06, null, { slide: 700, lp: 5200 }); } }
   megaUp() {
     if (!this.ok) return;

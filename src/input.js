@@ -24,13 +24,15 @@ export class Input {
     });
     surface.addEventListener('pointermove', (e) => {
       const p = this.pointers.get(e.pointerId); if (!p) return;
+      e.preventDefault();
+      // one swipe is one move: once a touch has changed lane or jumped it does nothing more until the finger lifts,
+      // however long or fast the swipe is
+      if (p.fired) return;
       const dx = e.clientX - p.x, dy = e.clientY - p.y, T = th();
       if (Math.abs(dx) < T && Math.abs(dy) < T) return;
       if (Math.abs(dx) > Math.abs(dy)) (dx > 0 ? on.right : on.left)();
       else if (dy < 0) on.jump();
-      // re-arm from here so one long drag can chain moves
-      p.x = e.clientX; p.y = e.clientY; p.fired = true;
-      e.preventDefault();
+      p.fired = true;
     });
     const end = (e) => {
       const p = this.pointers.get(e.pointerId); if (!p) return;

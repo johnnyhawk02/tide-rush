@@ -320,7 +320,7 @@ def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
     b.cone(0.07, 0.24, D, sx * 0.57, 1.08, 0.34, 0, 0, sx * 0.25, { seg: 6 }).cone(0.055, 0.2, D, sx * 0.7, 1.04, 0.34, 0, 0, sx * -0.45, { seg: 6 });
     for (let i = 0; i < 3; i++) { const z = -0.3 + i * 0.2; b.cap(0.04, 0.2, D, sx * 0.56, 0.36, z, 0, 0, sx * -1.05).cap(0.03, 0.2, D, sx * 0.7, 0.16, z, 0, 0, sx * 0.3); }
   }
-});
+}, { zap: true });
 def('penguin', 'low', 1.15, 0.98, 1.0, (b) => {
   // waddles across the lanes; built facing +x
   const K = 0x1f2933, W = 0xf6f8fb;
@@ -404,6 +404,8 @@ def('ratBig', 'tall', 1.5, 2.6, 1.4, (b) => ratInto(b, true, 1.44, 0, 0, -0.1), 
 def('rat', 'low', 1.3, 0.92, 1.3, (b) => ratInto(b, false, 0.92, 0, 0, -0.1), { rat: true });
 // a rat that scurries across the lanes; built facing +x like the other movers
 def('ratRun', 'low', 1.5, 0.92, 1.0, (b) => ratInto(b, false, 0.9, -0.1, 0, 0, PI / 2), { rat: true });
+// a rat that charges straight down its lane at Robyn
+def('ratCharge', 'low', 1.0, 0.92, 1.5, (b) => ratInto(b, false, 0.9, 0, 0, 0.1, 0), { rat: true });
 const PIPE = 0x9c9e96, PIPE_D = 0x777a72, RUST = 0x9a5a36, SLIME = 0x8dff5a;
 def('pipeStack', 'tall', 1.7, 2.75, 1.5, (b) => {
   // concrete pipe sections stacked in a pyramid, with a small rat keeping watch on top
@@ -524,7 +526,7 @@ def('rover', 'low', 1.5, 0.95, 1.1, (b) => {
   b.cyl(0.03, 0.03, 0.32, C.steel, 0.38, 0.7, 0).box(0.2, 0.14, 0.26, 0x5b6770, 0.42, 0.9, 0).cyl(0.06, 0.06, 0.03, 0x58e6ff, 0.53, 0.9, 0, 0, 0, PI / 2, { seg: 8, glow: true, grad: 1 });
   b.cyl(0.012, 0.012, 0.4, C.steel, -0.4, 0.84, 0.2).sph(0.04, 0xff5a5a, -0.4, 1.05, 0.2, 1, 1, 1, { glow: true, seg: 5, grad: 1 });
   b.box(0.5, 0.02, 0.6, 0x2f4fa8, -0.15, 0.76, 0, 0, 0, 0.15);                                             // solar panel
-});
+}, { zap: true });
 def('plasma', 'low', 1.1, 1.0, 1.0, (b) => {
   // a UFO's shot: a crackling ball that skims along the lane
   b.sph(0.46, 0xff5ae0, 0, 0, 0, 1, 1, 1, { seg: 12, glow: true, grad: 0.6 }).sph(0.3, 0xffffff, 0, 0.05, 0, 1, 1, 1, { seg: 8, glow: true, grad: 0.9 });
@@ -542,6 +544,90 @@ def('ufo', 'deco', 2.4, 1.3, 2.4, (b) => {
   b.cyl(0.38, 0.5, 0.1, 0x58e6ff, 0, -0.33, 0, 0, 0, 0, { seg: 14, glow: true, grad: 0.7 });              // the glow underneath
   b.cyl(0.1, 0.16, 0.34, C.iron, 0, -0.36, 0.5, -0.9, 0, 0, { seg: 8 }).sph(0.1, 0xff5ae0, 0, -0.47, 0.64, 1, 1, 1, { glow: true, seg: 6, grad: 1 });   // its blaster
 });
+
+
+// ---------- flying attackers and what they drop ----------
+// Each one hovers over a lane and lobs a shot that rolls along it. The laser zaps them in a harmless puff.
+// "wings" builds one wing (side -1 or 1) as its own mesh so that it can flap.
+const GULL_W = 0xf7f7f2, GULL_G = 0x9aa4b0, GULL_O = 0xf5a623, LEATHER = 0x6b4a2b;
+def('gull', 'deco', 2.8, 1.0, 1.7, (b) => {
+  // a bomber gull in flying goggles
+  b.sph(0.38, GULL_W, 0, 0, 0, 0.95, 0.85, 1.5, { seg: 14 }).sph(0.36, GULL_G, 0, 0.1, -0.1, 0.9, 0.7, 1.3, { seg: 12 });
+  b.sph(0.27, GULL_W, 0, 0.22, 0.5, 1, 1, 1, { seg: 12 });
+  b.cone(0.09, 0.36, GULL_O, 0, 0.16, 0.86, PI / 2, 0, 0, { seg: 8 }).sph(0.04, 0xd8362b, 0, 0.11, 0.93, 1, 1, 1, { seg: 5 });
+  b.tor(0.275, 0.028, LEATHER, 0, 0.3, 0.5, PI / 2 - 0.25, 0, 0, { seg: 14 });                            // goggle strap
+  b.sph(0.2, LEATHER, 0, 0.36, 0.44, 1.1, 0.7, 1.1, { seg: 8 });                                          // flying cap
+  for (const sx of [-1, 1]) {
+    b.tor(0.1, 0.03, LEATHER, sx * 0.125, 0.3, 0.72, 0, 0, 0, { seg: 10 });
+    b.sph(0.085, 0x8fd8ff, sx * 0.125, 0.3, 0.725, 1, 1, 0.4, { seg: 8, grad: 1 }).sph(0.04, 0x1b1f24, sx * 0.125, 0.29, 0.76, 1, 1, 0.4, { seg: 6, grad: 1 });
+    b.box(0.17, 0.04, 0.03, 0x1b1f24, sx * 0.125, 0.425, 0.74, 0, 0, sx * -0.45);                         // cross brows
+    b.cap(0.028, 0.12, GULL_O, sx * 0.1, -0.33, 0.12, 0.6, 0, 0).sph(0.07, GULL_O, sx * 0.1, -0.4, 0.2, 1, 0.4, 1.3, { seg: 6 });
+  }
+  for (const k of [-1, 0, 1]) b.sph(0.22, k ? GULL_G : GULL_W, k * 0.13, 0.02, -0.66 + Math.abs(k) * 0.05, 0.5, 0.12, 1.1, { seg: 8 });
+}, {
+  wings: (b, sx) => {
+    b.sph(0.5, GULL_G, sx * 0.62, 0, 0, 1.25, 0.09, 0.62, { seg: 12 }).sph(0.36, GULL_W, sx * 0.42, -0.02, 0.08, 1, 0.08, 0.6, { seg: 8 });
+    b.sph(0.3, 0x2a2f36, sx * 1.18, 0.005, -0.05, 1, 0.1, 0.72, { seg: 8 });
+  }, wingAt: [0.2, 0.12, 0.02],
+});
+def('egg', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the gulls drop: a big speckled egg that rolls down the lane
+  b.sph(0.47, 0xfff3d6, 0, 0, 0, 0.9, 1, 1.05, { seg: 14, grad: 0.9 });
+  for (let i = 0; i < 12; i++) { const a = i * 2.4, c = Math.cos(i * 1.7); b.sph(0.05 + (i % 3) * 0.015, i % 2 ? 0xc99a5b : 0x9b7440, Math.sin(i * 1.7) * 0.4, Math.cos(a) * 0.44 * Math.abs(c), Math.sin(a) * 0.46 * Math.abs(c), 1, 1, 1, { seg: 5, grad: 1 }); }
+}, { center: true });
+const BAT = 0x5a4686, BAT_D = 0x34284f;
+def('bat', 'deco', 2.6, 1.0, 1.2, (b) => {
+  // a round, grumpy slime bat with glowing eyes
+  b.sph(0.38, BAT, 0, 0, 0, 1, 1.05, 0.95, { seg: 12 }).sph(0.27, 0x7d68ad, 0, -0.1, 0.14, 0.9, 0.8, 0.8, { seg: 10 });
+  for (const sx of [-1, 1]) {
+    b.cone(0.14, 0.4, BAT_D, sx * 0.22, 0.44, 0, 0, 0, sx * -0.3, { seg: 6 }).cone(0.075, 0.24, 0xf5a9b0, sx * 0.22, 0.42, 0.05, 0, 0, sx * -0.3, { seg: 5 });
+    b.sph(0.09, 0xffe27a, sx * 0.14, 0.1, 0.32, 1, 1, 0.5, { seg: 7, glow: true, grad: 1 }).sph(0.038, 0x15151f, sx * 0.14, 0.09, 0.36, 1, 1, 0.5, { seg: 5, grad: 1 });
+    b.box(0.17, 0.04, 0.03, 0x15151f, sx * 0.14, 0.22, 0.34, 0, 0, sx * -0.4);
+    b.cone(0.032, 0.1, 0xffffff, sx * 0.06, -0.14, 0.34, PI, 0, 0, { seg: 4 });
+    b.cap(0.025, 0.1, BAT_D, sx * 0.1, -0.42, 0.04);
+  }
+  b.sph(0.05, 0x15151f, 0, -0.01, 0.38, 1, 0.7, 0.5, { seg: 5 }).tor(0.1, 0.016, 0x15151f, 0, -0.06, 0.345, 0, 0, PI, { arc: PI, seg: 8 });
+}, {
+  wings: (b, sx) => {
+    b.sph(0.5, BAT_D, sx * 0.56, 0, 0, 1.2, 0.05, 0.78, { seg: 10 }).sph(0.32, BAT_D, sx * 1.0, 0, -0.12, 1.1, 0.05, 0.85, { seg: 8 });
+    for (let i = 0; i < 3; i++) b.cyl(0.022, 0.012, 1.0, BAT, sx * 0.56, 0.035, -0.02, 0, sx * (i - 1) * 0.42, PI / 2, { seg: 5 });
+    b.cone(0.04, 0.14, 0xe9e2f5, sx * 1.12, 0.03, 0.26, PI / 2, 0, 0, { seg: 4 });                         // thumb claw
+  }, wingAt: [0.26, 0.08, 0],
+});
+def('slime', 'low', 1.05, 1.0, 1.0, (b) => {
+  // a wobbling ball of glowing slime
+  b.sph(0.46, 0x8dff5a, 0, 0, 0, 1, 0.95, 1, { seg: 12, glow: true, grad: 0.55 }).sph(0.2, 0xe9ffd6, -0.12, 0.16, 0.2, 1, 1, 1, { seg: 7, glow: true, grad: 1 });
+  for (let i = 0; i < 7; i++) { const a = i * 0.9; b.sph(0.13, 0x6fe03a, Math.cos(a) * 0.4, Math.sin(i * 2.1) * 0.3, Math.sin(a) * 0.4, 1, 1, 1, { seg: 6, glow: true, grad: 0.7 }); }
+}, { center: true });
+function cloudDef(name, col, dark, under) {
+  def(name, 'deco', 2.7, 1.4, 1.6, (b) => {
+    // a cross little cloud
+    for (const [x, y, z, r] of [[0, 0, 0, 0.62], [-0.62, -0.08, 0, 0.46], [0.62, -0.08, 0, 0.46], [-0.3, 0.3, -0.05, 0.44], [0.34, 0.32, -0.05, 0.4], [0, -0.1, -0.35, 0.5], [-0.98, -0.2, 0, 0.28], [0.98, -0.2, 0, 0.28]]) b.sph(r, col, x, y, z, 1, 0.9, 0.9, { seg: 10 });
+    b.sph(1.0, dark, 0, -0.36, 0, 1.08, 0.2, 0.62, { seg: 10 });
+    for (const sx of [-1, 1]) {
+      b.sph(0.13, 0xffffff, sx * 0.23, 0.06, 0.55, 1, 1.15, 0.5, { seg: 8, grad: 1 }).sph(0.06, 0x15151f, sx * 0.21, 0.03, 0.61, 1, 1, 0.5, { seg: 6, grad: 1 });
+      b.box(0.27, 0.055, 0.04, 0x15151f, sx * 0.23, 0.25, 0.6, 0, 0, sx * -0.45);
+      b.sph(0.1, 0xf5a9b0, sx * 0.42, -0.1, 0.5, 1, 0.7, 0.4, { seg: 6, grad: 1 });                         // puffed cheeks
+    }
+    b.tor(0.12, 0.024, 0x15151f, 0, -0.26, 0.58, 0, 0, 0, { arc: PI, seg: 8 });
+    under(b);
+  });
+}
+cloudDef('stormcloud', 0x6f7890, 0x4a5268, (b) => {
+  // a lightning bolt underneath
+  b.box(0.12, 0.34, 0.06, 0xffe27a, 0.06, -0.62, 0.15, 0, 0, 0.5, { glow: true, grad: 1 }).box(0.12, 0.34, 0.06, 0xffe27a, -0.03, -0.86, 0.15, 0, 0, -0.5, { glow: true, grad: 1 });
+  b.cone(0.07, 0.22, 0xffe27a, 0.05, -1.08, 0.15, PI, 0, 0.35, { seg: 4, glow: true, grad: 1 });
+});
+cloudDef('snowcloud', 0xe6eef8, 0xb9c8dc, (b) => {
+  // icicles and a few snowflakes underneath
+  for (let i = 0; i < 5; i++) b.cone(0.06, 0.2 + (i % 2) * 0.14, 0xcfeaff, -0.6 + i * 0.3, -0.56 - (i % 2) * 0.07, 0.05, PI, 0, 0, { seg: 5 });
+  for (let i = 0; i < 4; i++) b.sph(0.05, 0xffffff, -0.5 + i * 0.34, -0.9 - (i % 2) * 0.16, 0.2, 1, 1, 1, { seg: 5, glow: true, grad: 1 });
+});
+def('spark', 'low', 1.05, 1.0, 1.0, (b) => {
+  // ball lightning from a storm cloud
+  b.sph(0.42, 0xffe27a, 0, 0, 0, 1, 1, 1, { seg: 12, glow: true, grad: 0.6 }).sph(0.26, 0xffffff, 0, 0, 0, 1, 1, 1, { seg: 8, glow: true, grad: 0.9 });
+  for (let i = 0; i < 8; i++) { const a = i * 0.785, t = i % 2 ? 0.5 : -0.4; b.cone(0.07, 0.3, i % 2 ? 0x8ff0ff : 0xfff6c2, Math.cos(a) * 0.5, Math.sin(a) * 0.5 * Math.cos(t), Math.sin(t) * 0.4, t, 0, a - PI / 2, { seg: 4, glow: true, grad: 1 }); }
+}, { center: true });
 
 // ---------- platform pieces ----------
 function platBlockDef(name, col, dark) {
@@ -723,7 +809,11 @@ export function obtain(name) {
     else if (name === 'portal') obj = buildPortal();
     else if (name.startsWith('letter:')) obj = buildLetter(name.slice(7));
     else if (name.startsWith('pw:')) obj = buildPower(name.slice(3));
-    else { const b = new Builder(0.8); DEF[name].fn(b); obj = b.build({ cast: true }); }
+    else {
+      const d = DEF[name], b = new Builder(0.8); d.fn(b); obj = b.build({ cast: true });
+      // flapping wings are separate meshes hung on the body
+      if (d.wings) for (const sx of [-1, 1]) { const wb = new Builder(0.8); d.wings(wb, sx); const w = wb.build({ cast: true }); w.position.set(sx * d.wingAt[0], d.wingAt[1], d.wingAt[2]); w.userData.wing = sx; obj.add(w); }
+    }
     prefabs.set(name, obj);
   }
   const o = prefabs.get(name).clone();

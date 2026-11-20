@@ -27,6 +27,8 @@ npm run build      # production build in dist/ (index.html + game.js, runs from 
 | Pause | Esc or P | Pause button |
 | Sound on or off | M | Speaker button |
 
+On a touch screen one swipe is one move: however long or fast the swipe is, Robyn changes lane once, and the finger has to lift before the next move (`src/input.js`).
+
 Jumps are buffered and you can change lane in mid-air.
 
 ## Rules
@@ -42,8 +44,10 @@ Jumps are buffered and you can change lane in mid-air.
 - Warp tunnels: most levels have one glowing portal, one lane over from the safe path. Run into it for a bonus tunnel full of shells and pearls that comes out at the next level.
 - Bounce pads launch Robyn into a high arc of shells with a pearl at the top. Pearls are worth 100 points and count as 5 shells.
 - Giant crabs scuttle across all three lanes on the beach levels, and penguins waddle across on Frosty Pier. Jump them.
-- The Sewers: an underground brick tunnel with giant rats. Big ones sit up in a lane and must be dodged, small ones are jumped, and some scurry across all three lanes. A laser zapper pickup always appears soon after the way in. While it lasts (11 seconds) Robyn fires at the nearest rat ahead by herself, and each one vanishes in a puff of sparkles for 40 points.
+- The Sewers: an underground brick tunnel with giant rats. Big ones sit up in a lane and must be dodged, small ones are jumped, and some scurry across all three lanes. A laser zapper pickup always appears soon after the way in. While it lasts (13 seconds) Robyn fires at the nearest rat ahead by herself, and each one vanishes in a puff of sparkles for 40 points.
 - Space Pier: UFOs hover over the lanes and fire a plasma ball that skims along a lane toward Robyn. Dodge it or jump it. Her mega laser is switched on for the whole level and shoots each UFO down once it is close (120 points). The plasma balls are generated like rolling barrels, so the safe path is never blocked.
+- Attackers everywhere: every level has its own flying attacker that hovers over a lane and lobs something down it. Bomber gulls in flying goggles drop giant eggs (Promenade, Grand Pier, Old Harbour, Sandcastle Bay), slime bats spit slime (Funfair, Smugglers' Cove, Sewers), cross storm clouds throw ball lightning (Storm Point) and snow clouds drop snowballs (Frosty Pier). In the sewers some rats also charge straight down a lane. Their shots are generated like rolling barrels, never on the safe path (`FLYERS` and `ATTACKER` in `src/track.js`).
+- Laser zappers everywhere: most levels hand one out early on and they also turn up among the other power-ups. The laser lasts 13 seconds and zaps flying attackers, rats, crabs and moon rovers in a harmless puff. Picking up another while one is running powers it up to a double and then a triple laser, which fires faster and reaches further (`LASER_LV` in `src/main.js`).
 - Izzi and Pixel: every so often one of them runs in from behind and follows Robyn's exact path for a while. Izzi (about 16 seconds) rounds up shells like a magnet. While Pixel is there (about 13 seconds) every shell and pearl counts double. They leave when the rocket or a warp tunnel starts, and trot beside Robyn on the title screen.
 - Letters: collect R, O, B, Y and N for a big bonus, a magnet and double score.
 - Each level is 280 m long, so a new one arrives about every 20 seconds at first and sooner as she speeds up, and each pays a level bonus. The Midnight Funfair has fireworks, Storm Point has rain, lightning and waves breaking over the rail, Smugglers' Cove glows with crystals, and Frosty Pier has snow and the northern lights.

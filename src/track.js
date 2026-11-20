@@ -31,6 +31,17 @@ function deckTopGeo(rects) {
   return sliceZ(g);
 }
 
+// The flying attackers: how high each hovers, how big it is drawn, and what it lobs down the lane.
+const FLYERS = {
+  ufo: { y: 5.4, size: 1.5, shot: 'plasma', crackle: true },
+  gull: { y: 4.7, size: 1.35, shot: 'egg' },
+  bat: { y: 4.5, size: 1.4, shot: 'slime', crackle: true },
+  stormcloud: { y: 5.0, size: 1.3, shot: 'spark', crackle: true },
+  snowcloud: { y: 5.0, size: 1.3, shot: 'snowball' },
+};
+// Which attacker each level has, and how often a "roller" row is one of them rather than a plain rolling thing.
+const ATTACKER = { 0: ['gull', 0.6], 1: ['gull', 0.6], 2: ['gull', 0.6], 3: ['bat', 0.65], 4: ['stormcloud', 0.75], 5: ['gull', 0.6], 6: ['bat', 0.7], 7: ['snowcloud', 0.7], 8: ['bat', 0.5], 9: ['ufo', 1] };
+
 export class Track {
   constructor(scene) {
     this.group = new THREE.Group(); scene.add(this.group);
@@ -50,7 +61,7 @@ export class Track {
     this.t = 0;
   }
 
-  newGen(s) { return { s, safe: 0, last: '', plat: null, clear: null, nextPower: s + 200 + this.rng() * 120, lastPower: '', nextLetter: s + 60 + this.rng() * 60, portalLevel: -1, laserLevel: -1 }; }
+  newGen(s) { return { s, safe: 0, last: '', plat: null, clear: null, nextPower: s + 200 + this.rng() * 120, lastPower: '', nextLetter: s + 60 + this.rng() * 60, portalLevel: -1, laserLevel: -1, laserWant: false }; }
   clearObjects() {
     for (const o of this.obstacles) { o.mesh.position.y = 0; release(o.mesh); }
     for (const a of [this.pads, this.portals, this.letters, this.ufos]) for (const p of a) release(p.mesh);
@@ -95,7 +106,7 @@ export class Track {
   // ---------- spawning ----------
   spawnObstacle(name, lane, s, extra) {
     const def = obstacleDef(name), mesh = obtain(name);
-    const o = { name, kind: def.kind, lane, x: laneX(lane), s: s + def.d / 2, w: def.w, h: def.h, d: def.d, mesh, y: def.center ? def.h / 2 : 0, rat: !!def.rat, ...extra };
+    const o = { name, kind: def.kind, lane, x: laneX(lane), s: s + def.d / 2, w: def.w, h: def.h, d: def.d, mesh, y: def.center ? def.h / 2 : 0, rat: !!def.rat, zappable: !!(def.rat || def.zap), ...extra };
     mesh.position.set(o.x, o.y, -o.s);
     if (def.d < 2.5 && !def.center && name !== 'barrier') mesh.rotation.y = (this.rng() - 0.5) * 0.16;
     this.group.add(mesh); this.obstacles.push(o);
@@ -117,10 +128,11 @@ export class Track {
     const mesh = obtain('portal'); mesh.position.set(laneX(lane), 0, -s);
     this.group.add(mesh); this.portals.push({ lane, x: laneX(lane), s, mesh });
   }
-  // A UFO hovers over the lane and fires `ball`, a plasma shot that skims along the lane toward the player.
-  addUfo(lane, s, ball) {
-    const mesh = obtain('ufo'); mesh.position.set(laneX(lane), 5.4, -s);
-    this.group.add(mesh); this.ufos.push({ lane, x: laneX(lane), y: 5.4, s, mesh, ball, p: this.rng() * 6 });
+  // A flying attacker (a UFO, bomber gull, slime bat or cross cloud) hovers over the lane and lobs `ball`,
+  // a shot that drops to the deck and comes along the lane toward the player.
+  addUfo(lane, s, ball, kind = 'ufo') {
+    const F = FLYERS[kind], mesh = obtain(kind); mesh.position.set(laneX(lane), F.y, -s);
+    this.group.add(mesh); this.ufos.push({ kind, lane, x: laneX(lane), y: F.y, size: F.size, s, mesh, ball, p: this.rng() * 6 });
   }
   addLetter(i, x, y, s) {
     const mesh = obtain('letter:' + LETTERS[i]); mesh.position.set(x, y, -s);
@@ -152,8 +164,8 @@ export class Track {
         barrier: early || g.last === 'barrier' || cl ? 0 : 7 + 6 * diff,
         gap: early || s < this.noGapBefore || g.last === 'gap' || cl ? 0 : (9 + 5 * diff) * (zone === 4 || zone === 6 ? 1.3 : 1),
         platform: run < 170 || g.last === 'platform' || cl ? 0 : 9,
-        roller: run < 230 || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 3 ? 0.6 : zone === 9 ? 5 : 1),
-        trolley: run < 320 || g.last === 'trolley' || cl ? 0 : (5 + 4 * diff) * (zone === 8 ? 1.7 : 1),
+        roller: run < 150 || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 9 ? 5 : zone === 3 ? 1.6 : 2.6),
+        trolley: run < 260 || g.last === 'trolley' || cl ? 0 : (5 + 4 * diff) * (zone === 8 ? 2 : 1.4),
         pad: run < 150 || g.last === 'pad' || g.last === 'gap' || cl ? 0 : zone === 3 || zone === 5 ? 9 : 4.5,
       };
       let tot = 0; for (const k in w) tot += w[k];
@@ -245,11 +257,14 @@ export class Track {
         const count = free.length > 1 && diff > 0.35 && rng() < 0.5 ? 2 : 1;
         const lanes = free.length > 1 && count === 1 ? [pick(rng, free)] : free.slice(0, count);
         lanes.forEach((l, k) => {
-          if (zone === 9) {
-            // in space the "roller" is a UFO's plasma shot: the UFO waits over the lane and fires as Robyn comes into range
-            const o = this.spawnObstacle('plasma', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6, on: false, range: 34, plasma: true, age: 0 } });
-            o.mesh.visible = false; this.addUfo(l, o.s, o);
-          } else this.spawnObstacle(zone === 5 ? 'beachball' : zone === 7 ? 'snowball' : 'barrel', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false } });
+          const [kind, chance] = ATTACKER[zone];
+          if (rng() < chance) {
+            // a flying attacker waits over the lane and lets fly as Robyn comes into range (in space it is always a UFO)
+            const F = FLYERS[kind];
+            const o = this.spawnObstacle(F.shot, l, s + 2 + k * 3, { mover: { type: 'roll', v: 6, on: false, range: 34, shot: true, plasma: F.crackle, drop: F.y - 1.2, age: 0 } });
+            o.mesh.visible = false; this.addUfo(l, o.s, o, kind);
+          } else if (zone === 8) this.spawnObstacle('ratCharge', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6.5, on: false, run: true } });     // a rat charging down the lane
+          else this.spawnObstacle(zone === 5 ? 'beachball' : zone === 7 ? 'snowball' : 'barrel', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false } });
           skip.push(l);
         });
         extra = (count - 1) * 3;   // the second roller trails the row, so leave room to cut back in behind it
@@ -275,11 +290,14 @@ export class Track {
       if (!any && type === 'scatter') type = 'breather';
       // power-up between rows, on the safe path
       // (the sewers always offer a laser zapper soon after the way in, and power-ups come round faster down there)
-      const lvl = Math.floor(s / ZONE_LEN), firstLaser = zone === 8 && g.laserLevel !== lvl && s - lvl * ZONE_LEN > 22 && run > 60;
+      // (most levels also hand out a laser zapper early on, and the sewers always do; in space the mega laser is built in)
+      const lvl = Math.floor(s / ZONE_LEN);
+      if (g.laserLevel !== lvl) { g.laserLevel = lvl; g.laserWant = zone !== 9 && (zone === 8 || rng() < 0.7); }
+      const firstLaser = g.laserWant && s - lvl * ZONE_LEN > 22 && run > 60;
       if (((run > 140 && s >= g.nextPower) || firstLaser) && type !== 'platform') {
-        if (firstLaser) { g.laserLevel = lvl; g.lastPower = 'laser'; }
+        if (firstLaser) { g.laserWant = false; g.lastPower = 'laser'; }
         this.addPower(firstLaser ? 'laser' : this.pickPower(), laneX(newSafe), 1.2, s - spacing * 0.5);
-        g.nextPower = s + (zone === 8 ? 130 + rng() * 80 : 300 + rng() * 200);
+        g.nextPower = s + (zone === 8 ? 130 + rng() * 80 : 220 + rng() * 150);
       } else if (run > 60 && s >= g.nextLetter && this.wantLetter >= 0 && !this.letters.length && type !== 'platform') {
         // the next letter of ROBYN, on the safe path between two rows
         this.addLetter(this.wantLetter, laneX(newSafe), 1.25, s - spacing * 0.5);
@@ -293,7 +311,9 @@ export class Track {
     const g = this.gen; let t;
     const far = g.s - this.runStart;
     let pool = far > 380 ? [...POWER_TYPES, 'board', 'board', 'rocket', 'rocket'] : far > 120 ? [...POWER_TYPES, 'board', 'board'] : POWER_TYPES;
-    if (zoneAtS(g.s) === 8) pool = [...POWER_TYPES, 'board', 'laser', 'laser', 'laser', 'laser'];   // the laser zapper is found in the sewers
+    const zone = zoneAtS(g.s);
+    if (zone === 8) pool = [...POWER_TYPES, 'board', 'laser', 'laser', 'laser', 'laser'];   // the sewers are full of laser zappers
+    else if (zone !== 9 && far > 120) pool = [...pool, 'laser', 'laser', 'laser'];          // and they turn up everywhere else too
     do { t = pick(this.rng, pool); } while (t === g.lastPower && t !== 'laser');
     g.lastPower = t; return t;
   }
@@ -345,10 +365,10 @@ export class Track {
     for (const o of this.obstacles) {
       const m = o.mover; if (!m) continue;
       if (m.type === 'roll') {
-        if (!m.on && o.s - dist < (m.range || 30)) { m.on = true; if (m.plasma) o.mesh.visible = true; }
-        if (m.on && !o.flung) { o.s -= m.v * dt; o.mesh.position.z = -o.s; o.mesh.rotation.x += (m.v / 0.5) * dt; }
-        // a plasma shot drops out of the UFO to lane height and crackles as it comes
-        if (m.plasma && m.on && !o.flung) { m.age += dt; o.mesh.position.y = o.y + Math.max(0, 1 - m.age / 0.4) * 4.2; o.mesh.rotation.y += dt * 7; if (!o.zap) o.mesh.scale.setScalar(1 + Math.sin(this.t * 22) * 0.08); }
+        if (!m.on && o.s - dist < (m.range || 30)) { m.on = true; if (m.shot) o.mesh.visible = true; }
+        if (m.on && !o.flung) { o.s -= m.v * dt; o.mesh.position.z = -o.s; if (m.run) o.mesh.position.y = Math.abs(Math.sin(this.t * 15)) * 0.09; else o.mesh.rotation.x += (m.v / 0.5) * dt; }
+        // an attacker's shot drops out of it to lane height; plasma, sparks and slime crackle and wobble as they come
+        if (m.shot && m.on && !o.flung) { m.age += dt; o.mesh.position.y = o.y + Math.max(0, 1 - m.age / 0.4) * m.drop; if (m.plasma) { o.mesh.rotation.y += dt * 7; if (!o.zap) o.mesh.scale.setScalar(1 + Math.sin(this.t * 22) * 0.08); } }
       } else if (m.type === 'cross' && !o.flung) {
         o.x = Math.sin(this.t * m.w + m.phase) * m.amp; o.mesh.position.x = o.x;
         if (m.crab) { o.mesh.rotation.y = 0; o.mesh.position.y = Math.abs(Math.sin(this.t * 13)) * 0.07; o.mesh.rotation.z = Math.sin(this.t * 13) * 0.05; }
@@ -367,9 +387,18 @@ export class Track {
     // UFOs hover and wobble; a zapped one spins away into the sky
     for (const u of this.ufos) {
       const m = u.mesh;
-      if (u.zap) { u.zap.t += dt; m.position.y += (9 + u.zap.t * 30) * dt; m.position.x += u.zap.vx * dt; m.rotation.y += dt * 16; m.rotation.z += dt * 5; m.scale.setScalar(Math.max(0.05, 1 - u.zap.t / 0.9) * 1.5); continue; }
-      m.scale.setScalar(1.5);
-      m.position.y = u.y + Math.sin(this.t * 2.3 + u.p) * 0.25; m.rotation.y = Math.sin(this.t * 1.1 + u.p) * 0.5; m.rotation.z = Math.sin(this.t * 1.7 + u.p) * 0.1;
+      // wings flap (faster when it has been zapped and is tumbling away)
+      for (const w of m.children) if (w.userData.wing) w.rotation.z = w.userData.wing * (Math.sin(this.t * (u.zap ? 30 : u.kind === 'bat' ? 15 : 9) + u.p) * 0.6 + 0.12);
+      if (u.zap) { u.zap.t += dt; m.position.y += (9 + u.zap.t * 30) * dt; m.position.x += u.zap.vx * dt; m.rotation.y += dt * 16; m.rotation.z += dt * 5; m.scale.setScalar(Math.max(0.05, 1 - u.zap.t / 0.9) * u.size); continue; }
+      m.scale.setScalar(u.size);
+      if (u.kind === 'ufo') { m.position.y = u.y + Math.sin(this.t * 2.3 + u.p) * 0.25; m.rotation.y = Math.sin(this.t * 1.1 + u.p) * 0.5; m.rotation.z = Math.sin(this.t * 1.7 + u.p) * 0.1; }
+      else {
+        // gulls and bats bob with each wing beat and weave a little; clouds puff in and out
+        const cloud = u.kind.endsWith('cloud'), beat = u.kind === 'bat' ? 15 : 9;
+        m.position.y = u.y + (cloud ? Math.sin(this.t * 2 + u.p) * 0.2 : Math.cos(this.t * beat + u.p) * 0.12 + Math.sin(this.t * 1.9 + u.p) * 0.2);
+        m.position.x = u.x + Math.sin(this.t * 1.3 + u.p) * 0.25; m.rotation.y = Math.sin(this.t * 1.3 + u.p) * 0.3; m.rotation.z = -Math.cos(this.t * 1.3 + u.p) * 0.12;
+        if (cloud) m.scale.set(u.size * (1 + Math.sin(this.t * 4 + u.p) * 0.05), u.size * (1 - Math.sin(this.t * 4 + u.p) * 0.05), u.size);
+      }
       m.rotation.x = u.recoil > 0 ? -(u.recoil = Math.max(0, u.recoil - dt * 3)) * 0.5 : 0;
     }
     // recycle what is behind the player

@@ -278,7 +278,7 @@ export class Robyn {
   setRocket(on) { this.rocket.visible = on; }
   setBoard(on) { this.board.visible = on; }
   // mega: the bigger space version
-  setBlaster(on, mega = false) { this.blaster.visible = on; this.blaster.scale.setScalar(mega ? 1.45 : 1.1); }
+  setBlaster(on, mega = false, size = 1.1) { this.blaster.visible = on; this.blaster.scale.setScalar(mega ? 1.45 : size); }
   fire() { this.kick = 1; }
   dispose() { this.root.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
 

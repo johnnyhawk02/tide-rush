@@ -14,12 +14,19 @@ import { zoneName } from './scenery.js';
 import { SkyLife } from './skylife.js';
 import { Pets } from './pets.js';
 
-const POWER_TIME = { magnet: 9, shield: 22, boots: 10, gem: 10, rocket: 6.5, board: 12, laser: 11 };
+const POWER_TIME = { magnet: 9, shield: 22, boots: 10, gem: 10, rocket: 6.5, board: 12, laser: 13 };
 const POWER_KEYS = Object.keys(POWER_TIME);
 const POWER_POP = { magnet: 'Shell magnet!', shield: 'Bubble shield!', boots: 'Spring boots! Double jump', gem: 'Double score!', rocket: 'Rocket ride!', board: 'Hoverboard!', laser: 'Laser zapper!' };
 const TIDE_STEP = 0.45, TIDE_LIMIT = 0.5, TIDE_FADE = 14;   // how far the tide gains per stumble, how close is one stumble from the end, seconds to fall back fully
 const ROCKET_SPEED = 1.5, FLY_Y = 6.0;
 const SPACE = 9;
+// the flying attackers: what to call each one when it is zapped, and the colours of its puff
+const FLYER = {
+  ufo: ['UFO', [0xff7ad9, 0x8ff0ff, 0xffe27a, 0xffffff]], gull: ['Bomber gull', [0xffffff, 0xf5a623, 0xdfe6ee, 0xffe27a]], bat: ['Slime bat', [0x8dff5a, 0xb59cff, 0xffe27a, 0xffffff]],
+  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]],
+};
+// picking up a laser while one is already running powers it up: it fires faster and reaches further
+const LASER_LV = [null, { name: 'Laser zapper!', gap: 0.16, reach: 0, col: 0x6ff6ff, size: 1.1 }, { name: 'Double laser!', gap: 0.1, reach: 4, col: 0x9dff6a, size: 1.25 }, { name: 'Triple laser!', gap: 0.065, reach: 8, col: 0xffb347, size: 1.4 }];
 // what her footsteps sound like in each world
 const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
 const PET_POP = { izzi: ['Izzi is here! She rounds up shells', "Izzi's off for a sniff"], pixel: ['Pixel is here! Shells count double', 'Pixel wandered off'] };
@@ -123,7 +130,7 @@ class Game {
     this.p = { lane: 0, fromLane: 0, x: 0, y: 0, vy: 0, vx: 0, grounded: true, coyote: 0, jumpBuf: 0, airJumps: 0, stumbleT: 0, invuln: 0, laneT: 9, float: 0, blast: false };
     this.score = 0; this.shells = 0; this.mult = 1; this.topMult = 1; this.combo = 0; this.tide = 0;
     this.pw = { magnet: 0, shield: 0, boots: 0, gem: 0, rocket: 0, board: 0, laser: 0 };
-    this.laserT = 0; this.zapPopT = 0; if (this.bolts) for (const b of this.bolts) { b.live = false; b.mesh.visible = false; }
+    this.laserT = 0; this.laserLv = 0; this.zapPopT = 0; if (this.bolts) for (const b of this.bolts) { b.live = false; b.mesh.visible = false; }
     if (this.pets) this.pets.reset(); this.robyn.setBlaster(false);
     this.robyn.setBoots(false); this.robyn.setShield(false); this.robyn.setRocket(false); this.robyn.setBoard(false);
     if (this.skylife) this.skylife.reset();
@@ -478,11 +485,13 @@ class Game {
     }
     if (this.wordT > 0) { this.wordT -= dt; if (this.wordT <= 0) { this.got = [0, 0, 0, 0, 0]; tr.wantLetter = 0; this.ui.letters(this.got); } }
     // power-ups
+    const mega0 = zoneAtS(s) === SPACE;
     for (const p of tr.powerups) {
       if (p.gone) continue;
       if (Math.abs(p.s - s) < 1.0 && Math.abs(p.x - P.x) < 1.0 && Math.abs(p.y - (P.y + 0.85)) < 1.5) {
+        if (p.type === 'laser') this.laserLv = this.pw.laser > 0 && !mega0 ? Math.min(3, this.laserLv + 1) : 1;
         p.gone = true; this.pw[p.type] = POWER_TIME[p.type]; this.addCombo(0.2);
-        this.audio.power(p.type); this.ui.popup(POWER_POP[p.type], 'gold');
+        this.audio.power(p.type); this.ui.popup(p.type === 'laser' ? LASER_LV[this.laserLv].name : POWER_POP[p.type], 'gold');
         this.sparkle(p.x, p.y, 0, p.mesh.userData.color, 18);
         if (p.type === 'boots') { this.robyn.setBoots(true); if (!P.grounded) P.airJumps = 1; }
         if (p.type === 'shield') this.robyn.setShield(true);
@@ -496,7 +505,7 @@ class Game {
         // three warning ticks as a power-up runs out
         if (k !== 'rocket' && this.pw[k] > 0 && this.pw[k] < 1.55 && Math.floor((this.pw[k] + dt) * 2) !== Math.floor(this.pw[k] * 2)) this.audio.tick();
         if (this.pw[k] <= 0) {
-          this.pw[k] = 0; this.audio.powerEnd();
+          this.pw[k] = 0; this.audio.powerEnd(); if (k === 'laser') this.laserLv = 0;
           if (k === 'boots') this.robyn.setBoots(false); if (k === 'shield') this.robyn.setShield(false); if (k === 'rocket') this.endRocket(); if (k === 'board') P.float = Math.max(P.float, 1.2);
         }
         if (k !== 'laser' || zoneAtS(s) !== SPACE) this.ui.power(k, this.pw[k] / POWER_TIME[k]);
@@ -509,7 +518,7 @@ class Game {
       if (this.pw.laser <= 0) { this.ui.popup('Mega laser!', 'gold'); this.audio.megaUp(); }
       this.pw.laser = Math.max(this.pw.laser, 1.2); this.ui.power('laser', 0); this.ui.power('mega', 1);
     } else this.ui.power('mega', 0);
-    this.robyn.setBlaster(this.pw.laser > 0 && !fly && !this.warp, mega);
+    this.robyn.setBlaster(this.pw.laser > 0 && !fly && !this.warp, mega, LASER_LV[this.laserLv || 1].size);
     this.updateLaser(dt, mega);
     if (this.pw.shield > 0) this.robyn.shield.material.uniforms.uA.value = this.pw.shield < 3 ? 0.55 + 0.45 * Math.sin(this.time * 14) : 1;
     if (hover && !fly) for (let i = 0; i < 2; i++) this.fx.emit({ x: P.x + rnd(0.25), y: P.y + 0.08, z: 0.5 + Math.random() * 0.5, vx: rnd(1.2), vy: 0.3 + Math.random() * 0.8, vz: 3 + Math.random() * 3, life: 0.3 + Math.random() * 0.25, size: 0.2, grow: 1.2, color: i ? 0x7ff6ff : 0xffffff, g: 1, a: 0.5, world: false });
@@ -561,9 +570,9 @@ class Game {
       else if (o.name === 'penguin') A.penguin();
       else if (o.name === 'trolley') A.trolley();
       else if (o.name === 'rover') A.roverBeep();
-      else if (m && m.type === 'roll' && !m.plasma) A.rumble();
+      else if (m && m.type === 'roll' && !m.shot) A.rumble();
     }
-    for (const u of tr.ufos) if (!u.heard && !u.zap && u.s - s < 62 && u.s > s) { u.heard = true; A.ufoHum(); }
+    for (const u of tr.ufos) if (!u.heard && !u.zap && u.s - s < 62 && u.s > s) { u.heard = true; A.flyerNear(u.kind); }
     // Izzi and Pixel pipe up now and then
     if ((this.petT -= dt) < 0) {
       this.petT = 3.5 + Math.random() * 4;
@@ -592,21 +601,23 @@ class Game {
     const tr = this.track, s = this.dist, P = this.p;
     // a UFO that has just loosed its shot
     for (const u of tr.ufos) if (!u.shot && !u.zap && u.ball.mover.on) {
-      u.shot = true; u.recoil = 1; this.audio.ufoShot();
-      for (let i = 0; i < 8; i++) this.fx.emit({ x: u.x + rnd(0.3), y: u.y - 0.5, z: -(u.s - s) + 0.6, vx: rnd(2), vy: -1 - Math.random() * 2, vz: rnd(2), life: 0.3, size: 0.22, color: i % 2 ? 0xff5ae0 : 0xffffff, g: 0 });
+      u.shot = true; u.recoil = 1; this.audio.attack(u.kind);
+      const cols = FLYER[u.kind][1];
+      for (let i = 0; i < 8; i++) this.fx.emit({ x: u.x + rnd(0.3), y: u.y - 0.5, z: -(u.s - s) + 0.6, vx: rnd(2), vy: -1 - Math.random() * 2, vz: rnd(2), life: 0.3, size: 0.22, color: cols[i % 2 ? 0 : 3], g: 0 });
     }
     this.zapPopT -= dt;
     if (this.pw.laser <= 0 || this.pw.rocket > 0 || this.warp) return;
     if ((this.laserT -= dt) > 0) return;
     let best = null, bd = 1e9;
-    for (const o of tr.obstacles) { const dz = o.s - s; if (o.rat && !o.zap && !o.flung && !o.aimed && dz > 1.5 && dz < 27 && dz < bd) { best = o; bd = dz; } }
-    for (const u of tr.ufos) { const dz = u.s - s; if (!u.zap && !u.aimed && dz > 1.5 && dz < 21 && dz < bd) { best = u; bd = dz; } }
+    const L = LASER_LV[this.laserLv || 1], reach = mega ? 4 : L.reach;
+    for (const o of tr.obstacles) { const dz = o.s - s; if (o.zappable && !o.zap && !o.flung && !o.aimed && dz > 1.5 && dz < 27 + reach && dz < bd) { best = o; bd = dz; } }
+    for (const u of tr.ufos) { const dz = u.s - s; if (!u.zap && !u.aimed && dz > 1.5 && dz < 21 + reach && dz < bd) { best = u; bd = dz; } }
     if (!best) return;
     const b = this.bolts.find((q) => !q.live);
     if (!b) return;
-    best.aimed = true; this.laserT = mega ? 0.2 : 0.16;
+    best.aimed = true; this.laserT = mega ? 0.14 : L.gap;
     Object.assign(b, { live: true, target: best, ufo: best.ball !== undefined, x: P.x + 0.3, y: P.y + 1.05, z: -0.75, t: 0, mega });
-    b.mesh.material.color.set(mega ? 0xff5ae0 : 0x6ff6ff); b.mesh.scale.set(mega ? 2.6 : 1.5, mega ? 2.6 : 1.5, mega ? 2.2 : 1.7);
+    b.mesh.material.color.set(mega ? 0xff5ae0 : L.col); b.mesh.scale.set(mega ? 2.6 : 1.5, mega ? 2.6 : 1.5, mega ? 2.2 : 1.7);
     this.robyn.fire(); this.audio.zap(mega);
   }
   updateBolts(dt) {
@@ -628,9 +639,9 @@ class Game {
     tg.zap = { t: 0, vx: rnd(5) }; tg.hit = true;
     if (ufo && !tg.ball.mover.on && !tg.ball.zap) tg.ball.zap = { t: 0 };      // it never got its shot off
     const pts = (ufo ? 120 : 40) * this.mult * this.x2; this.score += pts; this.addCombo(ufo ? 0.12 : 0.06);
-    if (this.zapPopT <= 0 || ufo) { this.zapPopT = 0.7; this.ui.popup((ufo ? 'UFO zapped! +' : 'Zap! +') + fmt(pts), ufo ? 'gold' : ''); }
-    this.audio.poof(ufo); if (ufo) this.audio.ufoDown(); else this.audio.ratPop();
-    const cols = ufo ? [0xff7ad9, 0x8ff0ff, 0xffe27a, 0xffffff] : [0xffffff, 0xd6ffb0, 0xffe27a, 0xf2f2f2];
+    if (this.zapPopT <= 0 || ufo) { this.zapPopT = 0.7; this.ui.popup((ufo ? FLYER[tg.kind][0] + ' zapped! +' : 'Zap! +') + fmt(pts), ufo ? 'gold' : ''); }
+    this.audio.poof(ufo); if (ufo) this.audio.flyerDown(tg.kind); else if (tg.rat) this.audio.ratPop();
+    const cols = ufo ? FLYER[tg.kind][1] : [0xffffff, 0xd6ffb0, 0xffe27a, 0xf2f2f2];
     for (let i = 0; i < (ufo ? 26 : 16); i++) { const a = Math.random() * 6.28, u = Math.random() * 3.14, sp = 2 + Math.random() * (ufo ? 6 : 3.5); this.fx.emit({ x, y, z, vx: Math.cos(a) * Math.sin(u) * sp, vy: Math.cos(u) * sp + 1.5, vz: Math.sin(a) * Math.sin(u) * sp, life: 0.45 + Math.random() * 0.3, size: i % 3 ? 0.2 : 0.42, grow: i % 3 ? 0 : 1.6, color: cols[i % 4], g: i % 3 ? 4 : -0.5, a: i % 3 ? 1 : 0.6 }); }
   }
 
