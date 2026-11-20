@@ -102,7 +102,7 @@ class Game {
       if (what === 'step') this.audio.invStep(n);
       else if (what === 'cleared') {
         const bonus = 1500 * this.x2; this.score += bonus; this.addCombo(0.4);
-        this.ui.popup('Wave cleared! +' + fmt(bonus), 'gold'); this.audio.invClear(); this.celebrate(4);
+        this.ui.popup('Wave cleared! +' + fmt(bonus), 'gold'); this.audio.invClear(); this.celebrate(3);
       } else if (what === 'fled' && this.mode === 'run') { this.ui.popup('The invaders zoomed off!'); this.audio.invFlee(); }
     };
     // Grumpy Santa, the villain of Christmas Pier
@@ -117,7 +117,7 @@ class Game {
     };
     this.pets.onEvent = (kind, what) => {
       if (what === 'join') { this.ui.popup(PET_POP[kind][0], 'gold'); if (kind === 'izzi') this.audio.bark(); else this.audio.meow(); }
-      else { this.ui.power(kind, 0); if (this.mode === 'run' && !this.warp && this.pw.rocket <= 0) { this.ui.popup(PET_POP[kind][1]); if (kind === 'izzi') this.audio.whine(); else this.audio.mew(); } }
+      else { this.ui.power(kind, 0); if (this.mode === 'run' && !this.warp && this.pw.rocket <= 0) { if (kind === 'izzi') this.audio.whine(); else this.audio.mew(); } }
     };
     // laser bolts in flight
     this.bolts = [];
@@ -393,7 +393,7 @@ class Game {
       this.scene.fog.color.set(0xf4dcff);
     }
     this.ambience(dt);
-    { const c = this.sky.cur, roof = (d) => { const z = zoneAtS(d); return ROOFED(z) || z === SPACE; }; this.skylife.update(dt, this.time, { run: this.mode === 'run', hidden: !!this.warp, clear: !roof(this.dist) && !roof(this.dist + 150), calm: c.storm < 0.4, night: c.stars }); }
+    { const c = this.sky.cur, roof = (d) => { const z = zoneAtS(d); return ROOFED(z) || z === SPACE; }; this.skylife.update(dt, this.time, { run: this.mode === 'run', hidden: !!this.warp, clear: !roof(this.dist) && !roof(this.dist + 150), calm: c.storm < 0.4, night: c.stars, hold: this.showOn() }); }
 
     // Robyn
     const rb = this.robyn, fly = this.mode === 'run' && this.pw.rocket > 0, surf = this.pw.board > 0 && !fly && (this.mode === 'run' || this.mode === 'title');
@@ -404,7 +404,7 @@ class Game {
       rb.update(dt, { mode: fly ? 'ride' : surf ? 'surf' : 'run', speed: this.speed, vy: P.vy, vx: P.vx, grounded: P.grounded, stumble: P.stumbleT > 0 ? P.stumbleT / 0.7 : 0 });
     }
     this.flyK = damp(this.flyK, fly ? 1 : 0, 3, dt);
-    this.pets.update(dt, this.time, { mode: this.mode, dist: this.dist, x: P.x, y: P.y, speed: this.speed, busy: fly || !!this.warp, floorAt: (x, s) => this.track.floorAt(x, s) });
+    this.pets.update(dt, this.time, { mode: this.mode, dist: this.dist, x: P.x, y: P.y, speed: this.speed, busy: fly || !!this.warp, hold: this.showOn() || !!this.skylife.heli, floorAt: (x, s) => this.track.floorAt(x, s) });
     this.updateBolts(dt);
     const f = Math.max(0, this.track.floorAt(P.x, this.dist));
     this.blob.visible = this.mode !== 'over' && (P.float > 0 || surf || this.track.floorAt(P.x, this.dist) > -1) && rb.root.visible;
@@ -481,7 +481,7 @@ class Game {
         if (pad.used || Math.abs(pad.s - s) > 0.95 || Math.abs(pad.x - P.x) > 0.85 || P.y > 0.5) continue;
         pad.used = true; pad.t = 1;
         P.vy = V0 * PAD_BOOST; P.y = Math.max(P.y, 0.05); P.grounded = false; P.coyote = 0; P.jumpBuf = 0; P.airJumps = boots ? 1 : 0;
-        this.audio.boing(); this.ui.popup('Boing!', 'gold'); this.addCombo(0.15);
+        this.audio.boing(); this.addCombo(0.15);
         for (let i = 0; i < 16; i++) { const a = (i / 16) * 6.28; this.fx.emit({ x: P.x + Math.cos(a) * 0.5, y: 0.3, z: Math.sin(a) * 0.5, vx: Math.cos(a) * 3.5, vy: 2.5, vz: Math.sin(a) * 3.5, life: 0.45, size: 0.18, color: i % 2 ? 0xff7ac0 : 0xffe27a, g: 5 }); }
       }
       // warp portals
@@ -533,7 +533,7 @@ class Game {
           this.audio.pearl(); this.ui.popup('Pearl! +' + fmt(pts)); this.sparkle(c.x, c.y, s - c.s, 0xffc4ec, 14);
         } else {
           this.shells += lucky; this.score += 10 * this.mult * this.x2 * lucky; this.addCombo(0.045);
-          this.audio.coin(); this.sparkle(c.x, c.y, s - c.s);
+          this.audio.coin(); this.sparkle(c.x, c.y, s - c.s, 0xffe27a, 4);
         }
       }
     }
@@ -601,7 +601,7 @@ class Game {
       if (this.zone !== -1) {
         // a new level
         const bonus = 250 * lv * this.x2; this.score += bonus;
-        this.ui.zone(`LEVEL ${lv} · ${zoneName(z)}`); this.ui.popup('Level bonus +' + fmt(bonus), 'gold'); this.audio.levelUp(); this.audio.sting(z); this.celebrate(3); this.gullT = 1.6 + Math.random() * 1.6;
+        this.ui.zone(`LEVEL ${lv} · ${zoneName(z)}`); this.ui.popup('Level bonus +' + fmt(bonus), 'gold'); this.audio.levelUp(); this.audio.sting(z); this.celebrate(2); this.gullT = 1.6 + Math.random() * 1.6;
       }
       this.level = lv; this.zone = z;
     }
@@ -731,7 +731,7 @@ class Game {
     this.audio.santaHit(this.santaN);
     this.glitter(a.wx + rnd(1.2), a.wy + rnd(1), a.wz + 0.5, 10);
     const left = this.santa.hp - 1;
-    if (left === 9 || left === 4) { this.audio.santaOof(); this.ui.popup(left === 9 ? 'He is wobbling!' : 'Nearly jolly!'); }
+    if (left === 9 || left === 4) { this.audio.santaOof(); if (left === 4) this.ui.popup('Nearly jolly!'); }
     this.santa.hit();
   }
   // a burst of Christmas glitter in the world ahead of Robyn
@@ -793,7 +793,7 @@ class Game {
     tg.zap = { t: 0, vx: rnd(5) }; tg.hit = true;
     if (ufo && !tg.ball.mover.on && !tg.ball.zap) tg.ball.zap = { t: 0 };      // it never got its shot off
     const pts = (ufo ? 120 : 40) * this.mult * this.x2; this.score += pts; this.addCombo(ufo ? 0.12 : 0.06);
-    if (this.zapPopT <= 0 || ufo) { this.zapPopT = 0.7; this.ui.popup((ufo ? FLYER[tg.kind][0] + ' zapped! +' : 'Zap! +') + fmt(pts), ufo ? 'gold' : ''); }
+    if (ufo) this.ui.popup(FLYER[tg.kind][0] + ' zapped! +' + fmt(pts), 'gold');
     this.audio.poof(ufo); if (ufo) this.audio.flyerDown(tg.kind); else if (tg.rat) this.audio.ratPop();
     const cols = ufo ? FLYER[tg.kind][1] : [0xffffff, 0xd6ffb0, 0xffe27a, 0xf2f2f2];
     for (let i = 0; i < (ufo ? 26 : 16); i++) { const a = Math.random() * 6.28, u = Math.random() * 3.14, sp = 2 + Math.random() * (ufo ? 6 : 3.5); this.fx.emit({ x, y, z, vx: Math.cos(a) * Math.sin(u) * sp, vy: Math.cos(u) * sp + 1.5, vz: Math.sin(a) * Math.sin(u) * sp, life: 0.45 + Math.random() * 0.3, size: i % 3 ? 0.2 : 0.42, grow: i % 3 ? 0 : 1.6, color: cols[i % 4], g: i % 3 ? 4 : -0.5, a: i % 3 ? 1 : 0.6 }); }
@@ -883,7 +883,7 @@ class Game {
       this.pw.magnet = POWER_TIME.magnet; this.pw.gem = POWER_TIME.gem;
       this.wordT = 2.4; this.track.wantLetter = -1;
     } else {
-      this.ui.popup(LETTERS[i] + '!', 'gold'); this.ui.letters(this.got);
+      this.ui.letters(this.got);
       this.track.wantLetter = this.got.indexOf(0);
     }
   }
@@ -894,6 +894,8 @@ class Game {
     }
     this.audio.firework(vol);
   }
+  // is one of the big shows on (invaders, Grumpy Santa, or a flying attacker close ahead)? Pets, planes and geese wait until it is over
+  showOn() { const d = this.dist; return this.invaders.active || this.santa.active || this.track.ufos.some((u) => u.s - d > -5 && u.s - d < 70); }
   celebrate(n) { for (let i = 0; i < n; i++) this.firework(rnd(7), 5 + Math.random() * 5, -(12 + Math.random() * 18), pickOf(FW_COLORS), 26, 0.28, 0.9, i ? 0 : 0.8); }
   // Fireworks over the Midnight Funfair; lightning, thunder and sea spray at Storm Point.
   // Robyn has reached the top of a hill level.

@@ -46,7 +46,7 @@ export class UI {
     if (name === 'title') { $('bestLine').hidden = !(best > 0); $('bestVal').textContent = fmt(best || 0); }
   }
   resetHud() {
-    this.last = {}; this.chips = {}; $('powers').innerHTML = ''; $('popups').innerHTML = '';
+    this.last = {}; this.chips = {}; $('powers').innerHTML = ''; $('popups').innerHTML = ''; this.popQ = []; this.popBusy = false; clearTimeout(this.popTimer);
     this.score(0, 0, 1); this.shells(0); this.mult(1, 0, false); this.tide(0, 5); this.letters([0, 0, 0, 0, 0]);
   }
   score(score, dist, level) {
@@ -99,12 +99,16 @@ export class UI {
     }
     if (v > 0) $('tidebar').style.transform = `scaleX(${v.toFixed(2)})`;
   }
+  // One message at a time, so that they never pile up or sit on top of each other: a message that arrives while
+  // another is showing waits its turn (a warning jumps the queue, and a third message waiting pushes out the oldest).
   popup(text, cls = '') {
-    const box = $('popups');
-    while (box.children.length > 2) box.firstChild.remove();
+    const q = this.popQ || (this.popQ = []), box = $('popups');
+    if (this.popBusy && cls !== 'warn') { if (q.length >= 2) q.shift(); q.push([text, cls]); return; }
+    if (cls === 'warn') box.innerHTML = '';
     const el = document.createElement('div'); el.className = 'pop ' + cls; el.textContent = text;
-    el.style.marginTop = box.children.length * 44 + 'px';
     box.appendChild(el); setTimeout(() => el.remove(), 1150);
+    this.popBusy = true; clearTimeout(this.popTimer);
+    this.popTimer = setTimeout(() => { this.popBusy = false; const n = q.shift(); if (n) this.popup(n[0], n[1]); }, 950);
   }
   zone(name) { const el = $('zone'); el.textContent = name; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
   wash(state) { const w = $('wash'); w.classList.toggle('on', state === 'on'); w.classList.toggle('dim', state === 'dim'); }

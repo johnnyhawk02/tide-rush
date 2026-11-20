@@ -72,8 +72,8 @@ function buildPixel() {
 }
 
 const KINDS = {
-  izzi: { build: buildIzzi, lag: 1.55, off: -0.42, stay: 16, first: [8, 13], again: [26, 44], title: [-1.2, 0.35] },
-  pixel: { build: buildPixel, lag: 2.5, off: 0.46, stay: 13, first: [24, 34], again: [38, 64], title: [1.05, 0.7] },
+  izzi: { build: buildIzzi, lag: 1.55, off: -0.42, stay: 16, first: [14, 22], again: [45, 70], title: [-1.2, 0.35] },
+  pixel: { build: buildPixel, lag: 2.5, off: 0.46, stay: 13, first: [50, 65], again: [60, 90], title: [1.05, 0.7] },
 };
 
 class Pet {
@@ -138,7 +138,8 @@ export class Pets {
       let lag = p.lag;
       if (p.state === 'away') {
         p.root.visible = false;
-        if ((p.timer -= dt) > 0) continue;
+        // (they wait their turn: not while something else is going on, and one of them at a time)
+        if ((p.timer -= dt) > 0 || ctx.hold || this.list.some((q) => q !== p && q.state !== 'away')) continue;
         p.state = 'in'; p.k = 0; if (this.onEvent) this.onEvent(p.kind, 'join');
       }
       if (p.state === 'in') { p.k += dt / 0.9; lag = lerp(9, p.lag, smooth(p.k)); if (p.k >= 1) { p.state = 'with'; p.left = p.stay; } }

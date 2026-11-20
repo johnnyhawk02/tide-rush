@@ -121,7 +121,7 @@ export class Track {
     this.group.add(mesh); this.coins.push({ x, y, s, mesh, y0: y, pearl });
   }
   coinsLine(lane, s0, s1, y = 0.95, step = 1.7) { for (let s = s0; s <= s1 + 0.01; s += step) this.addCoin(laneX(lane), y, s); }
-  coinsArc(lane, sc, len, base = 0, peak = JUMP_H * 0.82, n = clamp(Math.round(len / 1.7), 5, 9)) {
+  coinsArc(lane, sc, len, base = 0, peak = JUMP_H * 0.82, n = clamp(Math.round(len / 2.1), 4, 7)) {
     for (let i = 0; i < n; i++) { const t = (i + 0.5) / n; this.addCoin(laneX(lane), base + 0.95 + peak * 4 * t * (1 - t), sc - len / 2 + len * t); }
   }
   addPad(lane, s) {
@@ -156,7 +156,7 @@ export class Track {
     // a run starts gently: over the first two levels the rows are further apart and emptier, and the trickier
     // things (barriers, gaps, rollers, attackers, things that cross) join in one at a time
     const ease = clamp(run / 560, 0, 1);
-    const spacing = v * lerp(0.98, 0.64, diff) * lerp(1.3, 1, ease);
+    const spacing = v * lerp(1.12, 0.8, diff) * lerp(1.25, 1, ease);
     const jumpLen = v * jt;
     const zone = zoneAtS(s), prevSafe = g.safe;
     if (g.clear && s > g.clear.until) g.clear = null;
@@ -169,14 +169,19 @@ export class Track {
       g.waveLevel = lvl0;
       // (on Christmas Pier it is Grumpy Santa in his sleigh instead, and he always turns up)
       const santa = zone === 10;
-      if (!ROOFED(zone) && (run > 520 || santa) && (zone === 9 || santa || this.waveAlways || rng() < 0.5)) {
+      // (an optional wave needs two quiet levels since the last visitors, so that they stay a treat)
+      if (!ROOFED(zone) && (run > 520 || santa) && (zone === 9 || santa || this.waveAlways || (lvl0 - (g.lastWave ?? -9) >= 3 && rng() < 0.4))) {
         // (Santa waits for the level's name to clear, and makes do with a shorter visit if the level is nearly over)
         const s0 = s + (santa ? 40 : 14), room = (lvl0 + 1) * ZONE_LEN - 6 - s0, want = Math.min(v * (santa ? 9 : 7.5), 215), len = santa ? Math.min(want, room - 1) : want;
-        if (len < room && len > v * 5) this.waves.push({ s0, s1: s0 + len, done: false, santa });
+        if (len < room && len > v * 5) { this.waves.push({ s0, s1: s0 + len, done: false, santa }); g.lastWave = lvl0; }
       }
     }
     // while a wave is overhead its bombs take the place of rollers and flying attackers
     const wave = this.waves.find((w) => s > w.s0 + 4 && s < w.s1 - 22), inWave = !!wave;
+    // visitors overhead are the show: while they are about (and just before and after) the deck stays simpler
+    const nearWave = this.waves.some((w) => s > w.s0 - 20 && s < w.s1 + 10);
+    // one thing at a time: after any special row come a couple of plain ones
+    const calm = (g.quiet || 0) > 0;
 
     let type = 'scatter';
     if (!g.plat) {
@@ -184,12 +189,12 @@ export class Track {
       const w = {
         scatter: 46,
         breather: g.last === 'breather' ? 0 : 7,
-        barrier: early || g.last === 'barrier' || cl ? 0 : 7 + 6 * diff,
-        gap: early || s < this.noGapBefore || g.last === 'gap' || cl ? 0 : (9 + 5 * diff) * (zone === 4 || zone === 6 ? 1.3 : 1),
-        platform: run < 230 || g.last === 'platform' || cl ? 0 : 9,
-        roller: (run < 290 && !inWave) || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 9 || inWave ? 5 : zone === 3 ? 1.6 : 2.6),
-        trolley: run < 380 || g.last === 'trolley' || cl ? 0 : (5 + 4 * diff) * (zone === 8 ? 2 : 1.4),
-        pad: run < 150 || g.last === 'pad' || g.last === 'gap' || cl ? 0 : zone === 3 || zone === 5 || zone === 11 ? 9 : 4.5,
+        barrier: early || calm || g.last === 'barrier' || cl ? 0 : 7 + 6 * diff,
+        gap: early || calm || s < this.noGapBefore || g.last === 'gap' || cl ? 0 : (9 + 5 * diff) * (zone === 4 || zone === 6 ? 1.3 : 1),
+        platform: run < 230 || calm || nearWave || g.last === 'platform' || cl ? 0 : 9,
+        roller: (run < 290 && !inWave) || calm || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 9 || inWave ? 3.5 : zone === 3 ? 1.3 : 1.8),
+        trolley: run < 380 || calm || nearWave || g.last === 'trolley' || cl ? 0 : (5 + 4 * diff) * (zone === 8 ? 2 : 1.4),
+        pad: run < 150 || calm || nearWave || g.last === 'pad' || g.last === 'gap' || cl ? 0 : zone === 3 || zone === 5 || zone === 11 ? 9 : 4.5,
       };
       let tot = 0; for (const k in w) tot += w[k];
       let r = rng() * tot;
@@ -205,7 +210,7 @@ export class Track {
 
     if (this.force && this.force.length && !g.plat) type = this.force.shift();
     let newSafe = prevSafe, extra = 0, skip = [], needJump = false;
-    const wantCoins = rng() < 0.78;
+    const wantCoins = rng() < 0.55;
 
     if (type === 'barrier') {
       for (const l of LANES) this.spawnObstacle('barrier', l, s);
@@ -278,7 +283,7 @@ export class Track {
       newSafe = pick(rng, cand);
       if (type === 'roller') {
         const free = LANES.filter((l) => l !== prevSafe && l !== newSafe);
-        const count = free.length > 1 && diff > 0.35 && rng() < 0.5 ? 2 : 1;
+        const count = free.length > 1 && diff > 0.35 && rng() < 0.3 ? 2 : 1;
         const lanes = free.length > 1 && count === 1 ? [pick(rng, free)] : free.slice(0, count);
         lanes.forEach((l, k) => {
           const [kind, chance] = ATTACKER[zone];
@@ -290,8 +295,10 @@ export class Track {
             // a bomb from the invaders overhead: it falls to the deck and skims along the lane
             const o = this.spawnObstacle('plasma', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6, on: false, range: 32, shot: true, plasma: true, bomb: true, drop: 7, age: 0 } });
             o.mesh.visible = false;
-          } else if (rng() < chance * lerp(0.5, 1, clamp((run - 280) / 560, 0, 1))) {
+          } else if (k === 0 && s >= (g.nextFlyer || 0) && rng() < chance * lerp(0.5, 1, clamp((run - 280) / 560, 0, 1))) {
             // a flying attacker waits over the lane and lets fly as Robyn comes into range (in space it is always a UFO)
+            // (one at a time, and a few seconds apart)
+            g.nextFlyer = s + v * (zone === 9 ? 3 : 5);
             const F = FLYERS[kind];
             const o = this.spawnObstacle(F.shot, l, s + 2 + k * 3, { mover: { type: 'roll', v: 6, on: false, range: 34, shot: true, plasma: F.crackle, drop: F.y - 1.2, age: 0 } });
             o.mesh.visible = false; this.addUfo(l, o.s, o, kind);
@@ -303,7 +310,7 @@ export class Track {
         extra = (count - 1) * 3;   // the second roller trails the row, so leave room to cut back in behind it
       }
       const early = run < 200;
-      const pTall = lerp(0.34, 0.62, diff) * lerp(0.6, 1, ease), pLow = 0.22 * lerp(0.7, 1, ease), pSafeLow = early ? 0.08 : lerp(0.28, 0.5, diff) * lerp(0.6, 1, ease);
+      const pTall = lerp(0.28, 0.5, diff) * lerp(0.6, 1, ease) * (nearWave ? 0.7 : 1), pLow = 0.16 * lerp(0.7, 1, ease), pSafeLow = early ? 0.08 : lerp(0.2, 0.38, diff) * lerp(0.6, 1, ease);
       let any = false;
       for (const l of avail) {
         if (skip.includes(l)) continue;
@@ -319,25 +326,27 @@ export class Track {
         const o = this.spawnObstacle(name, l, s);
         if (l === newSafe) { needJump = true; if (wantCoins) this.coinsArc(l, o.s, jumpLen * 0.9); }
       }
-      if (!needJump && wantCoins) this.coinsLine(newSafe, s - 5.1, s + 1.7);
+      if (!needJump && wantCoins) this.coinsLine(newSafe, s - 3.4, s + 1.7);
       if (!any && type === 'scatter') type = 'breather';
       // power-up between rows, on the safe path
       // (the sewers always offer a laser zapper soon after the way in, and power-ups come round faster down there)
       // (most levels also hand out a laser zapper early on, and the sewers always do; in space the mega laser is built in)
       const lvl = Math.floor(s / ZONE_LEN);
-      if (g.laserLevel !== lvl) { g.laserLevel = lvl; g.laserWant = zone !== 9 && (zone === 8 || rng() < 0.7); }
-      const firstLaser = g.laserWant && s - lvl * ZONE_LEN > 22 && run > 60;
-      if (((run > 140 && s >= g.nextPower) || firstLaser) && type !== 'platform') {
-        if (firstLaser) { g.laserWant = false; g.lastPower = 'laser'; }
+      if (g.laserLevel !== lvl) { g.laserLevel = lvl; g.laserWant = zone !== 9 && (zone === 8 || (s >= (g.nextLaser || 0) && rng() < 0.5)); }
+      // (pick-ups come one at a time, a few seconds apart, and wait until any visitors overhead have gone)
+      const free = s >= (g.nextPickup || 0), firstLaser = free && g.laserWant && s - lvl * ZONE_LEN > 22 && run > 60;
+      if (((run > 140 && s >= g.nextPower && free && !nearWave) || firstLaser) && type !== 'platform') {
+        if (firstLaser) { g.laserWant = false; g.lastPower = 'laser'; g.nextLaser = s + 420; }
         this.addPower(firstLaser ? 'laser' : this.pickPower(), laneX(newSafe), 1.2, s - spacing * 0.5);
-        g.nextPower = s + (zone === 8 ? 130 + rng() * 80 : 220 + rng() * 150);
-      } else if (run > 60 && s >= g.nextLetter && this.wantLetter >= 0 && !this.letters.length && type !== 'platform') {
+        g.nextPower = s + (zone === 8 ? 170 + rng() * 90 : 300 + rng() * 170); g.nextPickup = s + v * 4;
+      } else if (run > 60 && free && !nearWave && s >= g.nextLetter && this.wantLetter >= 0 && !this.letters.length && type !== 'platform') {
         // the next letter of ROBYN, on the safe path between two rows
         this.addLetter(this.wantLetter, laneX(newSafe), 1.25, s - spacing * 0.5);
-        g.nextLetter = s + 150 + rng() * 130;
+        g.nextLetter = s + 200 + rng() * 150; g.nextPickup = s + v * 4;
       }
     }
     this.rows.push({ s, safe: newSafe, type, needJump });
+    g.quiet = type === 'scatter' || type === 'breather' ? Math.max(0, (g.quiet || 0) - 1) : diff > 0.75 ? 1 : 2;
     g.safe = newSafe; g.last = type; g.s = s + spacing + extra;
   }
   pickPower() {

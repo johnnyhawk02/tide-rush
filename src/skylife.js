@@ -96,31 +96,33 @@ const BANNERS = ['GO ROBYN GO!', 'TIDE RUSH', 'HELLO ROBYN!', 'ICE CREAM 99p', '
 export class SkyLife {
   constructor(scene) {
     this.group = new THREE.Group(); scene.add(this.group);
-    this.planeT = rand(9, 16); this.flockT = rand(4, 9); this.jetT = rand(15, 30); this.heliT = rand(32, 50);
+    this.planeT = rand(20, 32); this.flockT = rand(8, 14); this.jetT = rand(15, 30); this.heliT = rand(55, 80);
     this.onHeli = null; this.onPlane = null;   // callbacks: (phase) => {}
     this.plane = null; this.flock = null; this.jet = null; this.heli = null; this.bi = Math.floor(Math.random() * BANNERS.length);
   }
   make(key, fn) { const k = '_' + key; if (!this[k]) { this[k] = fn(); this[k].visible = false; this.group.add(this[k]); } return this[k]; }
   reset() {
     for (const k of ['plane', 'flock', 'jet', 'heli']) { if (this[k]) this[k].o.visible = false; this[k] = null; }
-    this.heliT = rand(32, 50); this.planeT = rand(9, 16); this.flockT = rand(4, 9);
+    this.heliT = rand(55, 80); this.planeT = rand(20, 32); this.flockT = rand(8, 14);
   }
 
   // ctx: { run (playing), hidden (in the warp tunnel), clear (no cave roof overhead for a while), calm (no storm), night (0..1) }
   update(dt, t, ctx) {
     this.group.visible = !ctx.hidden;
     const go = ctx.run && !ctx.hidden && ctx.clear;
+    // one visitor in the sky at a time, and none while something bigger is going on
+    const free = () => !ctx.hold && !this.plane && !this.flock && !this.heli;
     if (ctx.run) { this.planeT -= dt; this.flockT -= dt; this.jetT -= dt; this.heliT -= dt; }
 
     // a plane towing a banner across the view
-    if (!this.plane && this.planeT <= 0 && go && ctx.calm) {
+    if (!this.plane && this.planeT <= 0 && go && ctx.calm && free()) {
       const dir = Math.random() < 0.5 ? 1 : -1, o = this.make('plane', () => { const g = new THREE.Group(); g.add(bannerPlane()); return g; });
       if (this._banner) { o.remove(this._banner); this._banner.children[0].geometry.dispose(); }
       this._banner = banner(BANNERS[this.bi++ % BANNERS.length]); o.add(this._banner);
       o.children[0].rotation.y = dir > 0 ? -PI / 2 : PI / 2; o.children[0].scale.setScalar(1.25);
       this._banner.position.set(-dir * 15, -0.3, 0);
       this.plane = { o, dir, x: -dir * 135, y: rand(24, 31), z: -rand(85, 105) };
-      o.visible = true; this.planeT = rand(28, 50);
+      o.visible = true; this.planeT = rand(45, 80); this.flockT = Math.max(this.flockT, 12);
       if (this.onPlane) this.onPlane();
     }
     if (this.plane) {
@@ -144,12 +146,12 @@ export class SkyLife {
     }
 
     // a skein of geese
-    if (!this.flock && this.flockT <= 0 && go && ctx.calm) {
+    if (!this.flock && this.flockT <= 0 && go && ctx.calm && free()) {
       const dir = Math.random() < 0.5 ? 1 : -1;
       const o = this.make('flock', () => { const g = new THREE.Group(); for (let i = 0; i < 7; i++) { const b = goose(), k = Math.ceil(i / 2), side = i % 2 ? 1 : -1; b.position.set(-k * 1.9, k * 0.25, side * k * 1.7); b.userData.p = i * 0.9; b.rotation.y = -PI / 2; b.scale.setScalar(1.3); g.add(b); } return g; });
       o.rotation.y = dir > 0 ? 0 : PI;
       this.flock = { o, dir, x: -dir * 95, y: rand(15, 24), z: -rand(45, 80), dz: rand(-2.5, 2.5) };
-      o.visible = true; this.flockT = rand(16, 32);
+      o.visible = true; this.flockT = rand(30, 55); this.planeT = Math.max(this.planeT, 12);
     }
     if (this.flock) {
       const f = this.flock; f.x += f.dir * 10.5 * dt; f.z += f.dz * dt;
@@ -159,10 +161,10 @@ export class SkyLife {
     }
 
     // the Tide TV helicopter: in, hover and film, away
-    if (!this.heli && this.heliT <= 0 && go) {
+    if (!this.heli && this.heliT <= 0 && go && free()) {
       const side = -1, o = this.make('heli', helicopter);   // it comes in from the sea
       this.heli = { o, side, t: 0, phase: 'in', from: new THREE.Vector3(side * 70, 34, -150), hover: new THREE.Vector3(side * 4.6, 11.4, -25), to: new THREE.Vector3(-side * 85, 40, -70), told: false };
-      o.visible = true; this.heliT = rand(95, 170);
+      o.visible = true; this.heliT = rand(140, 240); this.planeT = Math.max(this.planeT, 25); this.flockT = Math.max(this.flockT, 25);
       if (this.onHeli) this.onHeli('in');
     }
     if (this.heli) {
