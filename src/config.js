@@ -10,16 +10,16 @@ export const PLAT_H = 1.5;         // height of cargo platforms
 export const ZONE_CHUNKS = 7;      // chunks per level
 export const ZONE_LEN = CHUNK * ZONE_CHUNKS;
 // Zone ids: 0 promenade, 1 grand pier, 2 old harbour, 3 midnight funfair, 4 storm point, 5 sandcastle bay, 6 smugglers' cove, 7 frosty pier,
-// 8 the sewers (underground), 9 space pier, 10 Christmas pier (where Grumpy Santa lives).
+// 8 the sewers (underground), 9 space pier, 10 Christmas pier (where Grumpy Santa lives), 11 Marshmallow Shore (the sweets world).
 // The levels are played in this order, then the cycle repeats.
-export const ZONE_ORDER = [0, 8, 10, 1, 9, 5, 2, 3, 6, 4, 7];
+export const ZONE_ORDER = [0, 8, 10, 11, 1, 9, 5, 2, 3, 6, 4, 7];
 export const XMAS = 10;
 export const ZONES = ZONE_ORDER.length;
 // underground levels have a roof, so nothing in the sky can be seen from them
 export const ROOFED = (zone) => zone === 6 || zone === 8;
 export const zoneOfLevel = (i) => ZONE_ORDER[((i % ZONES) + ZONES) % ZONES];
 
-export const SPEED0 = 13;
+export const SPEED0 = 11;      // a gentle jog to start with
 export const SPEED1 = 31;
 
 // Running speed as a function of distance covered in this run.

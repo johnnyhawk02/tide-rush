@@ -395,6 +395,9 @@ export class GameAudio {
   santaOof() { if (this.ok) { const t = this.ctx.currentTime; this.tone('sawtooth', 190, t, 0.32, 0.13, null, { lp: 700, lpTo: 300, slide: 80, att: 0.02 }); this.tone('sine', 380, t, 0.3, 0.06, null, { slide: 160 }); } }
   santaJolly() { if (this.ok) { const t = this.ctx.currentTime + 0.05; [[72, 0], [76, 0.1], [79, 0.2], [84, 0.3], [88, 0.42], [91, 0.52], [96, 0.64]].forEach(([n, d], i) => { this.tone('sine', midi(n), t + d, i === 6 ? 0.8 : 0.3, 0.07); this.tone('triangle', midi(n + 12), t + d, i === 6 ? 0.6 : 0.16, 0.03); }); this.jingle(8, 0.06); setTimeout(() => this.hoHo(true), 500); } }
   santaFlee() { if (this.ok) { const t = this.ctx.currentTime; this.noise(t, 0.7, 0.1, { type: 'bandpass', f: 500, fTo: 3600, q: 1.2, att: 0.3 }); this.jingle(5, 0.045); setTimeout(() => this.hoHo(false, 0.12), 150); } }
+  // ----- Marshmallow Shore -----
+  pop() { if (this.ok) { const t = this.ctx.currentTime, n = 1 + ((Math.random() * 3) | 0); for (let i = 0; i < n; i++) { const u = t + i * 0.13, f = rnd(500, 900); this.tone('sine', f, u, 0.07, 0.12, null, { slide: f * 2.4 }); this.noise(u + 0.05, 0.03, 0.06, { type: 'highpass', f: 3000 }); } } }
+  giggle() { if (this.ok) { const t = this.ctx.currentTime; [1050, 1250, 1100, 1400].forEach((f, i) => this.tone('triangle', f, t + i * 0.09, 0.07, 0.1, null, { slide: f * 1.25, vib: 0.02, vibHz: 30 })); } }
   toot() { if (this.ok) { const t = this.ctx.currentTime; for (const f of [740, 932]) { this.tone('square', f, t, 0.12, 0.035, null, { lp: 2600 }); this.tone('square', f, t + 0.17, 0.3, 0.035, null, { lp: 2600 }); } } }
 
   sting(zone) {
@@ -406,6 +409,7 @@ export class GameAudio {
     else if (zone === 3) run([72, 76, 79, 84, 79, 84], 'square', 0.08, 0.06);
     else if (zone === 4) { run([64, 67, 71, 76], 'sawtooth', 0.07, 0.05); this.thunder(0.5); }
     else if (zone === 7) run([87, 91, 94, 99, 103], 'sine', 0.06, 0.06);
+    else if (zone === 11) { run([82, 86, 89, 94, 89, 94, 98], 'triangle', 0.06, 0.08); this.pop(); }
     else if (zone === 10) { run([84, 87, 91, 96, 91, 96], 'sine', 0.07, 0.07); this.jingle(5, 0.05); }
     else if (zone === 6) { this.tone('sine', 147, t, 0.9, 0.16); this.tone('sine', 147, t + 0.35, 0.9, 0.06); }
     else if (zone === 2) { for (const f of [98, 147]) this.tone('sawtooth', f, t, 0.9, 0.06, null, { lp: 460, att: 0.15 }); }

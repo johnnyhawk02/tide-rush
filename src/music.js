@@ -288,4 +288,24 @@ THEMES[10] = theme('Grumpy Santa Stomp', {
   drums: { thump: 'x.......x.......', sleigh: 'x.x.x.x.x.x.x.x.', snare: '....x.......x..x', tick: '..x...x...x...x.' },
 });
 
+// ---- 11. Marshmallow Shore: "Sherbet Skip", a bubbly, bouncy skip (B flat major) ----
+THEMES[11] = theme('Sherbet Skip', {
+  key: 10, scale: 'maj', base: 70, gain: 1.1, tempo: 1.1, swing: 0.25, voice: 'pluck', bassVoice: 'pizz', stab: 'pluck',
+  chords: 'I IV I V vi IV ii V',
+  tune: [
+    "3:2 5:2 1':2 5:2 3:2 5:2 1':4",
+    "6:3 6:1 1':2 6:2 4:4 6:4",
+    "5:2 3:2 5:2 1':2 3':4 1':4",
+    "2':3 2':1 7:2 5:2 2:4 -:4",
+    "6:2 1':2 3':2 1':2 6:2 1':2 3':4",
+    "4':2 1':2 6:2 1':2 4':4 6:4",
+    "2:2 4:2 6:2 4:2 2':4 6:4",
+    "5:2 7:2 2':2 5':2 5':4 -:4",
+  ],
+  bass: [0, _, 7, _, 0, _, 7, _, 0, _, 7, _, 12, _, 7, _],
+  stabs: '..x...x...x...x.',
+  arp: { pat: [0, 1, 2, 1], wave: 'triangle', oct: 12, vol: 0.02 },
+  drums: { kick: 'x.......x.......', clap: '....x.......x...', shake: 'x.x.x.x.x.x.x.x.', snap: '..........x...x.' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

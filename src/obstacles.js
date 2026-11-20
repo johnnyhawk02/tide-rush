@@ -407,6 +407,123 @@ def('giftBomb', 'low', 1.05, 1.0, 1.0, (b) => {
   for (const [x, y] of [[-0.22, 0.14], [0.2, -0.16], [0.22, 0.2], [-0.2, -0.2]]) for (const sz of [-1, 1]) b.sph(0.05, 0xffe27a, x, y, sz * 0.42, 1, 1, 0.4, { seg: 5 });
 }, { center: true });
 
+// ---------- Marshmallow Shore ----------
+const MALLOW_P = 0xffb3d4, MALLOW_W = 0xfff6ee, DOUGH = 0xdba15c, CHOC = 0x6b3a22, SPRINK = [0xff5a8a, 0x5ac8ff, 0xffe24a, 0x7be07b, 0xffffff, 0xb07bff];
+// A puffy marshmallow: (x, y, z) is the middle of its base.
+export function mallowInto(b, r, h, col, x = 0, y = 0, z = 0) {
+  b.cyl(r, r, h * 0.74, col, x, y + h / 2, z, 0, 0, 0, { seg: 16 }).sph(r * 0.985, col, x, y + h / 2, z, 1, (h * 0.5) / (r * 0.985), 1, { seg: 16 });
+}
+// A cute sleepy face on the front (+z) of something round of radius r, centred at height y.
+function faceInto(b, r, y, s = 1, x = 0, z = 0) {
+  for (const sx of [-1, 1]) b.tor(0.07 * s, 0.018 * s, 0x4a2a20, x + sx * 0.2 * s, y + 0.05 * s, z + r, 0, 0, PI, { arc: PI, seg: 7 }).sph(0.07 * s, 0xff8fb0, x + sx * 0.33 * s, y - 0.07 * s, z + r - 0.02, 1, 0.65, 0.3, { seg: 6 });
+  b.tor(0.08 * s, 0.02 * s, 0x4a2a20, x, y - 0.03 * s, z + r, 0, 0, PI, { arc: PI, seg: 7 });
+}
+// A ring doughnut with icing and sprinkles. flat: lying down (centre at x, y, z); otherwise standing, facing +z.
+export function donutInto(b, R, tube, icing, x, y, z, flat = true, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    const rx = flat ? PI / 2 : 0;
+    b.tor(R, tube, DOUGH, 0, 0, 0, rx, 0, 0, { seg: 18, tseg: 9 });
+    if (flat) b.tor(R, tube * 0.86, icing, 0, tube * 0.3, 0, rx, 0, 0, { seg: 18, tseg: 8 }); else b.tor(R, tube * 0.86, icing, 0, 0, tube * 0.3, rx, 0, 0, { seg: 18, tseg: 8 });
+    for (let i = 0; i < 9; i++) { const a = i * 0.7 + 0.2, rr = R + ((i % 3) - 1) * tube * 0.35, c = SPRINK[i % 6]; if (flat) b.box(0.035, 0.03, 0.11, c, Math.cos(a) * rr, tube * 1.12, Math.sin(a) * rr, 0, a * 2, 0); else b.box(0.035, 0.11, 0.03, c, Math.cos(a) * rr, Math.sin(a) * rr, tube * 1.12, 0, 0, a * 2); }
+  });
+}
+// A swirl lollipop on a stick, facing +z; (x, y, z) is the foot of the stick, h the height of the middle of the sweet.
+export function lollyInto(b, x, y, z, h, r, c1, c2 = 0xffffff, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    b.cyl(r * 0.07, r * 0.07, h, 0xfff6ee, 0, h / 2, 0, 0, 0, 0, { seg: 6 });
+    b.cyl(r, r, r * 0.26, c1, 0, h, 0, PI / 2, 0, 0, { seg: 18 }).cyl(r * 0.72, r * 0.72, r * 0.3, c2, 0, h, 0, PI / 2, 0, 0, { seg: 16 }).cyl(r * 0.46, r * 0.46, r * 0.34, c1, 0, h, 0, PI / 2, 0, 0, { seg: 12 }).cyl(r * 0.2, r * 0.2, r * 0.38, c2, 0, h, 0, PI / 2, 0, 0, { seg: 8 });
+  });
+}
+// A cupcake: fluted paper case, a swirl of icing, sprinkles and a cherry. s is its overall size (about 2.9 s tall).
+export function cupcakeInto(b, x, y, z, s, caseA, caseB, icing) {
+  b.at(x, y, z, 0, () => {
+    const g = new THREE.CylinderGeometry(0.86, 0.6, 1.1, 16, 1).toNonIndexed();
+    b.add(g, (px, py, pz, i) => (i < 96 ? (Math.floor(i / 6) % 2 ? caseA : caseB) : caseA), 0, 0.55, 0);
+    b.sph(0.95, DOUGH, 0, 1.1, 0, 1, 0.3, 1, { seg: 14 });
+    for (let i = 0; i < 4; i++) b.sph(0.88 - i * 0.2, icing, (i % 2 ? 0.05 : -0.05), 1.42 + i * 0.36, 0, 1, 0.42, 1, { seg: 14 });
+    b.sph(0.2, icing, 0, 2.62, 0, 1, 1.2, 1, { seg: 8 }).sph(0.17, 0xe5283b, 0, 2.8, 0, 1, 1, 1, { seg: 9 }).cyl(0.012, 0.012, 0.22, 0x4f8a3a, 0.04, 2.98, 0, 0, 0, -0.3, { seg: 4 });
+    for (let i = 0; i < 12; i++) { const a = i * 1.9, yy = 1.5 + (i % 4) * 0.3, rr = 0.86 - (i % 4) * 0.19; b.box(0.04, 0.04, 0.13, SPRINK[i % 6], Math.cos(a) * rr, yy, Math.sin(a) * rr, 0.6, a, 0); }
+  }, s);
+}
+def('mallow', 'low', 1.3, 0.92, 1.3, (b) => {
+  mallowInto(b, 0.6, 0.9, MALLOW_P); faceInto(b, 0.6, 0.48, 1.1);
+});
+def('donut', 'low', 1.4, 0.9, 1.4, (b) => {
+  donutInto(b, 0.42, 0.23, 0xff8fc0, 0, 0.23, 0); donutInto(b, 0.38, 0.21, CHOC, 0.05, 0.66, -0.03, true, 0.8);
+});
+def('jellyLow', 'low', 1.3, 0.92, 1.3, (b) => {
+  b.cyl(0.66, 0.6, 0.06, 0xffffff, 0, 0.03, 0, 0, 0, 0, { seg: 16 });
+  const g = new THREE.CylinderGeometry(0.34, 0.58, 0.74, 12, 1).toNonIndexed();
+  b.add(g, (x, y, z, i) => (i < 72 ? (Math.floor(i / 6) % 2 ? 0xff4a6a : 0xff6f88) : 0xff8fa2), 0, 0.43, 0);
+  b.sph(0.34, 0xff8fa2, 0, 0.8, 0, 1, 0.3, 1, { seg: 12 }).sph(0.15, 0xfff6ee, 0, 0.86, 0, 1, 0.8, 1, { seg: 8 });
+});
+def('toffees', 'low', 1.4, 0.86, 1.1, (b) => {
+  // a heap of wrapped sweets
+  const wrap = (x, y, z, ry, c, s = 1) => b.at(x, y, z, ry, () => { b.sph(0.3, c, 0, 0, 0, 1.25, 0.9, 0.9, { seg: 10 }); for (const sx of [-1, 1]) b.cone(0.2, 0.26, c, sx * 0.48, 0, 0, 0, 0, sx * PI / 2, { seg: 8 }); b.box(0.07, 0.56, 0.56, 0xffffff, 0, 0, 0, 0.78, 0, 0); }, s);
+  wrap(-0.3, 0.27, 0.18, 0.3, 0xff5a8a); wrap(0.34, 0.27, -0.1, -0.5, 0x5ac8ff); wrap(0.0, 0.62, 0.02, 1.2, 0xffe24a, 0.85); wrap(0.25, 0.22, 0.42, 1.9, 0x7be07b, 0.7);
+});
+def('chocBar', 'low', 1.5, 0.92, 0.7, (b) => {
+  // a slab of chocolate standing on its edge, half out of its wrapper
+  b.box(1.3, 0.5, 0.26, 0xe5283b, 0, 0.25, 0).box(1.32, 0.1, 0.28, 0xffd24a, 0, 0.5, 0).box(1.34, 0.04, 0.3, 0xdfe6ee, 0, 0.57, 0);
+  b.box(1.2, 0.36, 0.2, CHOC, 0, 0.74, 0);
+  for (let i = 0; i < 4; i++) b.box(0.26, 0.26, 0.26, 0x7d4529, -0.45 + i * 0.3, 0.74, 0, 0, 0, 0);
+});
+def('mallowTower', 'tall', 1.7, 3.0, 1.7, (b) => {
+  mallowInto(b, 0.8, 1.0, MALLOW_W); mallowInto(b, 0.74, 0.95, MALLOW_P, 0.04, 0.98, 0); mallowInto(b, 0.68, 0.9, MALLOW_W, -0.03, 1.9, 0.02);
+  faceInto(b, 0.68, 2.36, 1.3, -0.03, 0.02);
+  b.sph(0.7, CHOC, -0.03, 2.72, 0.02, 1, 0.22, 1, { seg: 14 });      // dipped in chocolate
+  for (let i = 0; i < 6; i++) b.sph(0.13, CHOC, -0.03 + Math.cos(i * 1.05) * 0.62, 2.6 - (i % 3) * 0.07, 0.02 + Math.sin(i * 1.05) * 0.62, 1, 1.6, 1, { seg: 6 });
+});
+def('lollyBig', 'tall', 1.8, 3.15, 1.0, (b) => {
+  b.sph(1, 0xfff1dc, 0, 0, 0, 0.8, 0.22, 0.5, { seg: 9 });
+  lollyInto(b, 0, 0, 0, 2.3, 0.82, 0xff5a8a); lollyInto(b, -0.6, 0, 0.2, 1.1, 0.42, 0x5ac8ff, 0xffffff, 0.2); lollyInto(b, 0.62, 0, 0.18, 1.3, 0.38, 0xffb347, 0xffffff, -0.2);
+  for (const sx of [-1, 1]) b.sph(0.18, 0xb07bff, sx * 0.17, 1.38, 0.1, 1, 0.6, 0.4, { seg: 7 });
+});
+def('cupcakeOb', 'tall', 1.8, 3.05, 1.8, (b) => cupcakeInto(b, 0, 0, 0, 1.0, 0x8fd8ff, 0xffffff, 0xff9fd0));
+def('jellyOb', 'tall', 1.7, 2.9, 1.7, (b) => {
+  b.cyl(0.84, 0.76, 0.08, 0xffffff, 0, 0.04, 0, 0, 0, 0, { seg: 16 });
+  [[0.78, 0.66, 1.0, 0x7be07b, 0x5fd06a], [0.6, 0.5, 0.85, 0xffe24a, 0xf5c93a], [0.44, 0.3, 0.75, 0xff5a8a, 0xf04478]].reduce((y, [rb, rt, h, c1, c2]) => {
+    const g = new THREE.CylinderGeometry(rt, rb, h, 12, 1).toNonIndexed();
+    b.add(g, (px, py, pz, i) => (i < 72 ? (Math.floor(i / 6) % 2 ? c1 : c2) : c1), 0, y + h / 2, 0);
+    return y + h;
+  }, 0.08);
+  b.sph(0.3, 0xfff6ee, 0, 2.7, 0, 1, 0.5, 1, { seg: 9 }).sph(0.12, 0xe5283b, 0, 2.86, 0, 1, 1, 1, { seg: 7 });
+});
+def('sundae', 'tall', 1.6, 3.2, 1.6, (b) => {
+  b.cyl(0.5, 0.56, 0.1, 0xcfeaff, 0, 0.05, 0, 0, 0, 0, { seg: 14 }).cyl(0.1, 0.12, 0.6, 0xcfeaff, 0, 0.4, 0, 0, 0, 0, { seg: 8 }).cyl(0.72, 0.16, 1.2, 0xdff2ff, 0, 1.3, 0, 0, 0, 0, { seg: 14 });
+  b.cyl(0.66, 0.4, 0.5, 0xff9fd0, 0, 1.62, 0, 0, 0, 0, { seg: 14 });
+  b.sph(0.46, 0xfff1dc, -0.24, 2.1, 0.1, 1, 1, 1, { seg: 11 }).sph(0.46, 0xff9fd0, 0.26, 2.12, 0.02, 1, 1, 1, { seg: 11 }).sph(0.44, 0x8a5a3a, 0.02, 2.5, -0.12, 1, 1, 1, { seg: 11 });
+  b.sph(0.3, CHOC, 0.02, 2.82, -0.12, 1.1, 0.4, 1.1, { seg: 9 }).sph(0.13, 0xe5283b, 0.02, 3.02, -0.12, 1, 1, 1, { seg: 7 });
+  b.box(0.3, 0.9, 0.05, 0xe9c27a, -0.42, 2.7, -0.2, 0, 0, 0.35).box(0.05, 1.3, 0.05, 0xff5a8a, 0.5, 2.6, -0.1, 0, 0, -0.3);
+});
+def('gingerMan', 'low', 1.15, 0.98, 1.0, (b) => {
+  // a gingerbread man who has run away from the bakery; he faces +z and jogs from side to side
+  const G = 0xc2783c, I = 0xfffaf0;
+  b.sph(0.2, G, 0, 0.78, 0, 1, 1, 0.45, { seg: 12 }).sph(0.24, G, 0, 0.44, 0, 1, 1.1, 0.42, { seg: 12 });
+  for (const sx of [-1, 1]) {
+    b.cap(0.085, 0.24, G, sx * 0.31, 0.52, 0, 0, 0, sx * -1.15, { seg: 7 }).cap(0.095, 0.22, G, sx * 0.13, 0.13, 0, 0, 0, sx * -0.2, { seg: 7 });
+    b.tor(0.085, 0.018, I, sx * 0.4, 0.57, 0.03, 0, PI / 2, 0, { seg: 8 }).tor(0.095, 0.018, I, sx * 0.14, 0.08, 0.03, PI / 2, 0, 0, { seg: 8 });
+    b.sph(0.03, 0x3a1d10, sx * 0.075, 0.82, 0.09, 1, 1, 0.5, { seg: 6 }).sph(0.04, 0xff8fb0, sx * 0.13, 0.75, 0.08, 1, 0.7, 0.4, { seg: 6 });
+  }
+  b.tor(0.06, 0.014, I, 0, 0.75, 0.09, 0, 0, PI, { arc: PI, seg: 7 });
+  for (let i = 0; i < 3; i++) b.sph(0.035, [0xff5a8a, 0x5ac8ff, 0x7be07b][i], 0, 0.56 - i * 0.12, 0.1, 1, 1, 0.6, { seg: 6 });
+});
+def('gobstopper', 'low', 1.1, 1.0, 1.0, (b) => {
+  const band = [0xff5a8a, 0xffb347, 0xffe24a, 0x7be07b, 0x5ac8ff, 0xb07bff];
+  b.add(new THREE.SphereGeometry(0.5, 20, 14), (x) => band[Math.min(5, Math.floor(((x + 0.5) / 1.0) * 6))], 0, 0, 0, 0, 0, 0, 1, 1, 1, { grad: 0.88 });
+  for (let i = 0; i < 10; i++) { const a = i * 2.4, c = Math.cos(i * 1.7); b.sph(0.04, 0xffffff, Math.sin(i * 1.7) * 0.45, Math.cos(a) * 0.47 * Math.abs(c), Math.sin(a) * 0.47 * Math.abs(c), 1, 1, 1, { seg: 5 }); }
+}, { center: true });
+def('bonbon', 'low', 1.05, 1.0, 1.0, (b) => {
+  // what the candyfloss clouds drop: a striped sweet in a twist of paper, rolling down the lane
+  b.add(new THREE.SphereGeometry(0.44, 16, 12), (x, y, z) => (Math.floor((Math.atan2(z, y) + PI) / (PI / 4)) % 2 ? 0xff5a8a : 0xffffff), 0, 0, 0, 0, 0, 0, 1.0, 1, 1, { grad: 0.9 });
+  for (const sx of [-1, 1]) b.cone(0.3, 0.3, 0xfff1a8, sx * 0.52, 0, 0, 0, 0, sx * PI / 2, { seg: 9 });
+}, { center: true });
+cloudDef('flosscloud', 0xff9fd0, 0xe772ae, (b) => {
+  // candyfloss on a paper cone, with a few sweets ready to drop
+  b.cone(0.3, 0.9, 0xfff1dc, 0, -0.85, 0, PI, 0, 0, { seg: 8 });
+  for (let i = 0; i < 4; i++) b.sph(0.07, [0xffe24a, 0x5ac8ff, 0x7be07b, 0xffffff][i], -0.55 + i * 0.36, -0.6 - (i % 2) * 0.12, 0.25, 1, 1, 1, { seg: 6 });
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -990,6 +1107,7 @@ export const TALL_TYPES = {
   5: ['castleOb', 'surfRack', 'cart', 'hutA', 'castleOb', 'hutB'], 6: ['crystal', 'treasure', 'rock', 'crystal', 'stack', 'treasure'], 7: ['snowman', 'firPot', 'hutA', 'snowman', 'stack', 'firPot'],
   8: ['ratBig', 'pipeStack', 'ratBig', 'valve', 'slimeTank', 'ratBig'], 9: ['asteroid', 'rocketOb', 'satDish', 'alienPod', 'asteroid', 'rocketOb'],
   10: ['giftStack', 'nutcracker', 'candyCanes', 'firPot', 'nutcracker', 'giftStack', 'snowman'],
+  11: ['mallowTower', 'lollyBig', 'cupcakeOb', 'jellyOb', 'sundae', 'mallowTower'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
-export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'] };
+export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'] };

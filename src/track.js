@@ -38,9 +38,10 @@ const FLYERS = {
   bat: { y: 4.5, size: 1.4, shot: 'slime', crackle: true },
   stormcloud: { y: 5.0, size: 1.3, shot: 'spark', crackle: true },
   snowcloud: { y: 5.0, size: 1.3, shot: 'snowball' },
+  flosscloud: { y: 5.0, size: 1.3, shot: 'bonbon' },
 };
 // Which attacker each level has, and how often a "roller" row is one of them rather than a plain rolling thing.
-const ATTACKER = { 0: ['gull', 0.6], 1: ['gull', 0.6], 2: ['gull', 0.6], 3: ['bat', 0.65], 4: ['stormcloud', 0.75], 5: ['gull', 0.6], 6: ['bat', 0.7], 7: ['snowcloud', 0.7], 8: ['bat', 0.5], 9: ['ufo', 1], 10: ['snowcloud', 0.3] };
+const ATTACKER = { 0: ['gull', 0.6], 1: ['gull', 0.6], 2: ['gull', 0.6], 3: ['bat', 0.65], 4: ['stormcloud', 0.75], 5: ['gull', 0.6], 6: ['bat', 0.7], 7: ['snowcloud', 0.7], 8: ['bat', 0.5], 9: ['ufo', 1], 10: ['snowcloud', 0.3], 11: ['flosscloud', 0.65] };
 
 export class Track {
   constructor(scene) {
@@ -149,7 +150,10 @@ export class Track {
     const g = this.gen, rng = this.rng;
     const s = g.s, run = s - this.runStart;
     const v = speedAt(run), diff = diffAt(run), jt = jumpTimeAt(run);
-    const spacing = v * lerp(0.98, 0.64, diff);
+    // a run starts gently: over the first two levels the rows are further apart and emptier, and the trickier
+    // things (barriers, gaps, rollers, attackers, things that cross) join in one at a time
+    const ease = clamp(run / 560, 0, 1);
+    const spacing = v * lerp(0.98, 0.64, diff) * lerp(1.3, 1, ease);
     const jumpLen = v * jt;
     const zone = zoneAtS(s), prevSafe = g.safe;
     if (g.clear && s > g.clear.until) g.clear = null;
@@ -162,7 +166,7 @@ export class Track {
       g.waveLevel = lvl0;
       // (on Christmas Pier it is Grumpy Santa in his sleigh instead, and he always turns up)
       const santa = zone === 10;
-      if (!ROOFED(zone) && (run > 200 || santa) && (zone === 9 || santa || this.waveAlways || rng() < 0.5)) {
+      if (!ROOFED(zone) && (run > 520 || santa) && (zone === 9 || santa || this.waveAlways || rng() < 0.5)) {
         // (Santa waits for the level's name to clear, and makes do with a shorter visit if the level is nearly over)
         const s0 = s + (santa ? 40 : 14), room = (lvl0 + 1) * ZONE_LEN - 6 - s0, want = Math.min(v * (santa ? 9 : 7.5), 215), len = santa ? Math.min(want, room - 1) : want;
         if (len < room && len > v * 5) this.waves.push({ s0, s1: s0 + len, done: false, santa });
@@ -173,16 +177,16 @@ export class Track {
 
     let type = 'scatter';
     if (!g.plat) {
-      const early = run < 110, cl = !!g.clear;
+      const early = run < 200, cl = !!g.clear;
       const w = {
         scatter: 46,
         breather: g.last === 'breather' ? 0 : 7,
         barrier: early || g.last === 'barrier' || cl ? 0 : 7 + 6 * diff,
         gap: early || s < this.noGapBefore || g.last === 'gap' || cl ? 0 : (9 + 5 * diff) * (zone === 4 || zone === 6 ? 1.3 : 1),
-        platform: run < 170 || g.last === 'platform' || cl ? 0 : 9,
-        roller: (run < 150 && !inWave) || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 9 || inWave ? 5 : zone === 3 ? 1.6 : 2.6),
-        trolley: run < 260 || g.last === 'trolley' || cl ? 0 : (5 + 4 * diff) * (zone === 8 ? 2 : 1.4),
-        pad: run < 150 || g.last === 'pad' || g.last === 'gap' || cl ? 0 : zone === 3 || zone === 5 ? 9 : 4.5,
+        platform: run < 230 || g.last === 'platform' || cl ? 0 : 9,
+        roller: (run < 290 && !inWave) || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 9 || inWave ? 5 : zone === 3 ? 1.6 : 2.6),
+        trolley: run < 380 || g.last === 'trolley' || cl ? 0 : (5 + 4 * diff) * (zone === 8 ? 2 : 1.4),
+        pad: run < 150 || g.last === 'pad' || g.last === 'gap' || cl ? 0 : zone === 3 || zone === 5 || zone === 11 ? 9 : 4.5,
       };
       let tot = 0; for (const k in w) tot += w[k];
       let r = rng() * tot;
@@ -221,10 +225,10 @@ export class Track {
     } else if (type === 'trolley') {
       // something that crosses all three lanes: a runaway luggage trolley, or a giant crab on the beach levels
       // (a waddling penguin on the Frosty Pier)
-      // (a scurrying giant rat in the sewers, a moon rover in space, a clockwork toy train on Christmas Pier)
-      const rat = zone === 8, rover = zone === 9, train = zone === 10;
+      // (a scurrying giant rat in the sewers, a moon rover in space, a clockwork toy train on Christmas Pier, a runaway gingerbread man on Marshmallow Shore)
+      const rat = zone === 8, rover = zone === 9, train = zone === 10, ginger = zone === 11;
       const crab = zone < 7 && rng() < (zone === 0 || zone === 4 || zone === 5 ? 0.75 : 0.2), penguin = zone === 7 && rng() < 0.8;
-      this.spawnObstacle(rat ? 'ratRun' : rover ? 'rover' : train ? 'toyTrain' : crab ? 'crab' : penguin ? 'penguin' : 'trolley', 0, s, { mover: { type: 'cross', amp: LANE_W, w: crab ? 2.2 : penguin || rover || train ? 1.9 : 2.5, phase: rng() * 6.28, crab, penguin, rat } });
+      this.spawnObstacle(rat ? 'ratRun' : rover ? 'rover' : train ? 'toyTrain' : ginger ? 'gingerMan' : crab ? 'crab' : penguin ? 'penguin' : 'trolley', 0, s, { mover: { type: 'cross', amp: LANE_W, w: crab ? 2.2 : penguin || rover || train || ginger ? 1.9 : 2.5, phase: rng() * 6.28, crab, penguin, rat, ginger } });
       needJump = true;
     } else if (type === 'pad') {
       // a bounce pad on the safe path, with a high arc of shells and a pearl at the top
@@ -283,19 +287,19 @@ export class Track {
             // a bomb from the invaders overhead: it falls to the deck and skims along the lane
             const o = this.spawnObstacle('plasma', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6, on: false, range: 32, shot: true, plasma: true, bomb: true, drop: 7, age: 0 } });
             o.mesh.visible = false;
-          } else if (rng() < chance) {
+          } else if (rng() < chance * lerp(0.5, 1, clamp((run - 280) / 560, 0, 1))) {
             // a flying attacker waits over the lane and lets fly as Robyn comes into range (in space it is always a UFO)
             const F = FLYERS[kind];
             const o = this.spawnObstacle(F.shot, l, s + 2 + k * 3, { mover: { type: 'roll', v: 6, on: false, range: 34, shot: true, plasma: F.crackle, drop: F.y - 1.2, age: 0 } });
             o.mesh.visible = false; this.addUfo(l, o.s, o, kind);
           } else if (zone === 8) this.spawnObstacle('ratCharge', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6.5, on: false, run: true } });     // a rat charging down the lane
-          else this.spawnObstacle(zone === 5 ? 'beachball' : zone === 7 ? 'snowball' : zone === 10 ? 'bauble' : 'barrel', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false } });
+          else this.spawnObstacle(zone === 5 ? 'beachball' : zone === 7 ? 'snowball' : zone === 10 ? 'bauble' : zone === 11 ? 'gobstopper' : 'barrel', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false } });
           skip.push(l);
         });
         extra = (count - 1) * 3;   // the second roller trails the row, so leave room to cut back in behind it
       }
-      const early = run < 110;
-      const pTall = lerp(0.34, 0.62, diff), pLow = 0.22, pSafeLow = early ? 0.12 : lerp(0.28, 0.5, diff);
+      const early = run < 200;
+      const pTall = lerp(0.34, 0.62, diff) * lerp(0.6, 1, ease), pLow = 0.22 * lerp(0.7, 1, ease), pSafeLow = early ? 0.08 : lerp(0.28, 0.5, diff) * lerp(0.6, 1, ease);
       let any = false;
       for (const l of avail) {
         if (skip.includes(l)) continue;
@@ -396,7 +400,8 @@ export class Track {
         if (m.shot && m.on && !o.flung) { m.age += dt; o.mesh.position.y = o.y + Math.max(0, 1 - m.age / 0.4) * m.drop; if (m.plasma) { o.mesh.rotation.y += dt * 7; if (!o.zap) o.mesh.scale.setScalar(1 + Math.sin(this.t * 22) * 0.08); } }
       } else if (m.type === 'cross' && !o.flung) {
         o.x = Math.sin(this.t * m.w + m.phase) * m.amp; o.mesh.position.x = o.x;
-        if (m.crab) { o.mesh.rotation.y = 0; o.mesh.position.y = Math.abs(Math.sin(this.t * 13)) * 0.07; o.mesh.rotation.z = Math.sin(this.t * 13) * 0.05; }
+        if (m.ginger) { o.mesh.rotation.y = 0; o.mesh.position.y = Math.abs(Math.sin(this.t * 12)) * 0.1; o.mesh.rotation.z = Math.sin(this.t * 12) * 0.22; }      // he jogs along facing Robyn
+        else if (m.crab) { o.mesh.rotation.y = 0; o.mesh.position.y = Math.abs(Math.sin(this.t * 13)) * 0.07; o.mesh.rotation.z = Math.sin(this.t * 13) * 0.05; }
         else o.mesh.rotation.y = Math.cos(this.t * m.w + m.phase) > 0 ? 0 : Math.PI;
         if (m.penguin) o.mesh.rotation.z = Math.sin(this.t * 11) * 0.16;      // waddle
         if (m.rat) o.mesh.position.y = Math.abs(Math.sin(this.t * 15)) * 0.09;   // scurry

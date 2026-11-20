@@ -1,10 +1,10 @@
-// Scenery prefabs and the eleven levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
-// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier and Christmas Pier (in zone-id order; config.js sets the order they are played in).
+// Scenery prefabs and the twelve levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
+// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier, Christmas Pier and Marshmallow Shore (in zone-id order; config.js sets the order they are played in).
 // Chunk-local coordinates: x across, z from 0 (near end) to -CHUNK (far end).
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, SAND, SAND_D } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, SAND, SAND_D } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -1058,6 +1058,97 @@ const floatBauble = (col) => prefab('fbauble' + col, () => {
   return b.build({ receive: false });
 });
 
+// ---------- Marshmallow Shore ----------
+const CREAM = 0xfff1dc, CREAM_D = 0xffdcc0, MP = 0xffb3d4, MW = 0xfff6ee, MINT = 0xb8f0d0, CHOCO = 0x6b3a22;
+const SWEETS = [0xff5a8a, 0x5ac8ff, 0xffe24a, 0x7be07b, 0xb07bff, 0xffb347];
+// Ground of smooth icing, scattered with sprinkles, with a wafer kerb along the pier.
+const sweetGround = () => prefab('sweetGround', () => {
+  const b = new Builder(0.86), rng = makeRng(1111);
+  b.box(46, 3.6, CHUNK, CREAM, DECK_HALF + 23, -1.82, -CHUNK / 2);
+  for (let i = 0; i < 20; i++) b.box(0.3, 0.2, 1.94, i % 2 ? 0xe9c27a : 0xd9ad62, DECK_HALF + 0.15, 0.04, -1 - i * 2);      // wafer kerb
+  for (let i = 0; i < 16; i++) b.sph(1, i % 2 ? CREAM_D : 0xffffff, DECK_HALF + 2.2 + rng() * 20, -0.03, -rng() * CHUNK, 1.2 + rng() * 2.4, 0.08 + rng() * 0.14, 0.8 + rng() * 1.6, { seg: 7 });
+  for (let i = 0; i < 70; i++) b.box(0.09, 0.07, 0.34, SWEETS[i % 6], DECK_HALF + 0.9 + rng() * 14, 0.03, -rng() * CHUNK, 0, rng() * 3, 0, { grad: 1 });
+  return b.build();
+});
+// Far hills of pink, white and mint marshmallow, each with icing on top and a cherry.
+const mallowHills = (v) => prefab('mallowhills' + v, () => {
+  const b = new Builder(0.84), rng = makeRng(1120 + v);
+  for (let i = 0; i < 8; i++) {
+    const cx = 27 + rng() * 16, cz = -rng() * CHUNK, sx = 7 + rng() * 5, sy = 3 + rng() * 4 + (cx - 27) * 0.25, sz = 6 + rng() * 5, col = [MP, MW, MINT][i % 3];
+    b.sph(1, col, cx, 0, cz, sx, sy, sz, { seg: 10 }).sph(1, 0xffffff, cx, sy * 0.72, cz, sx * 0.62, sy * 0.32, sz * 0.62, { seg: 9 });
+    b.sph(0.7, 0xe5283b, cx, sy * 1.04 + 0.5, cz, 1, 1, 1, { seg: 8 });
+  }
+  for (let i = 0; i < 3; i++) { const x = 20 + rng() * 6, z = -4 - i * 13 - rng() * 5, h = 1.6 + rng() * 0.5; mallowInto(b, 1.7, h, i % 2 ? MW : MP, x, 0, z); mallowInto(b, 1.5, h, i % 2 ? MP : MW, x + 0.2, h * 0.97, z + 0.1); }
+  return b.build({ receive: false });
+});
+// A pile of giant marshmallows by the pier.
+const mallowPile = (v) => prefab('mallowpile' + v, () => {
+  const b = new Builder(0.86);
+  mallowInto(b, 1.5, 1.5, MP, 0, 0, 0); mallowInto(b, 1.3, 1.4, MW, 2.4, 0, 0.8); mallowInto(b, 1.25, 1.3, v ? MINT : MW, 0.9, 1.45, 0.3); mallowInto(b, 1.0, 1.1, MP, -1.9, 0, 1.4);
+  if (v) { mallowInto(b, 0.9, 1.0, MW, 1.0, 2.7, 0.4); b.sph(0.95, CHOCO, 1.0, 3.6, 0.4, 1, 0.25, 1, { seg: 12 }); }
+  for (let i = 0; i < 3; i++) b.sph(0.4, SWEETS[i + v], -2.6 + i * 2.6, 0.2, 2.4 - i * 0.5, 1, 0.9, 1, { seg: 9 });      // gumdrops
+  return b.build({ cast: true });
+});
+// Lollipop and candyfloss trees.
+const lollyTree = (v) => prefab('lollytree' + v, () => {
+  const b = new Builder(0.86);
+  b.sph(1, CREAM_D, 0, 0, 0, 1.0, 0.2, 1.0, { seg: 8 });
+  if (v < 3) lollyInto(b, 0, 0, 0, 4.6 + v * 0.7, 1.45 - v * 0.15, SWEETS[v], 0xffffff, 0);
+  else {
+    // candyfloss: a paper cone and a big soft puff
+    const col = v === 3 ? 0xff9fd0 : 0x9fd8ff;
+    b.cone(0.5, 2.6, MW, 0, 1.3, 0, PI, 0, 0, { seg: 8 });
+    for (const [x, y, z, r] of [[0, 3.6, 0, 1.5], [-0.9, 3.2, 0.3, 1.0], [0.9, 3.3, -0.2, 1.05], [0.2, 4.5, 0.2, 1.0], [-0.4, 4.2, -0.6, 0.9], [0.5, 3.0, 0.7, 0.85]]) b.sph(r, col, x, y, z, 1, 0.92, 1, { seg: 9 });
+  }
+  return b.build({ cast: true, receive: false });
+});
+// A cupcake as big as a house, with a little door and windows; the front faces +z.
+const cupcakeHouse = () => prefab('cupcakehouse', () => {
+  const b = new Builder(0.86);
+  cupcakeInto(b, 0, 0, 0, 3.0, 0xff9fd0, 0xffffff, 0x9fe0ff);
+  b.box(1.1, 1.9, 0.2, 0x8a4a2a, 0, 0.95, 2.05, -0.2, 0, 0).tor(0.55, 0.09, MW, 0, 1.9, 1.9, -0.2, 0, 0, { arc: PI, seg: 10 }).sph(0.08, 0xffd24a, 0.32, 0.95, 2.14, 1, 1, 1, { seg: 6 });
+  for (const sx of [-1, 1]) b.cyl(0.42, 0.42, 0.12, 0xffe9a8, sx * 1.35, 2.1, 1.95, PI / 2 - 0.2, 0, sx * -0.6, { seg: 12, glow: true, grad: 0.85 }).tor(0.44, 0.07, MW, sx * 1.35, 2.1, 2.02, -0.2, sx * 0.6, 0, { seg: 12 });
+  lollyInto(b, -3.2, 0, 2.2, 2.2, 0.7, SWEETS[0], 0xffffff, 0.3); lollyInto(b, 3.2, 0, 2.0, 2.6, 0.75, SWEETS[4], 0xffffff, -0.3);
+  return b.build({ cast: true });
+});
+// A wobbly jelly castle on a plate.
+const jellyCastle = () => prefab('jellycastle', () => {
+  const b = new Builder(0.84);
+  b.cyl(4.6, 4.2, 0.25, 0xffffff, 0, 0.12, 0, 0, 0, 0, { seg: 18 });
+  const tier = (rb, rt, h, y, c1, c2, x = 0, z = 0) => { const g = new THREE.CylinderGeometry(rt, rb, h, 14, 1).toNonIndexed(); b.add(g, (px, py, pz, i) => (i < 84 ? (Math.floor(i / 6) % 2 ? c1 : c2) : c1), x, y + h / 2, z); b.sph(rt, c1, x, y + h, z, 1, 0.3, 1, { seg: 12 }); };
+  tier(3.6, 3.0, 2.0, 0.25, 0xff5a6e, 0xff7d8c); tier(2.4, 1.9, 1.7, 2.25, 0xffa43a, 0xffbb62); tier(1.4, 0.9, 1.4, 3.95, 0x7be07b, 0x97ea97);
+  b.sph(0.7, MW, 0, 5.5, 0, 1, 0.6, 1, { seg: 9 }).sph(0.3, 0xe5283b, 0, 5.95, 0, 1, 1, 1, { seg: 8 });
+  for (let i = 0; i < 4; i++) { const a = i * 1.57 + 0.5; tier(0.8, 0.5, 1.5, 0.25, 0xb07bff, 0xc79bff, Math.cos(a) * 3.6, Math.sin(a) * 3.6); }
+  return b.build({ cast: true });
+});
+// Somebody dropped a giant ice cream: the scoop has gone splat and the cone sticks up in the air.
+const droppedIce = () => prefab('droppedice', () => {
+  const b = new Builder(0.86);
+  b.sph(1, 0xfff1dc, 0, 0, 0, 3.4, 0.35, 3.0, { seg: 12 }).sph(2.0, 0xffb3d4, 0, 1.1, 0, 1.1, 0.8, 1.05, { seg: 14 });
+  for (let i = 0; i < 6; i++) b.sph(0.5, 0xffb3d4, Math.cos(i * 1.05) * 2.6, 0.2, Math.sin(i * 1.05) * 2.4, 1.3, 0.4, 1.2, { seg: 7 });
+  b.cone(1.5, 4.6, 0xe0aa60, 0.6, 4.3, -0.2, 0, 0, -0.28, { seg: 14 });
+  for (let i = 0; i < 5; i++) b.tor(1.36 - i * 0.26, 0.05, 0xc48f48, 0.6 + (i * 0.25 + 0.2) * 0.9 * 0.3, 2.6 + i * 0.85, -0.2, PI / 2, -0.28, 0, { seg: 14 });
+  b.box(0.5, 2.4, 0.14, CHOCO, -1.5, 2.6, 0.6, 0.2, 0, 0.5);      // the chocolate flake
+  for (let i = 0; i < 14; i++) { const a = i * 1.9; b.box(0.09, 0.09, 0.3, SWEETS[i % 6], Math.cos(a) * 1.6, 1.9 + (i % 3) * 0.35, Math.sin(a) * 1.5, 0.5, a, 0); }
+  return b.build({ cast: true });
+});
+// A rainbow of sour-belt sweets over the pier, standing on two marshmallow clouds.
+const rainbowArch = () => prefab('rainbowarch', () => {
+  const b = new Builder(0.9), cols = [0xff5a6e, 0xffa43a, 0xffe24a, 0x7be07b, 0x5ac8ff, 0xb07bff];
+  cols.forEach((c, i) => b.tor(5.55 - i * 0.24, 0.13, c, 0, 2.6, 0, 0, 0, 0, { arc: PI, seg: 28, tseg: 6 }));
+  for (const sx of [-1, 1]) for (const [x, y, z, r] of [[0, 2.6, 0, 1.0], [-0.7, 2.3, 0.2, 0.7], [0.7, 2.35, -0.1, 0.72], [0.1, 3.1, 0.1, 0.7], [0, 1.2, 0, 0.5]]) b.sph(r, MW, sx * 4.95 + x * 0.8, y, z, 1, 0.9, 1, { seg: 9 });
+  for (const sx of [-1, 1]) b.cyl(0.16, 0.2, 2.2, 0xffb3d4, sx * 4.95, 1.1, 0, 0, 0, 0, { seg: 8 });
+  return b.build({ cast: true });
+});
+// Things bobbing in the milkshake.
+const floatSweet = (v) => prefab('floatsweet' + v, () => {
+  const b = new Builder(0.86);
+  if (v === 0) { mallowInto(b, 1.5, 1.3, MP, 0, -0.3, 0); mallowInto(b, 1.0, 0.9, MW, 2.6, -0.25, 0.8); }
+  else if (v === 1) donutInto(b, 1.5, 0.75, 0xff8fc0, 0, 0.2, 0);
+  else { donutInto(b, 1.3, 0.65, 0x8fd8ff, 0, 0.15, 0); mallowInto(b, 0.9, 0.8, MW, -2.6, -0.2, 0.5); }
+  return b.build({ receive: false });
+});
+
 // ---------- the sewers ----------
 // A brick tunnel: walls SEW_W either side of the centre line, then a tall vault that springs at SEW_SPR and rises SEW_RISE.
 const SEW_W = 8.2, SEW_SPR = 3, SEW_RISE = 9, SEW_BOT = -3.6, SLIME = 0x8dff5a;
@@ -1236,9 +1327,9 @@ const asteroidFloat = (v) => prefab('astf' + v, () => {
 });
 
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -1246,7 +1337,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -1259,7 +1350,7 @@ export function populate(group, rawIndex, zone, anim) {
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   place(group, under40(), 0, 0, 0);
   place(group, rail40(), L, 0, 0);
-  const open = zone === 0 || zone === 5 || zone === 7 || zone === 9 || zone === 10;   // the right-hand side opens onto ground at deck level
+  const open = zone === 0 || zone === 5 || zone === 7 || zone >= 9;   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2) place(group, rail40(), R, 0, 0);
   if (zone !== 8) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
@@ -1389,6 +1480,17 @@ export function populate(group, rawIndex, zone, anim) {
     for (let i = 0; i < 2; i++) anim.push({ o: place(group, iceFloe((index + i) % 2), -8 - rng() * 12, WATER_Y, -5 - i * 19 - rng() * 10, rng() * 6), kind: 'bob', p: rng() * 6, amp: 0.6 });
     if (rng() < 0.75) anim.push({ o: place(group, floatBauble(pick(rng, [XR, XG, 0x2f6fd0, 0x8a4fd0])), -14 - rng() * 14, WATER_Y, -rng() * CHUNK, rng() * 6), kind: 'bob', p: rng() * 6, amp: 1.2 });
     if (index % 2) place(group, iceberg(index % 4 === 1 ? 0 : 1), -34 - rng() * 12, 0, -rng() * CHUNK, rng() * 6);
+  } else if (zone === 11) {
+    place(group, sweetGround(), 0, 0, 0);
+    place(group, mallowHills(index % 2), 0, 0, 0);
+    place(group, rainbowArch(), 0, 0, -20);
+    const k = index % 3, stall = (z) => place(group, kiosk(pick(rng, [C.rose, C.teal, C.blue, C.red]), pick(rng, ['FUDGE', 'CANDY FLOSS', 'TOFFEE', 'SHERBET', 'JELLY BEANS'])), DECK_HALF + 2.6, 0, z, -PI / 2);
+    if (k === 0) { place(group, cupcakeHouse(), DECK_HALF + 7.5, 0, -13, -PI / 2); place(group, mallowPile(0), 9.5, 0, -31, rng() * 6); }
+    else if (k === 1) { stall(-8); place(group, jellyCastle(), 12.5, 0, -24, rng() * 6); place(group, mallowPile(1), 17, 0, -6, rng() * 6, 0.9); }
+    else { place(group, droppedIce(), 11, 0, -12, rng() * 6); stall(-30); place(group, mallowPile(1), 14.5, 0, -33, rng() * 6); }
+    for (const z of [-3, -16, -27, -38]) if (rng() < 0.75) place(group, lollyTree(Math.floor(rng() * 5)), 6.3 + rng() * 1.2 + (rng() < 0.3 ? 12 : 0), 0, z + rng() * 2, -PI / 2 + (rng() - 0.5) * 0.8, 0.85 + rng() * 0.3);
+    for (let i = 0; i < 2; i++) anim.push({ o: place(group, floatSweet((index + i) % 3), -9 - rng() * 14, WATER_Y + 0.2, -5 - i * 19 - rng() * 10, rng() * 6), kind: 'bob', p: rng() * 6, amp: 1.2 });
+    if (rng() < 0.5) anim.push({ o: place(group, buoy(pick(rng, [C.red, C.green])), -16 - rng() * 10, WATER_Y, -rng() * CHUNK), kind: 'bob', p: rng() * 6 });
   } else if (zone === 8) {
     place(group, sewerShell(), 0, 0, 0);
     place(group, sewerSide(index % 2), 0, 0, 0);
