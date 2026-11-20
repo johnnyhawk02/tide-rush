@@ -1,4 +1,4 @@
-// Particles, the chasing tide wave, the warp tunnel and Robyn's ground shadow.
+// Particles, the chasing tide wave and Robyn's ground shadow. (The Star Tunnel is in startunnel.js.)
 import * as THREE from 'three';
 import { Builder, BEND_GLSL } from './kit.js';
 import { clamp, lerp, smooth } from './config.js';
@@ -111,50 +111,6 @@ export class Tide {
       }
     }
   }
-}
-
-// The warp tunnel: a neon tube and a glowing three-lane floor, shown while the normal world is hidden.
-export class Tunnel {
-  constructor(scene) {
-    this.group = new THREE.Group(); this.group.visible = false; scene.add(this.group);
-    const u = (this.uniforms = { uT: { value: 0 }, uS: { value: 0 } });
-    const tube = new THREE.CylinderGeometry(7.6, 7.6, 280, 44, 40, true); tube.rotateX(Math.PI / 2); tube.translate(0, 2.3, -128);
-    this.group.add(new THREE.Mesh(tube, new THREE.ShaderMaterial({
-      side: THREE.BackSide, uniforms: u,
-      vertexShader: `varying vec3 vP; ${BEND_GLSL} void main(){ vP = position; gl_Position = projectionMatrix * viewMatrix * bendWorld(modelMatrix * vec4(position, 1.0)); }`,
-      fragmentShader: `varying vec3 vP; uniform float uT, uS;
-        vec3 pal(float t){ return 0.5 + 0.5 * cos(6.2832 * (t + vec3(0.0, 0.33, 0.67))); }
-        void main(){
-          float a = atan(vP.y - 2.3, vP.x), s = uS - vP.z;
-          float stripes = smoothstep(0.62, 0.96, sin((a + s * 0.05 + uT * 0.4) * 6.0) * 0.5 + 0.5);
-          float rings = smoothstep(0.8, 1.0, sin(s * 0.7) * 0.5 + 0.5);
-          vec3 c = mix(vec3(0.05, 0.02, 0.16), vec3(0.15, 0.05, 0.38), sin(s * 0.07 + a * 2.0) * 0.5 + 0.5);
-          c += pal(s * 0.011 + uT * 0.07) * stripes * 0.8 + pal(s * 0.011 + 0.45) * rings * 0.95;
-          c = mix(c, vec3(1.0, 0.93, 1.0), smoothstep(70.0, 250.0, -vP.z));
-          gl_FragColor = vec4(c, 1.0);
-          #include <colorspace_fragment>
-        }`,
-    })));
-    const floor = new THREE.PlaneGeometry(7.8, 280, 1, 40); floor.rotateX(-Math.PI / 2); floor.translate(0, 0, -128);
-    this.group.add(new THREE.Mesh(floor, new THREE.ShaderMaterial({
-      uniforms: u,
-      vertexShader: `varying vec3 vP; ${BEND_GLSL} void main(){ vP = position; gl_Position = projectionMatrix * viewMatrix * bendWorld(modelMatrix * vec4(position, 1.0)); }`,
-      fragmentShader: `varying vec3 vP; uniform float uT, uS;
-        void main(){
-          float s = uS - vP.z, ax = abs(vP.x);
-          float lines = smoothstep(0.09, 0.0, abs(ax - 1.1)) + smoothstep(0.14, 0.0, abs(ax - 3.55));
-          float xl = abs(mod(vP.x + 1.1, 2.2) - 1.1);
-          float ch = fract((s + xl * 1.4) / 7.0);
-          float chev = smoothstep(0.0, 0.03, ch) * smoothstep(0.13, 0.09, ch) * step(ax, 3.3) * smoothstep(1.0, 0.75, xl);
-          vec3 c = vec3(0.07, 0.03, 0.2) + vec3(0.2, 0.85, 1.0) * lines + vec3(0.75, 0.3, 1.0) * chev * 0.6;
-          c = mix(c, vec3(1.0, 0.93, 1.0), smoothstep(70.0, 250.0, -vP.z));
-          gl_FragColor = vec4(c, 1.0);
-          #include <colorspace_fragment>
-        }`,
-    })));
-  }
-  show(v) { this.group.visible = v; }
-  update(dist, t) { this.uniforms.uT.value = t; this.uniforms.uS.value = dist % 20000; }
 }
 
 export function makeBlobShadow() {

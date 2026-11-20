@@ -5,7 +5,8 @@ import { laneX, WATER_Y, JUMP_H, ZONE_LEN, ROOFED, SPIRAL, MOUNTAIN, COASTER, HI
 import { Sky } from './sky.js';
 import { Track, zoneAtS, LETTERS, WARP_SPEED, PAD_BOOST } from './track.js';
 import { Robyn, OUTFITS } from './robyn.js';
-import { Particles, Tide, Tunnel, makeBlobShadow } from './fx.js';
+import { Particles, Tide, makeBlobShadow } from './fx.js';
+import { Tunnel } from './startunnel.js';
 import { GameAudio } from './audio.js';
 import { Input } from './input.js';
 import { UI } from './ui.js';
@@ -22,6 +23,7 @@ const POWER_POP = { magnet: 'Shell magnet!', shield: 'Bubble shield!', boots: 'S
 // Robyn can take five stumbles: each lets the tide gain a fifth of the way (TIDE_STEP), and a stumble while it is
 // closer than TIDE_LIMIT ends the run. The tide falls back all the way in TIDE_FADE seconds, so a stumble is
 // forgiven after about eight seconds of clean running.
+const WARP_CURVE = 0.0016;  // how sharply the Star Tunnel sweeps round
 const TWIST_MAX = 0.013;   // how tightly Spiral Bay corkscrews, in radians per metre
 const CURVE_MAX = 0.0042, BANK_MAX = 0.1;   // Rollercoaster World: how sharply the road ahead bends sideways, and how far the view leans into each bend (radians)
 const TIDE_STEP = 0.2, TIDE_LIMIT = 0.81, TIDE_FADE = 40;
@@ -67,7 +69,7 @@ class Game {
     r.setPixelRatio(this.pr);
     r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.02;
     r.shadowMap.enabled = this.quality.shadows; r.shadowMap.type = THREE.PCFSoftShadowMap;
-    r.setClearColor(0xfff0ff);     // only ever seen at the far end of the warp tunnel
+    r.setClearColor(0x03020a);     // deep space: only ever seen in the Star Tunnel
     setMaxAniso(r.capabilities.getMaxAnisotropy());
 
     this.scene = new THREE.Scene();
@@ -171,7 +173,7 @@ class Game {
     this.fwT = 1; this.boltT = 2.5; this.sprayT = 1;
   }
   // Show the normal world, or hide it and show the warp tunnel instead.
-  setWorld(on) { this.track.world.visible = on; this.sky.setVisible(on); this.tunnel.show(!on); }
+  setWorld(on) { this.track.world.visible = on; this.sky.setVisible(on); this.tunnel.show(!on, this.warp ? this.warp.turn : 1); }
   setOutfit(i) {
     if (this.mode !== 'title' || i === this.outfit || OUTFITS[i].need > this.bank) return;
     this.outfit = i;
@@ -366,7 +368,8 @@ class Game {
       const sway = z === COASTER ? Math.sin(u * Math.PI * 4) * Math.sin(u * Math.PI) : 0;
       const want = this.twistForce ?? (z === SPIRAL ? wave * TWIST_MAX : 0);
       this.twist = damp(this.twist || 0, want, 3, dt);
-      this.curve = damp(this.curve || 0, sway * CURVE_MAX, 3, dt);
+      // (the Star Tunnel sweeps gently round to one side all the way along)
+      this.curve = damp(this.curve || 0, this.warp ? this.warp.turn * WARP_CURVE : sway * CURVE_MAX, 3, dt);
       this.lean = damp(this.lean || 0, this.mode === 'run' ? -sway * BANK_MAX : 0, 3, dt);
       TWIST.value.x = Math.abs(this.twist) < 1e-5 ? 0 : this.twist;
       TWIST.value.z = Math.abs(this.curve) < 1e-6 ? 0 : this.curve;
@@ -388,9 +391,9 @@ class Game {
     this.audio.setSea(1 - Math.min(1, Math.max(this.sky.cur.under, this.sky.cur.space)));
     if (this.warp) {
       // inside the tunnel the lighting is the tunnel's own
-      this.tunnel.update(this.dist, this.time);
-      const sk = this.sky; sk.hemi.intensity = 1.7; sk.hemi.color.set(0xf6e2ff); sk.hemi.groundColor.set(0x9fdcff); sk.sun.intensity = 1.2; sk.sun.color.set(0xffffff);
-      this.scene.fog.color.set(0xf4dcff);
+      this.tunnel.update(this.dist, this.time, dt, this.warp.end - this.dist);
+      const sk = this.sky; sk.hemi.intensity = 1.6; sk.hemi.color.set(0xe6ecff); sk.hemi.groundColor.set(0x8f9dff); sk.sun.intensity = 1.2; sk.sun.color.set(0xffffff);
+      this.scene.fog.color.set(0x06041a);
     }
     this.ambience(dt);
     { const c = this.sky.cur, roof = (d) => { const z = zoneAtS(d); return ROOFED(z) || z === SPACE; }; this.skylife.update(dt, this.time, { run: this.mode === 'run', hidden: !!this.warp, clear: !roof(this.dist) && !roof(this.dist + 150), calm: c.storm < 0.4, night: c.stars, hold: this.showOn() }); }
@@ -837,11 +840,11 @@ class Game {
   enterWarp() {
     const P = this.p, tr = this.track, s = this.dist;
     const end = (Math.floor(s / ZONE_LEN) + 1) * ZONE_LEN - 14;     // come out just before the next level's gateway
-    this.warp = { end, len: end - s, nextS: s + 18, lane: P.lane };
+    this.warp = { end, len: end - s, nextS: s + 18, lane: P.lane, turn: Math.random() < 0.5 ? 1 : -1 };
     tr.genEnabled = false; tr.clearObjects(); tr.clearChunks();
     this.setWorld(false);
     this.tide = 0; P.stumbleT = 0; P.float = 1; this.shake = 0.6;
-    this.ui.flash(); this.ui.popup('Warp tunnel!', 'gold'); this.audio.warp();
+    this.ui.flash(); this.ui.popup('Star Tunnel!', 'gold'); this.audio.warp();
   }
   exitWarp() {
     const P = this.p;
@@ -857,8 +860,8 @@ class Game {
     if (r < 0.55) {
       let l = w.lane, ss = s0;
       for (let seg = 0; seg < 3; seg++) {
-        for (let i = 0; i < 5; i++) { tr.addCoin(laneX(l), 0.95, ss); ss += 2.5; }
-        l = pickOf([l - 1, l + 1].filter((v) => v >= -1 && v <= 1)); ss += 4.5;
+        for (let i = 0; i < 4; i++) { tr.addCoin(laneX(l), 0.95, ss); ss += 2.8; }
+        l = pickOf([l - 1, l + 1].filter((v) => v >= -1 && v <= 1)); ss += 6;
       }
       w.lane = l;
       return ss;
@@ -869,7 +872,7 @@ class Game {
       tr.addCoin(laneX(w.lane), 0.95 + JUMP_H * 0.82 + 0.8, s0 + len / 2, true);
       return s0 + len + 7;
     }
-    for (let i = 0; i < 4; i++) for (const l of [-1, 0, 1]) tr.addCoin(laneX(l), 0.95, s0 + i * 2.6);
+    for (let i = 0; i < 3; i++) for (const l of [-1, 0, 1]) tr.addCoin(laneX(l), 0.95, s0 + i * 3);
     return s0 + 17;
   }
 
@@ -998,6 +1001,7 @@ class Game {
     const sh = this.shake * this.shake * 0.35;
     cam.position.set(this.camPos.x + (Math.random() - 0.5) * sh, this.camPos.y + (Math.random() - 0.5) * sh, this.camPos.z);
     cam.lookAt(this.camLook);
+    if (this.warp) this.tunnel.face(cam);
     if (this.lean) cam.rotateZ(this.lean);
     if (this.debugCam) { cam.position.fromArray(this.debugCam.pos); cam.lookAt(new THREE.Vector3().fromArray(this.debugCam.look)); }
     const fov = this.baseFov + (this.mode === 'run' ? diff * 9 + (this.pw.gem > 0 ? 1 : 0) + (this.warp || this.pw.rocket > 0 ? 7 : 0) + Math.max(0, -(this.slope || 0)) * 22 : 0) * (this.baseFov > 75 ? 0.4 : 1);

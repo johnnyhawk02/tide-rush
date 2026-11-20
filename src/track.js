@@ -11,7 +11,7 @@ export const zoneAtS = (s) => zoneOfLevel(Math.floor(Math.max(0, s) / ZONE_LEN))
 const POWER_TYPES = ['magnet', 'shield', 'boots', 'gem'];
 export const LETTERS = 'ROBYN';
 // Flying on the rocket and running the warp tunnel are faster than normal running (main.js uses these too).
-export const WARP_SPEED = 1.3, WARP_TIME = 7, PAD_BOOST = 1.55;
+export const WARP_SPEED = 1.3, WARP_TIME = 9, PAD_BOOST = 1.55;
 
 function deckTopGeo(rects) {
   const n = rects.length, pos = new Float32Array(n * 12), nor = new Float32Array(n * 12), uv = new Float32Array(n * 8), idx = [];

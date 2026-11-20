@@ -1388,15 +1388,20 @@ function buildLetter(ch) {
   g.userData.color = 0x7ff3e8;
   return g;
 }
-// The warp portal: a glowing ring with a swirling centre. The shared material is animated from track.js.
+// The portal to the Star Tunnel: a glowing ring with a window on to space. The shared material is animated from track.js.
 export const portalMat = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { uT: { value: 0 } },
   vertexShader: `varying vec2 vUv; ${BEND_GLSL} void main(){ vUv = uv; gl_Position = projectionMatrix * viewMatrix * bendWorld(modelMatrix * vec4(position, 1.0)); }`,
   fragmentShader: `varying vec2 vUv; uniform float uT;
+    float ph(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     void main(){ vec2 p = vUv * 2.0 - 1.0; float r = length(p); if (r > 1.0) discard; float a = atan(p.y, p.x);
-      float s1 = sin(a * 3.0 + r * 9.0 - uT * 5.0) * 0.5 + 0.5, s2 = sin(a * 5.0 - r * 14.0 + uT * 3.0) * 0.5 + 0.5;
-      vec3 c = mix(vec3(0.36, 0.1, 0.95), vec3(0.1, 0.9, 1.0), s1); c = mix(c, vec3(1.0, 0.4, 0.9), s2 * 0.5);
-      c += vec3(1.0) * smoothstep(0.42, 0.0, r) * 0.9;
+      // a window on to space: a little galaxy turning in the dark, with stars drifting round it
+      float arm = pow(0.5 + 0.5 * cos(2.0 * a - 7.0 * log(r + 0.06) + uT * 1.6), 2.0);
+      vec3 c = vec3(0.03, 0.02, 0.13) + mix(vec3(1.0, 0.92, 0.8), vec3(0.45, 0.4, 1.0), smoothstep(0.0, 0.6, r)) * exp(-r * 2.6) * (0.25 + 1.3 * arm);
+      float ca = cos(uT * 0.5), sa = sin(uT * 0.5); vec2 q = mat2(ca, -sa, sa, ca) * p * 7.0, id = floor(q), f = fract(q) - 0.5;
+      c += vec3(0.85, 0.95, 1.0) * step(0.72, ph(id)) * smoothstep(0.16, 0.0, length(f - (vec2(ph(id + 3.1), ph(id + 7.7)) - 0.5) * 0.6));
+      c += vec3(0.35, 0.85, 1.0) * smoothstep(0.78, 1.0, r) * (0.6 + 0.4 * sin(a * 6.0 - uT * 4.0));
+      c += vec3(1.0) * smoothstep(0.2, 0.0, r) * 0.8;
       gl_FragColor = vec4(c, smoothstep(1.0, 0.86, r) * 0.96);
       #include <colorspace_fragment>
     }`,
@@ -1409,7 +1414,7 @@ function buildPortal() {
   for (let i = 0; i < 8; i++) b.add(new THREE.OctahedronGeometry(0.09), 0xffffff, Math.cos(i * PI / 4) * (R + 0.14), CY + Math.sin(i * PI / 4) * (R + 0.14), 0, 0, 0, 0, 1, 1, 1, { glow: true, grad: 1 });
   g.add(b.build());
   const disc = new THREE.Mesh(new THREE.CircleGeometry(R - 0.04, 32), portalMat); disc.position.y = CY; disc.renderOrder = 3; g.add(disc);
-  const s = signMesh('WARP', 1.5, 0.38, '#3a1a78', '#fff3d6', '#58e6ff'); s.position.set(0, CY + R + 0.42, 0); g.add(s);
+  const s = signMesh('SPACE', 1.5, 0.38, '#1a1450', '#fff3d6', '#58e6ff'); s.position.set(0, CY + R + 0.42, 0); g.add(s);
   return g;
 }
 
