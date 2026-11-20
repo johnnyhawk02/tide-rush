@@ -22,6 +22,7 @@ const PAL = [
   { top: 0x2a1a8c, hor: 0x46e0d0, sun: 0xfff0d0, sunI: 2.4, hemiS: 0xddd4ff, hemiG: 0x8f7fc0, hemiI: 1.45, deep: 0x3a1f9c, shal: 0x4fe6d6, cloud: 0xff8fd6, el: 0.7, az: -0.3, stars: 0.5, storm: 0, swirl: 1 },   // Spiral Bay: a violet sky with a great pink whirl turning in it
   { top: 0x1f6fdc, hor: 0xd8ecff, sun: 0xfff6e0, sunI: 3.0, hemiS: 0xdfeeff, hemiG: 0xa8b89a, hemiI: 1.4, deep: 0x155a8a, shal: 0x4fb6c8, cloud: 0xffffff, el: 0.8, az: 0.45, stars: 0, storm: 0 },   // Sky-High Mountain: clear, bright mountain air
   { top: 0x1a9be8, hor: 0xfff0c8, sun: 0xfff4d8, sunI: 2.9, hemiS: 0xe6f4ff, hemiG: 0xd8c8a0, hemiI: 1.4, deep: 0x0f7fa8, shal: 0x4fd8d0, cloud: 0xffffff, el: 0.7, az: -0.5, stars: 0, storm: 0 },   // Rollercoaster World: a bright afternoon at the theme park
+  { top: 0x1689e0, hor: 0xc8f0ff, sun: 0xfff6dc, sunI: 2.9, hemiS: 0xdff4ff, hemiG: 0xd8d0a8, hemiI: 1.4, deep: 0x0d6fa8, shal: 0x3fd0d8, cloud: 0xffffff, el: 0.9, az: 0.25, stars: 0, storm: 0 },   // the Glass Tunnel: a clear tropical day up top (under the water the dive takes over; see update)
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 
@@ -156,6 +157,7 @@ export class Sky {
     const seg = quality.low ? 72 : 120;
     const geo = new THREE.PlaneGeometry(700, 700, seg, seg); geo.rotateX(-Math.PI / 2);
     this.seaMat = new THREE.ShaderMaterial({
+      side: THREE.DoubleSide,     // (seen from underneath in the Glass Tunnel)
       uniforms: {
         uTime: { value: 0 }, uScroll: { value: 0 }, uDeep: { value: col(0) }, uShal: { value: col(0) }, uFog: { value: col(0) },
         uSun: { value: col(0) }, uSky: { value: col(0) }, uSunDir: { value: this.sunDir }, uNear: { value: 70 }, uFar: { value: 300 }, uAmp: { value: 1 }, uFoam: { value: col(0xffffff) },
@@ -168,8 +170,10 @@ export class Sky {
           vec4 wp = modelMatrix * vec4(p, 1.0); vPos = wp.xyz; wp = bendSea(wp);
           vec4 mv = viewMatrix * wp; vDepth = -mv.z; gl_Position = projectionMatrix * mv; }`,
       fragmentShader: `uniform float uTime, uNear, uFar, uAmp; uniform vec3 uDeep, uShal, uFog, uSun, uSky, uSunDir, uFoam;
-        varying vec2 vW; varying float vH; varying float vDepth; varying vec3 vPos;
+        varying vec2 vW; varying float vH; varying float vDepth; varying vec3 vPos; ${BEND_GLSL}
         void main(){
+          // where the Glass Tunnel dives through the surface, the water stands back from the glass
+          if (uHill.x < 0.0) { float sl = uHill.y - vPos.z; if (sl > 0.0 && sl < uHill.z) { float hg = ${WATER_Y.toFixed(1)} - hillAt(sl); if (hg > -0.4 && hg < 6.8) { float dy = max(hg - 1.2, 0.0); if (abs(vPos.x) < sqrt(max(31.36 - dy * dy, 0.0))) discard; } } }
           float n1 = sin(vW.x * 1.7 + uTime * 1.3) * sin(vW.y * 1.3 - uTime * 1.1);
           float n2 = sin(vW.x * 0.63 - vW.y * 0.9 + uTime * 0.7);
           float n3 = sin(vW.x * 4.3 + vW.y * 3.1 + uTime * 2.3) * sin(vW.x * 2.9 - vW.y * 4.7 - uTime * 1.9);
@@ -183,6 +187,8 @@ export class Sky {
           float th = 0.3 + (uAmp - 1.0) * 0.25;
           float foam = smoothstep(th, th + 0.1 * uAmp, vH + n1 * 0.07 + n3 * 0.05);
           c = mix(c, uFoam, foam * 0.55);
+          // from underneath: a bright, rippling ceiling of light
+          if (!gl_FrontFacing) c = mix(uShal * 1.1 + vec3(0.08, 0.2, 0.24), vec3(0.92, 1.0, 1.0), smoothstep(0.1, 0.8, n1 * 0.55 + n3 * 0.4 + n2 * 0.3));
           c = mix(c, uFog, smoothstep(uNear, uFar, vDepth));
           gl_FragColor = vec4(c, 1.0);
           #include <tonemapping_fragment>
@@ -237,6 +243,28 @@ export class Sky {
       this.snow = new THREE.Points(g, this.snowMat); this.snow.frustumCulled = false; this.snow.renderOrder = 6; this.snow.visible = false;
       scene.add(this.snow);
     }
+    // bubbles (under the sea): they wobble up through the water on either side of the glass tunnel
+    {
+      const N = quality.low ? 110 : 200, pos = new Float32Array(N * 3), rr = makeRng(17);
+      for (let i = 0; i < N; i++) pos.set([(rr() < 0.5 ? -1 : 1) * (6.6 + rr() * 16), rr() * 22, rr() * 60], i * 3);
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      this.bubbleMat = new THREE.ShaderMaterial({
+        transparent: true, depthWrite: false, uniforms: { uTime: { value: 0 }, uScroll: { value: 0 }, uA: { value: 0 }, uScale: { value: 400 }, uTop: { value: 0 } },
+        vertexShader: `uniform float uTime, uScroll, uScale, uTop; varying float vK;
+          void main(){ vec3 p = position; float id = position.x * 7.3 + position.z * 3.1;
+            p.y = mod(p.y + uTime * (1.2 + fract(id) * 1.6), 22.0) - 5.0;
+            p.z = mod(p.z + uScroll, 60.0) - 52.0;
+            p.x += sin(uTime * 1.7 + id) * 0.25; vK = smoothstep(uTop, uTop - 1.5, p.y);
+            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+            gl_PointSize = uScale * (0.05 + fract(id * 1.7) * 0.09) / max(0.5, -mv.z);
+            gl_Position = projectionMatrix * mv; }`,
+        fragmentShader: `uniform float uA; varying float vK;
+          void main(){ vec2 q = gl_PointCoord - 0.5; float d = length(q); float ring = smoothstep(0.5, 0.42, d) * smoothstep(0.28, 0.42, d), shine = smoothstep(0.16, 0.0, length(q - vec2(-0.14, -0.14)));
+            gl_FragColor = vec4(0.86, 0.97, 1.0, uA * vK * (ring * 0.75 + shine * 0.9 + smoothstep(0.5, 0.4, d) * 0.12)); }`,
+      });
+      this.bubbles = new THREE.Points(g, this.bubbleMat); this.bubbles.frustumCulled = false; this.bubbles.renderOrder = 6; this.bubbles.visible = false;
+      scene.add(this.bubbles);
+    }
     // lightning bolts: three jagged shapes far out to sea, shown for a few frames at a time
     this.bolts = [];
     for (let v = 0; v < 3; v++) {
@@ -264,6 +292,7 @@ export class Sky {
       s.bias = -0.0006; s.normalBias = 0.04;
     }
     this._a = col(0); this._b = col(0);
+    this.dive = 0; this.fogNear = scene.fog.near; this.fogFar = scene.fog.far;
   }
 
   setVisible(v) { this.hidden = !v; this.group.visible = v; this.sea.visible = v; }
@@ -276,13 +305,23 @@ export class Sky {
     this.bolt.scale.x = Math.random() < 0.5 ? -1 : 1;
   }
 
-  update(dist, t, dt) {
+  // dive: how far under the sea the camera is (0 above the water, 1 well under); depth: how far down the road is, in metres
+  update(dist, t, dt, dive = 0, depth = 0) {
+    const deep = Math.max(0, Math.min(1, (depth - 8) / 18));
     const zf = Math.max(0, dist) / ZONE_LEN, zi = Math.floor(zf), fr = zf - zi;
     const A = PAL[zoneOfLevel(zi)], B = PAL[zoneOfLevel(zi + 1)], k = smooth((fr - (1 - BLEND)) / BLEND);
     const c = this.cur;
     for (const key of ['top', 'hor', 'sun', 'hemiS', 'hemiG', 'deep', 'shal', 'cloud']) c[key].copy(this._a.set(A[key])).lerp(this._b.set(B[key]), k);
     c.stars = lerp(A.stars, B.stars, k); c.storm = lerp(A.storm, B.storm, k);
     for (const key of ['fun', 'snow', 'aurora', 'under', 'space', 'swirl']) c[key] = lerp(A[key] || 0, B[key] || 0, k);
+    // under the sea everything takes on the colour of the water, and gets bluer the deeper it goes
+    this.dive = dive;
+    if (dive > 0) {
+      const water = this._a.set(0x1a94c8).lerp(this._b.set(0x0a5a92), deep);
+      c.hor.lerp(water, dive); c.top.lerp(this._b.set(0xdff6ff), dive * 0.75);     // (the top of the sky stays bright: it is the daylight seen up the mouth of the tunnel)
+      c.hemiS.lerp(this._b.set(0xa8e6ff), dive * 0.6); c.hemiG.lerp(this._b.set(0x4fa0c0), dive * 0.6); c.cloud.lerp(water, dive);
+    }
+    this.scene.fog.near = lerp(this.fogNear, 3, dive); this.scene.fog.far = lerp(this.fogFar, lerp(105, 88, deep), dive);
     const el = lerp(A.el, B.el, k), az = lerp(A.az, B.az, k);
     this.sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)).normalize();
     this.flash = Math.max(0, this.flash - dt * 2.6); this.boltT = Math.max(0, this.boltT - dt);
@@ -290,7 +329,7 @@ export class Sky {
     if (this.bolt) this.bolt.visible = this.boltT > 0.2 || (this.boltT > 0 && this.boltT < 0.12);
 
     const du = this.dome.material.uniforms;
-    du.uTop.value.copy(c.top); du.uHor.value.copy(c.hor); du.uSun.value.copy(c.sun); du.uStars.value = c.stars + c.space; du.uFlash.value = fl; du.uAurora.value = c.aurora; du.uSwirl.value = c.swirl; du.uTime.value = t % 1000;
+    du.uTop.value.copy(c.top); du.uHor.value.copy(c.hor); du.uSun.value.copy(c.sun).multiplyScalar(1 - dive); du.uStars.value = c.stars + c.space; du.uFlash.value = fl; du.uAurora.value = c.aurora; du.uSwirl.value = c.swirl; du.uTime.value = t % 1000;
     this.scene.fog.color.copy(c.hor).lerp(this._a.set(0xdfe8ff), fl * 0.5);
     this.cloudMat.color.copy(c.cloud).lerp(this._a.set(0xffffff), fl * 0.6);
     this.farMat.color.copy(c.hor).lerp(this._a.set(0xffffff), 0.35).multiplyScalar(1 - 0.45 * Math.max(c.stars, c.storm));
@@ -303,19 +342,22 @@ export class Sky {
     if (this.rain.visible) { const ru = this.rainMat.uniforms; ru.uTime.value = t % 1000; ru.uScroll.value = dist % 44; ru.uA.value = c.storm; }
 
     this.snow.visible = c.snow > 0.02 && !this.hidden;
+    this.bubbles.visible = dive > 0.02 && !this.hidden;
+    if (this.bubbles.visible) { const bu = this.bubbleMat.uniforms; bu.uTime.value = t % 1000; bu.uScroll.value = dist % 60; bu.uA.value = dive; bu.uTop.value = depth + WATER_Y; }
     if (this.snow.visible) { const nu = this.snowMat.uniforms; nu.uTime.value = t % 1000; nu.uScroll.value = dist % 46; nu.uA.value = c.snow; }
 
     this.hemi.color.copy(c.hemiS); this.hemi.groundColor.copy(c.hemiG); this.hemi.intensity = lerp(A.hemiI, B.hemiI, k) + fl * 2.4;
-    this.sun.color.copy(c.sun); this.sun.intensity = lerp(A.sunI, B.sunI, k);
+    this.sun.color.copy(c.sun).lerp(this._a.set(0xbfeaff), dive * 0.5); this.sun.intensity = lerp(A.sunI, B.sunI, k) * (1 - 0.4 * dive);
     // keep the shadow light in front-left/right but never too flat, so shadows stay readable
     const sx = this.sunDir.x, sy = Math.max(this.sunDir.y, 0.55), sz = this.sunDir.z * 0.35;
     this.sun.position.set(sx * 60, sy * 60, sz * 60 - 12);
     this.sun.target.position.set(0, 0, -12);
 
     // nothing earthly on the horizon in space, and no gulls in space or underground
-    const earth = c.space < 0.5;
+    const earth = c.space < 0.5 && dive < 0.5;
     this.far.visible = earth; for (const m of this.sails) m.visible = earth;
     for (const g of this.gulls) g.visible = earth && c.under < 0.5;
+    for (const g of this.clouds) g.visible = dive < 0.5;
     this.planets.visible = c.space > 0.01; this.spaceMat.opacity = c.space;
     for (const g of this.clouds) { g.position.x += g.userData.v * dt; if (g.position.x > 800) g.position.x = -800; }
     for (const g of this.gulls) {

@@ -366,4 +366,24 @@ THEMES[14] = theme('Loop the Loop', {
   drums: { kick: 'x...x...x...x...', snare: '....x.......x.xx', hat: 'x.x.x.x.x.x.x.x.', cymbal: 'x...............', fill: 1 },
 });
 
+// ---- 15. The Glass Tunnel: "Deep Blue", a floating tune that rises like bubbles and drifts back down (E major) ----
+THEMES[15] = theme('Deep Blue', {
+  key: 4, scale: 'maj', base: 64, gain: 1.1, tempo: 0.98, echo: 0.35, voice: 'bell', bassVoice: 'synth', stab: 'pad',
+  chords: 'I vi IV V I iii IV V',
+  tune: [
+    "3:4 5:2 1':2 7:4 5:4",
+    "6:4 1':2 3':2 2':4 1':4",
+    "4:2 6:2 1':2 4':2 3':4 1':4",
+    "2':3 2':1 7:2 5:2 2:4 -:4",
+    "5:2 1':2 3':2 5':2 3':4 1':4",
+    "7:2 3':2 5':2 3':2 7:4 5:4",
+    "6:2 1':2 4':2 6':2 5':2 4':2 1':4",
+    "2':2 5':2 4':2 2':2 7:2 2':2 5:4",
+  ],
+  bass: [0, _, _, 0, 7, _, _, _, 0, _, _, 0, 12, _, 7, _],
+  stabs: 'x...............',
+  arp: { pat: [0, 1, 2, 1, 2, 1, 0, 1], wave: 'sine', oct: 24, vol: 0.02 },
+  drums: { kick: 'x.......x.......', rim: '....x.......x...', shake: 'x.x.x.x.x.x.x.x.', tick: '......x.......x.' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

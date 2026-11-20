@@ -42,9 +42,10 @@ const FLYERS = {
   twister: { y: 5.0, size: 1.3, shot: 'whirl', crackle: true },
   eagle: { y: 4.8, size: 1.35, shot: 'pinecone' },
   bandit: { y: 5.2, size: 1.35, shot: 'waterBalloon' },
+  inkOcto: { y: 4.5, size: 1.3, shot: 'inkBlob' },
 };
 // Which attacker each level has, and how often a "roller" row is one of them rather than a plain rolling thing.
-const ATTACKER = { 0: ['gull', 0.6], 1: ['gull', 0.6], 2: ['gull', 0.6], 3: ['bat', 0.65], 4: ['stormcloud', 0.75], 5: ['gull', 0.6], 6: ['bat', 0.7], 7: ['snowcloud', 0.7], 8: ['bat', 0.5], 9: ['ufo', 1], 10: ['snowcloud', 0.3], 11: ['flosscloud', 0.65], 12: ['twister', 0.65], 13: ['eagle', 0.6], 14: ['bandit', 0.55] };
+const ATTACKER = { 0: ['gull', 0.6], 1: ['gull', 0.6], 2: ['gull', 0.6], 3: ['bat', 0.65], 4: ['stormcloud', 0.75], 5: ['gull', 0.6], 6: ['bat', 0.7], 7: ['snowcloud', 0.7], 8: ['bat', 0.5], 9: ['ufo', 1], 10: ['snowcloud', 0.3], 11: ['flosscloud', 0.65], 12: ['twister', 0.65], 13: ['eagle', 0.6], 14: ['bandit', 0.55], 15: ['inkOcto', 0.6] };
 
 export class Track {
   constructor(scene) {
@@ -190,7 +191,7 @@ export class Track {
         scatter: 46,
         breather: g.last === 'breather' ? 0 : 7,
         barrier: early || calm || g.last === 'barrier' || cl ? 0 : 7 + 6 * diff,
-        gap: early || calm || s < this.noGapBefore || g.last === 'gap' || cl ? 0 : (9 + 5 * diff) * (zone === 4 || zone === 6 ? 1.3 : 1),
+        gap: early || calm || s < this.noGapBefore || g.last === 'gap' || cl ? 0 : (9 + 5 * diff) * (zone === 4 || zone === 6 ? 1.3 : zone === 15 ? 0 : 1),     // (no holes in the floor of the Glass Tunnel)
         platform: run < 230 || calm || nearWave || g.last === 'platform' || cl ? 0 : 9,
         roller: (run < 290 && !inWave) || calm || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 9 || inWave ? 3.5 : zone === 3 ? 1.3 : 1.8),
         trolley: run < 380 || calm || nearWave || g.last === 'trolley' || cl ? 0 : (5 + 4 * diff) * (zone === 8 ? 2 : 1.4),
@@ -235,7 +236,7 @@ export class Track {
       // (a waddling penguin on the Frosty Pier)
       // (a scurrying giant rat in the sewers, a moon rover in space, a clockwork toy train on Christmas Pier, a runaway gingerbread man on Marshmallow Shore, a humming top in Spiral Bay, a mountain goat on Sky-High Mountain, a dodgem in Rollercoaster World)
       const rat = zone === 8, rover = zone === 9, train = zone === 10, ginger = zone === 11, top = zone === 12, goat = zone === 13, dodgem = zone === 14;
-      const crab = zone < 7 && rng() < (zone === 0 || zone === 4 || zone === 5 ? 0.75 : 0.2), penguin = zone === 7 && rng() < 0.8;
+      const crab = zone === 15 || (zone < 7 && rng() < (zone === 0 || zone === 4 || zone === 5 ? 0.75 : 0.2)), penguin = zone === 7 && rng() < 0.8;
       this.spawnObstacle(rat ? 'ratRun' : rover ? 'rover' : train ? 'toyTrain' : ginger ? 'gingerMan' : top ? 'spinTop' : goat ? 'goat' : dodgem ? 'bumperCar' : crab ? 'crab' : penguin ? 'penguin' : 'trolley', 0, s, { mover: { type: 'cross', amp: LANE_W, w: crab ? 2.2 : penguin || rover || train || ginger || top || goat || dodgem ? 1.9 : 2.5, phase: rng() * 6.28, crab, penguin, rat, ginger, top, goat } });
       needJump = true;
     } else if (type === 'pad') {
@@ -304,7 +305,7 @@ export class Track {
             o.mesh.visible = false; this.addUfo(l, o.s, o, kind);
           } else if (zone === 14) this.spawnObstacle('runawayCar', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6.5, on: false, run: true } });     // a runaway coaster car full of screaming riders
           else if (zone === 8) this.spawnObstacle('ratCharge', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6.5, on: false, run: true } });     // a rat charging down the lane
-          else this.spawnObstacle(zone === 5 ? 'beachball' : zone === 7 || zone === 13 ? 'snowball' : zone === 10 ? 'bauble' : zone === 11 ? 'gobstopper' : zone === 12 ? 'marble' : 'barrel', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false } });
+          else this.spawnObstacle(zone === 5 ? 'beachball' : zone === 7 || zone === 13 ? 'snowball' : zone === 10 ? 'bauble' : zone === 11 ? 'gobstopper' : zone === 12 ? 'marble' : zone === 15 ? 'puffer' : 'barrel', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false } });
           skip.push(l);
         });
         extra = (count - 1) * 3;   // the second roller trails the row, so leave room to cut back in behind it

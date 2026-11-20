@@ -875,6 +875,100 @@ def('bandit', 'deco', 2.2, 2.4, 1.6, (b) => {
   balloonsInto(b, 0, -0.25, 0, 6, 1.0, 0.36);
 });
 
+// ---------- the Glass Tunnel ----------
+def('clam', 'low', 1.5, 0.95, 1.2, (b) => {
+  // a giant clam showing off its pearl
+  const S = 0xc7a8e6, SD = 0x9a7ac8, rib = (x) => (Math.sin(x * 15) > 0 ? S : SD);
+  b.add(new THREE.SphereGeometry(0.72, 16, 8, 0, PI * 2, 0, PI / 2), rib, 0, 0.38, 0, PI, 0, 0, 1, 0.52, 0.8);
+  b.add(new THREE.SphereGeometry(0.72, 16, 8, 0, PI * 2, 0, PI / 2), rib, 0, 0.42, -0.3, -0.8, 0, 0, 1, 0.5, 0.8);
+  b.sph(0.6, 0x4fd0c8, 0, 0.36, 0, 1, 0.16, 0.76, { seg: 12 }).sph(0.2, 0xfff6fb, 0, 0.52, 0.12, 1, 1, 1, { seg: 10, glow: true, grad: 1 });
+});
+def('wetSign', 'low', 1.3, 1.0, 0.9, (b) => {
+  // a "mind the puddle" sign: the tunnel has sprung a tiny leak
+  b.box(0.72, 1.02, 0.05, 0xffd23f, 0, 0.48, 0.17, -0.3, 0, 0).box(0.72, 1.02, 0.05, 0xf2b90f, 0, 0.48, -0.17, 0.3, 0, 0);
+  b.sph(0.13, 0x2f7fe0, 0, 0.5, 0.24, 1, 1.25, 0.3, { seg: 8 }).cone(0.1, 0.2, 0x2f7fe0, 0, 0.7, 0.19, -0.3, 0, 0, { seg: 8 });
+  b.cyl(0.62, 0.62, 0.02, 0x9fe0f6, 0.15, 0.012, 0.25, 0, 0, 0, { seg: 14, grad: 1 }).cyl(0.3, 0.3, 0.02, 0x9fe0f6, -0.4, 0.012, 0.1, 0, 0, 0, { seg: 10, grad: 1 });
+});
+def('bucket', 'low', 1.3, 1.0, 0.9, (b) => {
+  // a mop and bucket
+  b.cyl(0.36, 0.28, 0.52, 0x2f7fe0, -0.25, 0.26, 0, 0, 0, 0, { seg: 12 }).cyl(0.38, 0.38, 0.05, 0xdfe6ee, -0.25, 0.53, 0, 0, 0, 0, { seg: 12 }).cyl(0.32, 0.32, 0.02, 0x9fe0f6, -0.25, 0.56, 0, 0, 0, 0, { seg: 12, grad: 1 });
+  b.tor(0.36, 0.02, 0xdfe6ee, -0.25, 0.55, 0, 0, PI / 2, 0, { arc: PI, seg: 10 });
+  b.cyl(0.03, 0.03, 1.1, 0xb98a5a, 0.36, 0.56, 0, 0, 0, -0.32, { seg: 6 });
+  for (let i = 0; i < 6; i++) b.cap(0.05, 0.22, 0xf2f2ea, 0.5 + Math.cos(i * 1.05) * 0.09, 0.1, Math.sin(i * 1.05) * 0.09, Math.sin(i * 1.05) * 0.5, 0, -Math.cos(i * 1.05) * 0.5 - 0.3, { seg: 5 });
+});
+def('tanks', 'tall', 1.5, 2.3, 1.0, (b) => {
+  // a rack of divers' air tanks
+  b.box(1.5, 0.22, 0.9, 0x4a626e, 0, 0.11, 0).box(1.5, 2.2, 0.08, 0x6f8a96, 0, 1.1, -0.38).box(1.5, 0.1, 0.5, 0x4a626e, 0, 2.25, -0.15);
+  [0xffd23f, 0xff8a3c, 0x2fb0c8].forEach((c, i) => {
+    const x = -0.46 + i * 0.46;
+    b.cyl(0.2, 0.2, 1.4, c, x, 0.95, 0, 0, 0, 0, { seg: 12 }).sph(0.2, c, x, 1.65, 0, 1, 0.8, 1, { seg: 12 }).cyl(0.06, 0.06, 0.2, 0xdfe6ee, x, 1.88, 0, 0, 0, 0, { seg: 6 }).box(0.2, 0.07, 0.07, 0x2a2f36, x, 1.98, 0);
+    b.box(0.44, 0.07, 0.03, 0x2a2f36, x, 1.2, 0.2).box(0.44, 0.07, 0.03, 0x2a2f36, x, 0.6, 0.2);
+  });
+});
+def('divingSuit', 'tall', 1.3, 2.6, 1.0, (b) => {
+  // an old brass-helmet diving suit on show
+  const CV = 0xd9c9a0, BR = 0xc98a3c, BRD = 0x9a6424;
+  b.box(1.2, 0.26, 0.9, 0x55707c, 0, 0.13, 0);
+  for (const sx of [-1, 1]) {
+    b.box(0.3, 0.2, 0.46, 0x4a3a2a, sx * 0.24, 0.36, 0.06).cyl(0.16, 0.18, 0.8, CV, sx * 0.24, 0.84, 0, 0, 0, 0, { seg: 8 });
+    b.cap(0.13, 0.62, CV, sx * 0.56, 1.55, 0, 0, 0, sx * 0.22, { seg: 8 }).sph(0.15, 0x4a3a2a, sx * 0.66, 1.16, 0.02, 1, 1, 1, { seg: 7 });
+  }
+  b.cap(0.36, 0.42, CV, 0, 1.6, 0, 0, 0, 0, { seg: 12 }).box(0.6, 0.12, 0.5, 0x4a3a2a, 0, 1.24, 0).cyl(0.4, 0.46, 0.2, BR, 0, 1.98, 0, 0, 0, 0, { seg: 12 });
+  b.sph(0.42, BR, 0, 2.3, 0, 1, 1, 1, { seg: 14 }).cyl(0.24, 0.24, 0.08, BRD, 0, 2.3, 0.4, PI / 2, 0, 0, { seg: 12 }).cyl(0.18, 0.18, 0.1, 0x2f6f9a, 0, 2.3, 0.41, PI / 2, 0, 0, { seg: 12, grad: 1 });
+  for (const sx of [-1, 1]) b.cyl(0.13, 0.13, 0.06, BRD, sx * 0.4, 2.32, 0.08, 0, 0, PI / 2, { seg: 8 }).cyl(0.09, 0.09, 0.08, 0x2f6f9a, sx * 0.41, 2.32, 0.08, 0, 0, PI / 2, { seg: 8, grad: 1 });
+  b.sph(0.07, BRD, 0, 2.74, 0, 1, 1, 1, { seg: 6 });
+});
+def('miniSub', 'tall', 1.9, 2.4, 2.6, (b) => {
+  // a little yellow submarine on its stand
+  const Y = 0xffd23f, YD = 0xe0a800;
+  for (const z of [-0.7, 0.7]) b.box(1.5, 0.14, 0.2, 0x4a626e, 0, 0.07, z).box(0.14, 0.62, 0.14, 0x4a626e, -0.5, 0.36, z).box(0.14, 0.62, 0.14, 0x4a626e, 0.5, 0.36, z);
+  b.sph(1, Y, 0, 1.35, 0, 0.8, 0.74, 1.25, { seg: 16 }).box(1.7, 0.1, 0.5, YD, 0, 1.3, -0.3).cyl(0.36, 0.42, 0.5, YD, 0, 2.1, -0.1, 0, 0, 0, { seg: 12 }).cyl(0.04, 0.04, 0.4, 0x4a626e, 0.1, 2.45, -0.1, 0, 0, 0, { seg: 5 }).box(0.2, 0.08, 0.08, 0x4a626e, 0.1, 2.62, -0.03);
+  b.cyl(0.42, 0.42, 0.1, 0x4a626e, 0, 1.4, 1.08, PI / 2, 0, 0, { seg: 14 }).sph(0.36, 0x9fe0f6, 0, 1.4, 1.02, 1, 1, 0.5, { seg: 12, grad: 1 });
+  for (const sx of [-1, 1]) b.cyl(0.17, 0.17, 0.08, 0x4a626e, sx * 0.76, 1.45, 0.25, 0, 0, PI / 2, { seg: 10 }).cyl(0.12, 0.12, 0.1, 0x9fe0f6, sx * 0.77, 1.45, 0.25, 0, 0, PI / 2, { seg: 10, grad: 1 });
+  b.cyl(0.1, 0.16, 0.3, YD, 0, 1.35, -1.3, PI / 2, 0, 0, { seg: 8 });
+  for (let i = 0; i < 3; i++) b.box(0.12, 0.62, 0.04, 0xff5a4a, 0, 1.35, -1.46, 0, 0, i * 2.094);
+});
+def('fishTank', 'tall', 1.6, 2.4, 1.1, (b) => {
+  // a tank of tropical fish on a cupboard
+  b.box(1.5, 0.95, 1.0, 0x6a4a34, 0, 0.475, 0).box(1.56, 0.08, 1.06, 0x4a3324, 0, 0.98, 0).box(0.05, 0.6, 0.02, 0x4a3324, 0, 0.5, 0.51);
+  b.box(1.44, 1.2, 0.94, 0x58c4e6, 0, 1.62, 0, 0, 0, 0, 0, 0, 0, { grad: 0.75 }).box(1.56, 0.12, 1.06, 0x2a3440, 0, 2.28, 0).box(1.5, 0.1, 1.0, 0xe9dcb0, 0, 1.07, 0);
+  for (const sx of [-1, 1]) b.box(0.06, 1.2, 0.06, 0x2a3440, sx * 0.73, 1.62, 0.48);
+  [[-0.4, 1.9, 0xff8a2a], [0.3, 1.55, 0xffd23f], [-0.1, 1.4, 0xff6fae], [0.45, 2.0, 0x9a6fe0]].forEach(([x, y, c], i) => {
+    const d = i % 2 ? 1 : -1;
+    b.sph(0.14, c, x, y, 0.48, 1.4, 0.9, 0.3, { seg: 8, grad: 1 }).flat([[[-0.16 * d, 0, 0], [-0.34 * d, 0.13, 0], [-0.34 * d, -0.13, 0]]], c, x, y, 0.5).sph(0.03, 0x1b1f24, x + 0.11 * d, y + 0.03, 0.53, 1, 1, 0.5, { seg: 5, grad: 1 });
+  });
+  for (let i = 0; i < 4; i++) b.box(0.07, 0.5 + (i % 2) * 0.2, 0.02, 0x3fa85a, -0.55 + i * 0.36, 1.37 + (i % 2) * 0.1, 0.48, 0, 0, (i % 2 ? 1 : -1) * 0.15);
+});
+def('puffer', 'low', 1.1, 1.0, 1.0, (b) => {
+  // a puffed-up puffer fish, rolling along like a ball
+  b.add(new THREE.SphereGeometry(0.44, 16, 12), (x, y) => (y < -0.12 ? 0xfff6e0 : 0xf2c94c), 0, 0, 0);
+  for (let i = 0; i < 26; i++) {
+    const u = (i + 0.5) / 26, ph = Math.acos(1 - 2 * u), th = i * 2.4, x = Math.sin(ph) * Math.cos(th), y = Math.cos(ph), z = Math.sin(ph) * Math.sin(th);
+    if (z > 0.55 && Math.abs(y) < 0.5) continue;
+    b.cone(0.05, 0.16, 0xd9a520, x * 0.5, y * 0.5, z * 0.5, Math.atan2(z, Math.max(1e-3, Math.hypot(x, y))) * (y >= 0 ? 1 : -1), 0, -Math.atan2(x, y), { seg: 4 });
+  }
+  for (const sx of [-1, 1]) b.sph(0.12, 0xffffff, sx * 0.18, 0.12, 0.38, 1, 1, 0.6, { seg: 8, grad: 1 }).sph(0.06, 0x1b1f24, sx * 0.18, 0.12, 0.44, 1, 1, 0.5, { seg: 6, grad: 1 });
+  b.sph(0.07, 0xff8a6a, 0, -0.08, 0.43, 1, 0.8, 0.5, { seg: 7, grad: 1 });
+}, { center: true });
+def('inkBlob', 'low', 1.0, 1.0, 1.0, (b) => {
+  // a wobbly blob of ink
+  b.sph(0.45, 0x3a2a6a, 0, 0, 0, 1, 0.94, 1, { seg: 12, grad: 0.6 }).sph(0.14, 0xb9a8ff, -0.14, 0.18, 0.3, 1, 0.8, 0.5, { seg: 7, grad: 1 });
+  for (let i = 0; i < 6; i++) { const a = i * 1.05; b.sph(0.12, 0x2a1d52, Math.cos(a) * 0.42, Math.sin(i * 2.3) * 0.28, Math.sin(a) * 0.42, 1, 1, 1, { seg: 6, grad: 0.7 }); }
+}, { center: true });
+def('inkOcto', 'deco', 1.8, 1.7, 1.2, (b) => {
+  // a cheeky little octopus with a propeller hat, who squirts ink
+  const O = 0x9a6fe0, OD = 0x7a4fc0;
+  b.sph(0.42, O, 0, 0.1, 0, 1, 1.08, 1, { seg: 14 });
+  for (let i = 0; i < 6; i++) { const a = i * 1.047 + 0.5, x = Math.cos(a) * 0.3, z = Math.sin(a) * 0.3; b.cap(0.07, 0.42, i % 2 ? O : OD, x * 1.1, -0.42, z * 1.1, z * 0.5, 0, -x * 0.5, { seg: 6 }).sph(0.09, OD, x * 1.35, -0.7, z * 1.35, 1, 1, 1, { seg: 6 }); }
+  for (const sx of [-1, 1]) {
+    b.sph(0.13, 0xffffff, sx * 0.17, 0.2, 0.34, 1, 1.1, 0.6, { seg: 8, grad: 1 }).sph(0.065, 0x1b1f24, sx * 0.17, 0.19, 0.41, 1, 1, 0.5, { seg: 6, grad: 1 });
+    b.box(0.2, 0.04, 0.03, 0x3a2a6a, sx * 0.17, 0.37, 0.38, 0, 0, sx * -0.35);
+    b.box(0.5, 0.03, 0.14, 0xffd23f, sx * 0.27, 0.86, 0, 0, 0, sx * 0.12);
+  }
+  b.tor(0.09, 0.022, 0x3a2a6a, 0, 0.02, 0.4, 0.1, 0, PI, { arc: PI, seg: 7 });
+  b.dome(0.26, 0xff5a4a, 0, 0.44, 0, 0, 0, 0, 1, 0.7, 1, { seg: 10 }).cyl(0.025, 0.025, 0.24, 0x2a2f36, 0, 0.74, 0, 0, 0, 0, { seg: 5 }).sph(0.05, 0xffd23f, 0, 0.87, 0, 1, 1, 1, { seg: 6 });
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -1467,6 +1561,7 @@ export const TALL_TYPES = {
   12: ['hypnoWheel', 'twistPole', 'jackBox', 'shellTower', 'miniHelter', 'hypnoWheel'],
   13: ['pineOb', 'cairn', 'rock', 'fingerpost', 'woodShed', 'pineOb'],
   14: ['striker', 'balloonCart', 'ticketBooth', 'carStack', 'popcorn', 'striker'],
+  15: ['tanks', 'divingSuit', 'miniSub', 'fishTank', 'tanks', 'divingSuit'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
-export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'] };
+export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'] };

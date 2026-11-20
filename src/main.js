@@ -1,7 +1,7 @@
 // Tide Rush: game loop, player physics, collisions, scoring and camera.
 import * as THREE from 'three';
 import { setMaxAniso, TWIST, HILL, HILL_SHAPE, hillHeight } from './kit.js';
-import { laneX, WATER_Y, JUMP_H, ZONE_LEN, ROOFED, SPIRAL, MOUNTAIN, COASTER, HILLS, zoneOfLevel, speedAt, diffAt, jumpTimeAt, clamp, lerp, damp, smooth } from './config.js';
+import { laneX, WATER_Y, JUMP_H, ZONE_LEN, ROOFED, SPIRAL, MOUNTAIN, COASTER, DEEP, HILLS, zoneOfLevel, speedAt, diffAt, jumpTimeAt, clamp, lerp, damp, smooth } from './config.js';
 import { Sky } from './sky.js';
 import { Track, zoneAtS, LETTERS, WARP_SPEED, PAD_BOOST } from './track.js';
 import { Robyn, OUTFITS } from './robyn.js';
@@ -27,17 +27,23 @@ const WARP_CURVE = 0.0016;  // how sharply the Star Tunnel sweeps round
 const TWIST_MAX = 0.013;   // how tightly Spiral Bay corkscrews, in radians per metre
 const CURVE_MAX = 0.0042, BANK_MAX = 0.1;   // Rollercoaster World: how sharply the road ahead bends sideways, and how far the view leans into each bend (radians)
 const TIDE_STEP = 0.2, TIDE_LIMIT = 0.81, TIDE_FADE = 40;
-const ROCKET_SPEED = 1.5, FLY_Y = 6.0;
+const ROCKET_SPEED = 1.5, FLY_Y = 6.0, FLY_Y_TUBE = 3.9;
+// how high the rocket cruises at a point along the coast: lower inside the Glass Tunnel, so that she stays under its roof
+const flyYAt = (s) => {
+  const here = zoneAtS(s) === DEEP, m = ((s % ZONE_LEN) + ZONE_LEN) % ZONE_LEN;
+  const k = here ? 1 : zoneAtS(s + 14) === DEEP ? 1 - (ZONE_LEN - m) / 14 : zoneAtS(s - 14) === DEEP ? 1 - m / 14 : 0;
+  return lerp(FLY_Y, FLY_Y_TUBE, clamp(k, 0, 1));
+};
 const SPACE = 9;
 // the flying attackers: what to call each one when it is zapped, and the colours of its puff
 const FLYER = {
   ufo: ['UFO', [0xff7ad9, 0x8ff0ff, 0xffe27a, 0xffffff]], gull: ['Bomber gull', [0xffffff, 0xf5a623, 0xdfe6ee, 0xffe27a]], bat: ['Slime bat', [0x8dff5a, 0xb59cff, 0xffe27a, 0xffffff]],
-  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]], flosscloud: ['Candyfloss cloud', [0xff9fd0, 0xffffff, 0xffe24a, 0x8fd8ff]], twister: ['Little twister', [0x9fece4, 0xffffff, 0xff8fd6, 0xffd23f]], eagle: ['Grumpy eagle', [0x6b4a2e, 0xffffff, 0xffb300, 0xd9c7a8]], bandit: ['Balloon bandit', [0xe5383b, 0xffc928, 0x2f7fe0, 0xff6fae]],
+  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]], flosscloud: ['Candyfloss cloud', [0xff9fd0, 0xffffff, 0xffe24a, 0x8fd8ff]], twister: ['Little twister', [0x9fece4, 0xffffff, 0xff8fd6, 0xffd23f]], eagle: ['Grumpy eagle', [0x6b4a2e, 0xffffff, 0xffb300, 0xd9c7a8]], bandit: ['Balloon bandit', [0xe5383b, 0xffc928, 0x2f7fe0, 0xff6fae]], inkOcto: ['Inky octopus', [0x9a6fe0, 0x3a2a6a, 0xffd23f, 0xffffff]],
 };
 // picking up a laser while one is already running powers it up: it fires faster and reaches further
 const LASER_LV = [null, { name: 'Laser zapper!', gap: 0.16, reach: 0, col: 0x6ff6ff, size: 1.1 }, { name: 'Double laser!', gap: 0.1, reach: 4, col: 0x9dff6a, size: 1.25 }, { name: 'Triple laser!', gap: 0.065, reach: 8, col: 0xffb347, size: 1.4 }];
 // what her footsteps sound like in each world
-const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal', 10: 'snow', 12: 'wood', 13: 'wood', 14: 'wood' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
+const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal', 10: 'snow', 12: 'wood', 13: 'wood', 14: 'wood', 15: 'wood' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
 const PET_POP = { izzi: ['Izzi is here! She rounds up shells', "Izzi's off for a sniff"], pixel: ['Pixel is here! Shells count double', 'Pixel wandered off'] };
 const FW_COLORS = [0xffe27a, 0xff8ab0, 0x8ff0ff, 0xa6ff9a, 0xffb36b, 0xd9a6ff];
 const rnd = (a = 1) => (Math.random() - 0.5) * 2 * a;
@@ -188,7 +194,7 @@ class Game {
     const w = Math.max(1, this.app.clientWidth), h = Math.max(1, this.app.clientHeight);
     this.renderer.setPixelRatio(this.pr);
     this.renderer.setSize(w, h, false);
-    this.sky.snowMat.uniforms.uScale.value = h * this.pr;
+    this.sky.snowMat.uniforms.uScale.value = h * this.pr; this.sky.bubbleMat.uniforms.uScale.value = h * this.pr;
     const aspect = w / h;
     this.camera.aspect = aspect;
     // keep all three lanes in view: widen the vertical field of view on tall screens, then pull the camera back
@@ -359,7 +365,7 @@ class Game {
       this.speed = 0;
     }
     this.track.update(this.dist, dt);
-    this.sky.update(this.dist, this.time, dt);
+    this.sky.update(this.dist, this.time, dt, this.warp ? 0 : this.dive || 0, this.depth || 0);
     {
       // Spiral Bay corkscrews: the twist winds one way through the first half of the level, unwinds, then winds the other way
       const zf = Math.max(0, this.dist) / ZONE_LEN, u = zf - Math.floor(zf);
@@ -386,9 +392,11 @@ class Game {
       // over the top of a hump: the road was rising a moment ago, is falling now, and this is well up the hill
       if (hill && this.mode === 'run' && zoneOfLevel(lv) === COASTER && slope > 0.12 && (this.clackT = (this.clackT || 0) - dt) <= 0) { this.clackT = 0.5; this.audio.clack(4); }      // the clack of the lift hill
       const rising = this.rising; this.rising = hill ? slope > 0 : null;
-      if (hill && this.mode === 'run' && rising === true && slope <= 0 && HILL.value.w > hill[0] * 0.5) this.summit(zoneOfLevel(lv));
+      if (hill && hill[0] > 0 && this.mode === 'run' && rising === true && slope <= 0 && HILL.value.w > hill[0] * 0.5) this.summit(zoneOfLevel(lv));
+      // in the Glass Tunnel the road is under the sea: how deep it is, and how far under the surface the camera has gone
+      this.depth = hill && hill[0] < 0 ? -HILL.value.w : 0; this.dive = smooth((this.depth - 3.2) / 3.8);
     }
-    this.audio.setSea(1 - Math.min(1, Math.max(this.sky.cur.under, this.sky.cur.space)));
+    this.audio.setSea(1 - Math.min(1, Math.max(this.sky.cur.under, this.sky.cur.space, (this.dive || 0) * 0.7)));
     if (this.warp) {
       // inside the tunnel the lighting is the tunnel's own
       this.tunnel.update(this.dist, this.time, dt, this.warp.end - this.dist);
@@ -445,7 +453,7 @@ class Game {
     const floorAt = (x) => { const f = tr.floorAt(x, s); return P.float > 0 || hover ? Math.max(f, 0) : f; };
     if (fly) {
       // rocket mode: cruise above everything
-      P.y = damp(P.y, FLY_Y + Math.sin(this.time * 3.2) * 0.16, 3.4, dt); P.vy = 0; P.grounded = false; P.coyote = 0; P.jumpBuf = 0;
+      P.y = damp(P.y, flyYAt(s + 6) + Math.sin(this.time * 3.2) * 0.16, 3.4, dt); P.vy = 0; P.grounded = false; P.coyote = 0; P.jumpBuf = 0;
       for (let i = 0; i < 3; i++) this.fx.emit({ x: P.x + rnd(0.1), y: P.y + 0.6 + rnd(0.1), z: 0.9, vx: rnd(1.3), vy: rnd(1.3), vz: 7 + Math.random() * 6, life: 0.28 + Math.random() * 0.2, size: 0.34, grow: -0.7, color: i ? 0xffa62b : 0xfff3b0, g: 0, world: false });
       if (Math.random() < 0.5) this.fx.emit({ x: P.x + rnd(0.15), y: P.y + 0.6, z: 1.6, vx: rnd(0.6), vy: 0.4 + Math.random(), vz: 4, life: 0.8, size: 0.3, grow: 1.6, color: 0xe6e9f2, g: -0.5, world: false, a: 0.4 });
     } else {
@@ -659,6 +667,7 @@ class Game {
       else if (z === 6) { this.gullT = 2 + Math.random() * 4; if (r < 0.7) A.drip(); else A.squeak(3, 1.6); }
       else if (z === 9) A.blips();
       else if (z === 7) { if (r < 0.5) A.gust(); else A.chime(); }
+      else if (z === 15) { this.gullT = 2.5 + Math.random() * 4; if (this.dive < 0.5) A.gull(); else if (r < 0.7) A.blub(); else if (r < 0.85) A.whaleSong(); else A.sonar(); }
       else if (z === 14) { this.gullT = 2.5 + Math.random() * 4; if (r < 0.35) A.whee(0.5); else if (r < 0.6) A.cheer(); else if (r < 0.8) A.organToot(); else A.gull(); }
       else if (z === 13) { this.gullT = 2.5 + Math.random() * 4; if (r < 0.5) A.cowbell(); else if (r < 0.75) A.gust(); else if (r < 0.9) A.bleat(); else A.eagle(); }
       else if (z === 12) { this.gullT = 2.5 + Math.random() * 4; if (r < 0.6) A.whirl(); else if (r < 0.8) A.chime(); else A.gull(); }
@@ -810,7 +819,7 @@ class Game {
     this.audio.rocket(POWER_TIME.rocket); this.shake = 0.5;
     for (let i = 0; i < 20; i++) this.fx.emit({ x: P.x + rnd(0.4), y: P.y + 0.3, z: rnd(0.4), vx: rnd(3), vy: 1 + Math.random() * 2, vz: rnd(3), life: 0.6, size: 0.3, grow: 1.5, color: 0xf2f2f2, g: 0, a: 0.6 });
     // a trail of shells in the sky for the length of the flight
-    this.shellTrail(s + 26, s + speedAt(s - tr.runStart) * ROCKET_SPEED * POWER_TIME.rocket - 18, FLY_Y + 0.9, P.lane, 2.7);
+    this.shellTrail(s + 26, s + speedAt(s - tr.runStart) * ROCKET_SPEED * POWER_TIME.rocket - 18, null, P.lane, 2.7);
   }
   endRocket() {
     const P = this.p;
@@ -832,7 +841,7 @@ class Game {
     let l = lane, n = 0;
     for (let ss = s0; ss < s1; ss += step) {
       if (n > 0 && n % 6 === 0) { l = pickOf([l - 1, l + 1].filter((v) => v >= -1 && v <= 1)); ss += step * 1.7; if (ss >= s1) break; }
-      this.track.addCoin(laneX(l), y, ss, n % 12 === 11); n++;
+      this.track.addCoin(laneX(l), y ?? flyYAt(ss) + 0.9, ss, n % 12 === 11); n++;
     }
   }
 
@@ -992,6 +1001,7 @@ class Game {
     if (this.mode === 'over') { const a = Math.PI - 0.5 + Math.sin(t * 0.25) * 0.25; want.set(P.x * 0.5 + Math.sin(a) * 7.5 * back, 4.4, -Math.cos(a) * 7.5 * back); }
     const slope = (this.slope || 0) * k;      // on a hill the camera rides the slope: it sits lower going up, higher coming down, and looks along the road
     want.y -= slope * rad * 0.55;
+    if (k > 0.5 && (zoneAtS(this.dist + 10) === DEEP || zoneAtS(this.dist - 8) === DEEP)) want.y = Math.min(want.y, 5.5);     // stay under the roof of the Glass Tunnel
     this.camPos.lerp(want, 1 - Math.exp(-(this.mode === 'over' ? 1.5 : 9) * dt));
     const look = this._l || (this._l = new THREE.Vector3());
     look.set(P.x * lerp(1, 0.78, k), lerp(1.32, 1.25 + P.y * 0.5 + this.flyK * 1.6, k), lerp(0, -7.5, k));

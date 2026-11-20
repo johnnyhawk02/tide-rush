@@ -1,8 +1,8 @@
-// Scenery prefabs and the fifteen levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
-// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier, Christmas Pier, Marshmallow Shore, Spiral Bay, Sky-High Mountain and Rollercoaster World (in zone-id order; config.js sets the order they are played in).
+// Scenery prefabs and the sixteen levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
+// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier, Christmas Pier, Marshmallow Shore, Spiral Bay, Sky-High Mountain, Rollercoaster World and the Glass Tunnel (in zone-id order; config.js sets the order they are played in).
 // Chunk-local coordinates: x across, z from 0 (near end) to -CHUNK (far end).
 import * as THREE from 'three';
-import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight } from './kit.js';
+import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
 import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D } from './obstacles.js';
 
@@ -1612,10 +1612,215 @@ const asteroidFloat = (v) => prefab('astf' + v, () => {
   return b.build({ receive: false });
 });
 
+// ---------- the Glass Tunnel (under the sea) ----------
+// The road dives 26 m under the sea (a hill turned upside down; see HILLS in config.js) inside a tube of glass, and
+// everything here is set out relative to the road, so the sea bed, the weed and the fish all go down with it.
+const TUBE_R = 5.6, TUBE_Y = 1.2, BED_Y = -5.5;
+const GLASS = new THREE.MeshBasicMaterial({ color: 0xc8f4ff, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide });
+const SHINE = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide });
+const SHAFT = new THREE.MeshBasicMaterial({ color: 0xbff4ff, transparent: true, opacity: 0.07, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false });
+const SHAFT_GEO = new THREE.PlaneGeometry(4.5, 26, 1, 6);
+// rippling light on the tunnel floor, once the road is under the water
+const CAUSTIC_U = { uT: { value: 0 } };
+const CAUSTIC = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: CAUSTIC_U,
+  vertexShader: `varying vec3 vW; ${BEND_GLSL} void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * bendWorld(w); }`,
+  fragmentShader: `varying vec3 vW; uniform float uT; ${BEND_GLSL}
+    void main(){ float sl = uHill.y - vW.z, k = smoothstep(4.0, 9.0, -hillAt(sl));
+      vec2 p = vec2(vW.x, sl) * 0.9;
+      float a = sin(p.x * 1.9 + sin(p.y * 1.3 + uT * 0.9) * 1.6 + uT * 0.6), b = sin(p.y * 2.3 + sin(p.x * 1.7 - uT * 0.7) * 1.7 - uT * 0.5);
+      gl_FragColor = vec4(vec3(0.7, 1.0, 1.0) * pow(max(0.0, 1.0 - abs(a + b) * 0.9), 3.0) * 0.14 * k, 1.0);
+      #include <colorspace_fragment>
+    }`,
+});
+const CAUSTIC_GEO = new THREE.PlaneGeometry(DECK_HALF * 2, CHUNK, 1, 20); CAUSTIC_GEO.rotateX(-PI / 2); CAUSTIC_GEO.translate(0, 0.04, -CHUNK / 2);
+// the height of the sea bed (the same in every chunk, so that the chunks join up)
+const bedH = (x, z) => Math.sin(x * 0.11) * 0.7 + Math.sin(z * PI / 10 + x * 0.07) * 0.35 + Math.max(0, Math.abs(x) - 30) * 0.06;
+
+const glassTube = () => prefab('glasstube', () => {
+  const g = new THREE.Group(), a0 = Math.acos(TUBE_Y / TUBE_R), tilt = Math.asin(TUBE_Y / TUBE_R);
+  const gl = new Builder(1);
+  gl.add(new THREE.CylinderGeometry(TUBE_R, TUBE_R, CHUNK, 28, 10, true, a0, PI * 2 - a0 * 2), 0xffffff, 0, TUBE_Y, -CHUNK / 2, PI / 2, 0, 0);
+  const glass = gl.build({ receive: false, material: GLASS }); glass.renderOrder = 4; g.add(glass);
+  const sh = new Builder(1);
+  for (const [a, w] of [[0.55, 0.42], [0.82, 0.12], [-1.05, 0.22]]) sh.add(new THREE.CylinderGeometry(TUBE_R - 0.03, TUBE_R - 0.03, CHUNK, 2, 10, true, PI + a, w / TUBE_R), 0xffffff, 0, TUBE_Y, -CHUNK / 2, PI / 2, 0, 0);
+  const shine = sh.build({ receive: false, material: SHINE }); shine.renderOrder = 4; g.add(shine);
+  const b = new Builder(0.85), RIB = 0xeaf4f6, RIB_D = 0x2f8fa8;
+  for (let i = 0; i < 5; i++) {
+    const z = -4 - i * 8;
+    b.tor(TUBE_R, 0.15, RIB, 0, TUBE_Y, z, 0, 0, -tilt, { arc: PI + tilt * 2, seg: 30, tseg: 6 });
+    b.sph(0.2, 0xfff3c0, 0, TUBE_Y + TUBE_R - 0.32, z, 1.5, 0.6, 1.5, { glow: true, seg: 8, grad: 1 });
+  }
+  for (const sx of [-1, 1]) {
+    b.box(0.5, 0.5, CHUNK, RIB_D, sx * 5.2, 0.25, -CHUNK / 2).box(0.16, 0.16, CHUNK, RIB, sx * 5.05, 0.58, -CHUNK / 2);
+    for (let i = 0; i < 10; i++) b.sph(0.09, 0x8ff0ff, sx * 4.93, 0.4, -2 - i * 4, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
+  }
+  b.box(0.22, 0.22, CHUNK, RIB, 0, TUBE_Y + TUBE_R, -CHUNK / 2);
+  // the cradle the tunnel rests in, and its feet on the sea bed
+  b.box(11.6, 0.9, CHUNK, 0x55707c, 0, -0.76, -CHUNK / 2);
+  for (const z of [-6, -20, -34]) for (const sx of [-1, 1]) b.box(1.0, 4.4, 1.6, 0x4a626e, sx * 4.4, -3.4, z).box(1.9, 0.5, 2.5, 0x3f5560, sx * 4.4, BED_Y + 0.1, z);
+  g.add(b.build({ receive: false, material: MAT.double }));
+  g.add(new THREE.Mesh(CAUSTIC_GEO, CAUSTIC));
+  return g;
+});
+
+function coralInto(b, x, y, z, kind, s = 1, ci = 0) {
+  const cols = [0xff7fa8, 0xff9a4a, 0xb07ae0, 0xffd23f, 0xff5f7a], c = cols[ci % 5], c2 = cols[(ci + 2) % 5];
+  if (kind === 0) {          // branching coral
+    for (let i = 0; i < 7; i++) {
+      const rz = (i - 3) * 0.3, rx = Math.sin(i * 2.3) * 0.45, len = (1.0 + (i % 3) * 0.35) * s;
+      b.cap(0.11 * s, len, c, x - Math.sin(rz) * len / 2, y + Math.cos(rz) * len / 2, z + Math.sin(rx) * len / 2, rx, 0, rz, { seg: 6 });
+      b.sph(0.15 * s, 0xffe6f0, x - Math.sin(rz) * len, y + Math.cos(rz) * len, z + Math.sin(rx) * len, 1, 1, 1, { seg: 6 });
+    }
+  } else if (kind === 1) {   // brain coral
+    b.add(new THREE.SphereGeometry(1, 14, 10), (X, Y, Z) => (Math.sin(X * 7) + Math.sin(Z * 7 + Y * 5) > 0.3 ? c : c2), x, y + 0.3 * s, z, 0, 0, 0, s * 1.1, s * 0.75, s);
+  } else if (kind === 2) {   // tube sponges
+    for (let i = 0; i < 5; i++) { const a = i * 1.26, h = (0.8 + (i % 3) * 0.45) * s, r = 0.22 * s, px = x + Math.cos(a) * 0.4 * s, pz = z + Math.sin(a) * 0.4 * s; b.cyl(r, r * 0.7, h, i % 2 ? c : c2, px, y + h / 2, pz, 0, 0, 0, { seg: 8 }).cyl(r * 0.72, r * 0.72, 0.03, 0x3a2440, px, y + h + 0.01, pz, 0, 0, 0, { seg: 8 }); }
+  } else if (kind === 3) {   // a sea fan
+    b.cyl(0.07 * s, 0.1 * s, 0.7 * s, 0x7a3a5a, x, y + 0.35 * s, z, 0, 0, 0, { seg: 5 });
+    b.cyl(1.15 * s, 1.15 * s, 0.05, c, x, y + 1.6 * s, z, PI / 2, 0, 0, { seg: 9 });
+    for (let i = -2; i <= 2; i++) b.box(0.05 * s, 2.1 * s, 0.07, c2, x + Math.sin(i * 0.4) * 0.5 * s, y + 1.55 * s, z, 0, 0, -i * 0.4);
+  } else {                   // an anemone
+    b.cyl(0.4 * s, 0.5 * s, 0.5 * s, c2, x, y + 0.25 * s, z, 0, 0, 0, { seg: 9 });
+    for (let i = 0; i < 10; i++) { const a = i * 0.628; b.cap(0.06 * s, 0.6 * s, c, x + Math.cos(a) * 0.38 * s, y + 0.75 * s, z + Math.sin(a) * 0.38 * s, Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5, { seg: 5 }); b.sph(0.08 * s, 0xffffff, x + Math.cos(a) * 0.54 * s, y + 1.02 * s, z + Math.sin(a) * 0.54 * s, 1, 1, 1, { seg: 5 }); }
+  }
+}
+// the sand, with rocks, starfish, shells, sea grass and coral scattered over it (well clear of the tunnel)
+const seaBed = (v) => prefab('seabed' + v, () => {
+  const b = new Builder(0.9), rng = makeRng(1500 + v * 7);
+  const geo = new THREE.PlaneGeometry(180, CHUNK, 40, 10); geo.rotateX(-PI / 2);
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) p.setY(i, bedH(p.getX(i), p.getZ(i)));
+  b.add(geo, (x, y, z) => (Math.sin(x * 0.9 + Math.sin(z * 0.5) * 2) > 0.62 ? 0xd3c08f : y > BED_Y + 0.45 ? 0xecdcb2 : 0xdccb9c), 0, BED_Y, -CHUNK / 2);
+  const at = (x, z) => BED_Y + bedH(x, z + CHUNK / 2);
+  for (let i = 0; i < 7; i++) { const x = (i % 2 ? 1 : -1) * (8 + rng() * 34), z = -rng() * CHUNK; boulderInto(b, x, at(x, z) - 0.3, z, 0.7 + rng() * 1.3, i + v, false); }
+  for (let i = 0; i < 6; i++) { const x = (i % 2 ? -1 : 1) * (7.5 + rng() * 18), z = -rng() * CHUNK; b.cyl(0.42, 0.42, 0.1, [0xff8a3c, 0xff5f7a, 0xb07ae0][i % 3], x, at(x, z) + 0.06, z, 0, rng() * 3, 0, { seg: 5 }); }
+  for (let i = 0; i < 16; i++) { const x = (i % 2 ? 1 : -1) * (7 + rng() * 30), z = -rng() * CHUNK, y = at(x, z); for (let k = 0; k < 4; k++) b.cone(0.09, 0.9 + rng() * 0.8, k % 2 ? 0x3fa85a : 0x2f8f4a, x + (rng() - 0.5) * 0.7, y + 0.4, z + (rng() - 0.5) * 0.7, (rng() - 0.5) * 0.4, 0, (rng() - 0.5) * 0.4, { seg: 4 }); }
+  for (let i = 0; i < 7; i++) { const x = (i % 2 ? -1 : 1) * (7.5 + rng() * 20), z = -rng() * CHUNK; coralInto(b, x, at(x, z) - 0.1, z, (i + v) % 5, 0.9 + rng() * 0.9, i + v * 2); }
+  return b.build({ receive: false, material: MAT.double });
+});
+const kelp = (v) => prefab('kelp' + v, () => {
+  const b = new Builder(0.9), rng = makeRng(1600 + v * 3), cols = [0x2f8f4a, 0x3fa85a, 0x6f8f2a, 0x1f7a5a];
+  for (let f = 0; f < 3 + v; f++) {
+    let x = (rng() - 0.5) * 1.8, y = 0; const z = (rng() - 0.5) * 1.8, n = 5 + Math.floor(rng() * 4), c = cols[(f + v) % 4], ph = rng() * 6;
+    for (let i = 0; i < n; i++) {
+      const lean = Math.sin(i * 1.1 + ph) * 0.24;
+      b.box(0.55 - i * 0.035, 1.34, 0.05, c, x - Math.sin(lean) * 0.6, y + 0.6, z, 0, ph * 0.3, lean);
+      x -= Math.sin(lean) * 1.2; y += 1.2;
+      if (i % 2) b.sph(0.13, 0xb8c85a, x + 0.22, y, z, 1, 1.3, 1, { seg: 6 });
+    }
+  }
+  return b.build({ receive: false, material: MAT.double });
+});
+
+// ---- sea life (every swimmer is built nose toward +x; "tail", "wl" and "wr" are the parts that move) ----
+const shark = (v) => prefab('shark' + v, () => {
+  // a friendly shark with a big smile (v 1 is a spotted whale shark)
+  const g = new THREE.Group(), b = new Builder(0.9), top = v ? 0x4f7f9f : 0x7f93a6, belly = 0xf2f6f8, dark = 0x2a3440;
+  b.add(new THREE.SphereGeometry(1, 22, 14), (x, y, z) => (y < -0.22 ? belly : v && Math.sin(x * 5.1) * Math.sin(z * 7.3 + y * 4) > 0.55 ? 0xe6f2f6 : top), 0, 0, 0, 0, 0, 0, 3.4, 0.95, 0.85);
+  b.cone(0.5, 2.7, top, -3.75, 0.02, 0, 0, 0, PI / 2, { seg: 10 });
+  b.flat([[[0.7, 0.85, 0], [-1.0, 0.85, 0], [-0.9, 2.3, 0]]], top);
+  for (const sz of [-1, 1]) {
+    b.flat([[[1.0, -0.35, sz * 0.6], [-0.3, -0.35, sz * 0.7], [-0.9, -1.1, sz * 2.1]]], top);
+    b.sph(0.2, 0xffffff, 2.35, 0.3, sz * 0.56, 1, 1, 0.6, { seg: 8, grad: 1 }).sph(0.11, 0x1b1f24, 2.42, 0.3, sz * 0.66, 1, 1, 0.5, { seg: 6, grad: 1 }).sph(0.04, 0xffffff, 2.46, 0.35, sz * 0.72, 1, 1, 0.5, { seg: 5, grad: 1 });
+    b.box(1.0, 0.07, 0.05, dark, 2.55, -0.3, sz * 0.5, 0, sz * -0.3, 0.14);
+    for (let i = 0; i < 3; i++) b.box(0.05, 0.5, 0.04, dark, 1.15 + i * 0.25, 0.0, sz * (0.8 - i * 0.012));
+  }
+  g.add(b.build({ receive: false, material: MAT.double }));
+  const t = new Builder(0.9);
+  t.flat([[[0, 0.28, 0], [0, -0.12, 0], [-1.7, 1.9, 0]], [[0, 0.12, 0], [0, -0.28, 0], [-1.3, -1.35, 0]]], top);
+  const tail = t.build({ receive: false, material: MAT.double }); tail.position.x = -4.95; tail.name = 'tail'; g.add(tail);
+  return g;
+});
+const turtle = () => prefab('turtle', () => {
+  const g = new THREE.Group(), b = new Builder(0.9), G = 0x4fa86a, GD = 0x2f7a4a, SK = 0x8fd07a;
+  b.add(new THREE.SphereGeometry(1, 16, 10), (x, y, z) => (y < 0.02 ? 0xe9dca0 : Math.sin(x * 4.2) * Math.sin(z * 4.8) > 0.1 ? G : GD), 0, 0, 0, 0, 0, 0, 1.3, 0.6, 1.05);
+  b.sph(0.36, SK, 1.55, 0.02, 0, 1.15, 0.9, 0.9, { seg: 10 }).sph(0.2, SK, -1.35, -0.05, 0, 1.4, 0.5, 0.6, { seg: 6 }).box(0.03, 0.03, 0.3, 0x2a5a3a, 1.93, -0.08, 0);
+  for (const sz of [-1, 1]) {
+    b.sph(0.1, 0xffffff, 1.72, 0.14, sz * 0.24, 1, 1, 0.6, { seg: 7, grad: 1 }).sph(0.055, 0x1b1f24, 1.77, 0.14, sz * 0.29, 1, 1, 0.5, { seg: 5, grad: 1 });
+    b.sph(0.5, SK, -0.85, -0.12, sz * 0.9, 1, 0.14, 0.5, { seg: 8 });
+  }
+  g.add(b.build({ receive: false }));
+  for (const sz of [-1, 1]) { const f = new Builder(0.9); f.sph(1, SK, 0.1, 0, sz * 0.95, 0.42, 0.07, 1.0, { seg: 8 }); const m = f.build({ receive: false }); m.position.set(0.75, -0.05, sz * 0.8); m.name = sz < 0 ? 'wl' : 'wr'; g.add(m); }
+  return g;
+});
+const mantaRay = () => prefab('mantaray', () => {
+  const g = new THREE.Group(), b = new Builder(0.9), T = 0x34506e, U = 0xf0f4f6;
+  b.add(new THREE.SphereGeometry(1, 16, 10), (x, y) => (y < -0.03 ? U : T), 0, 0, 0, 0, 0, 0, 1.7, 0.3, 1.05);
+  b.cyl(0.02, 0.05, 3.2, T, -3.1, 0, 0, 0, 0, PI / 2, { seg: 5 });
+  for (const sz of [-1, 1]) b.sph(0.2, T, 1.75, 0, sz * 0.5, 1.6, 0.6, 0.6, { seg: 6 }).sph(0.09, 0xffffff, 1.3, 0.2, sz * 0.75, 1, 1, 1, { seg: 6, grad: 1 }).sph(0.05, 0x1b1f24, 1.36, 0.22, sz * 0.8, 1, 1, 1, { seg: 5, grad: 1 });
+  g.add(b.build({ receive: false }));
+  for (const sz of [-1, 1]) {
+    const w = new Builder(0.9);
+    w.flat([[[1.3, 0.02, 0], [-1.1, 0.02, 0], [-0.4, 0.06, sz * 3.3]]], T).flat([[[1.3, -0.03, 0], [-1.1, -0.03, 0], [-0.4, 0.02, sz * 3.3]]], U);
+    const m = w.build({ receive: false, material: MAT.double }); m.position.set(0, 0, sz * 0.75); m.name = sz < 0 ? 'wl' : 'wr'; g.add(m);
+  }
+  return g;
+});
+const FISH_COLS = [[0xff8a2a, 0xffffff], [0xffd23f, 0x2a2f36], [0x3f8fe0, 0xffd23f], [0xff6fae, 0xffffff], [0x9a6fe0, 0xfff0a0]];
+const fishSchool = (v) => prefab('school' + v, () => {
+  const b = new Builder(0.95), rng = makeRng(1700 + v * 11), [c1, c2] = FISH_COLS[v % 5], n = 9 + (v % 3) * 2;
+  for (let i = 0; i < n; i++) {
+    const fx = (rng() - 0.5) * 5.5, fy = (rng() - 0.5) * 2.2, fz = (rng() - 0.5) * 2.6, s = 0.9 + rng() * 0.6;
+    b.add(new THREE.SphereGeometry(1, 10, 8), (x) => (Math.abs(x - fx - 0.08 * s) < 0.07 * s || Math.abs(x - fx + 0.2 * s) < 0.05 * s ? c2 : c1), fx, fy, fz, 0, 0, 0, 0.45 * s, 0.26 * s, 0.13 * s);
+    b.flat([[[-0.4 * s, 0, 0], [-0.75 * s, 0.24 * s, 0], [-0.75 * s, -0.24 * s, 0]]], c2 === 0xffffff ? c1 : c2, fx, fy, fz);
+    b.flat([[[0.1 * s, 0.2 * s, 0], [-0.2 * s, 0.2 * s, 0], [-0.15 * s, 0.4 * s, 0]]], c1, fx, fy, fz);
+    for (const sz of [-1, 1]) b.sph(0.045 * s, 0x1b1f24, fx + 0.27 * s, fy + 0.05 * s, fz + sz * 0.1 * s, 1, 1, 0.5, { seg: 5, grad: 1 });
+  }
+  return b.build({ receive: false, material: MAT.double });
+});
+const jelly = (v) => prefab('jelly' + v, () => {
+  const b = new Builder(1), c = [0xff9fd6, 0xb9a0ff, 0x8ff0e6][v % 3], c2 = [0xffd6ee, 0xe0d6ff, 0xd6fff6][v % 3];
+  b.dome(0.75, c, 0, 0, 0, 0, 0, 0, 1, 0.85, 1, { seg: 14, glow: true, grad: 0.6 }).sph(0.5, c2, 0, 0.12, 0, 1, 0.5, 1, { seg: 10, glow: true, grad: 1 });
+  for (let i = 0; i < 8; i++) {
+    const a = i * PI / 4, h = 1.6 + (i % 3) * 0.5;
+    b.sph(0.13, c2, Math.cos(a) * 0.68, 0, Math.sin(a) * 0.68, 1, 1, 1, { seg: 6, glow: true, grad: 1 });
+    b.cyl(0.03, 0.015, h, c, Math.cos(a) * 0.5, -h / 2, Math.sin(a) * 0.5, Math.sin(a) * 0.12, 0, -Math.cos(a) * 0.12, { seg: 4, glow: true, grad: 0.8 });
+  }
+  for (let i = 0; i < 3; i++) b.cyl(0.09, 0.05, 1.1, c2, Math.cos(i * 2.1) * 0.15, -0.55, Math.sin(i * 2.1) * 0.15, 0, 0, 0, { seg: 5, glow: true, grad: 0.9 });
+  return b.build({ receive: false, material: MAT.double });
+});
+// an octopus waving from the top of a pile of rocks beside the glass (it faces +z)
+const octoRock = () => prefab('octorock', () => {
+  const b = new Builder(0.9), O = 0xff7a5a, OD = 0xd9543a, y0 = 0.1;
+  boulderInto(b, 0, BED_Y - 0.4, 0, 2.6, 3, false); boulderInto(b, 0.5, BED_Y + 2.2, -0.3, 1.9, 4, false); boulderInto(b, -0.2, y0 - 2.5, 0.1, 1.4, 5, false);
+  b.sph(0.8, O, 0, y0 + 0.75, 0, 1, 1.15, 1, { seg: 14 });
+  for (let i = 0; i < 8; i++) { const a = i * PI / 4 + 0.2; b.tor(0.5, 0.15, i % 2 ? O : OD, Math.cos(a) * 0.85, y0 - 0.05, Math.sin(a) * 0.85, 0, -a, 0, { arc: PI, seg: 8, tseg: 6 }).sph(0.14, OD, Math.cos(a) * 1.35, y0 - 0.05, Math.sin(a) * 1.35, 1, 1, 1, { seg: 6 }); }
+  for (const sx of [-1, 1]) b.sph(0.2, 0xffffff, sx * 0.32, y0 + 0.85, 0.68, 1, 1.15, 0.6, { seg: 8, grad: 1 }).sph(0.1, 0x1b1f24, sx * 0.32, y0 + 0.85, 0.8, 1, 1.1, 0.5, { seg: 6, grad: 1 });
+  b.tor(0.2, 0.03, 0x7a2416, 0, y0 + 0.55, 0.74, 0.1, 0, PI, { arc: PI, seg: 8 });
+  return b.build({ receive: false, material: MAT.double });
+});
+const whale = () => prefab('whale', () => {
+  const g = new THREE.Group(), b = new Builder(0.9), T = 0x2f5f8f, U = 0xdfeaf2;
+  b.add(new THREE.SphereGeometry(1, 22, 14), (x, y, z) => (y < -0.5 ? (Math.sin(z * 9) > 0.5 && x > 0 ? 0xb8c8d6 : U) : T), 0, 0, 0, 0, 0, 0, 8, 2.3, 2.2);
+  b.cone(1.4, 7, T, -9.5, 0.2, 0, 0, 0, PI / 2, { seg: 12 });
+  for (const sz of [-1, 1]) {
+    b.sph(1, T, 2.5, -1.3, sz * 2.4, 1.6, 0.16, 0.8, { seg: 8 });
+    b.sph(0.24, 0xffffff, 5.9, 0.1, sz * 1.44, 1, 1, 0.6, { seg: 8, grad: 1 }).sph(0.13, 0x1b1f24, 5.96, 0.1, sz * 1.54, 1, 1, 0.5, { seg: 6, grad: 1 });
+    b.box(2.4, 0.1, 0.06, 0x1d3f66, 5.9, -0.75, sz * 1.2, 0, sz * -0.4, 0.12);
+  }
+  g.add(b.build({ receive: false, material: MAT.double }));
+  const t = new Builder(0.9);
+  t.flat([[[0.4, 0, 0], [-0.6, 0, 0], [-2.6, 0, 3.2]], [[0.4, 0, 0], [-2.6, 0, -3.2], [-0.6, 0, 0]]], T);
+  const tail = t.build({ receive: false, material: MAT.double }); tail.position.set(-12.8, 0.2, 0); tail.name = 'tail'; g.add(tail);
+  return g;
+});
+const sunkBoat = () => prefab('sunkboat', () => {
+  // a rowing boat that went down long ago, with a chest of gold beside it
+  const b = new Builder(0.85), W = 0x7a5a3c, WD = 0x5a4028;
+  b.box(1.9, 0.14, 4.2, WD, 0, 0.1, 0, 0, 0, 0.25);
+  for (const sx of [-1, 1]) b.box(0.12, 0.9, 4.2, W, sx * 0.95 - 0.1, 0.5, 0, 0, 0, 0.25 + sx * 0.25);
+  for (let i = 0; i < 4; i++) b.box(1.8, 0.1, 0.14, W, -0.05, 0.36, -1.5 + i * 1.0, 0, 0, 0.25);
+  b.box(1.1, 0.7, 0.8, 0x8a5a3c, 2.4, 0.35, 0.6, 0, 0.5, 0).box(1.16, 0.12, 0.86, 0xffc928, 2.4, 0.72, 0.6, 0, 0.5, 0);
+  for (let i = 0; i < 7; i++) b.sph(0.13, 0xffd23f, 2.4 + Math.cos(i * 0.9) * 0.3, 0.84, 0.6 + Math.sin(i * 0.9) * 0.22, 1, 0.5, 1, { seg: 6, glow: true, grad: 1 });
+  b.sph(0.16, 0xfff0ff, 2.4, 0.95, 0.6, 1, 1, 1, { seg: 7, glow: true, grad: 1 });
+  return b.build({ receive: false, material: MAT.double });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -1623,7 +1828,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -1634,11 +1839,11 @@ export function populate(group, rawIndex, zone, anim) {
   const index = Math.abs(rawIndex);
   const rng = makeRng(index * 7919 + 13);
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
-  const coast = zone === 14;      // Rollercoaster World has coaster rails and its own frame in place of the pier's
+  const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
   if (!coast) { place(group, under40(), 0, 0, 0); place(group, rail40(), L, 0, 0); }
   const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
-  if (zone !== 8) for (const z of [-10, -30]) {
+  if (zone !== 8 && zone !== 15) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
     place(group, lamp(), -4.05, 0, z, 0, 1.24); if (flags) place(group, bunting20(), -4.05, 4.86, z);
     if (zone !== 2) { place(group, lamp(), open ? 4.75 : 4.05, 0, z, 0, 1.24); if (flags) place(group, bunting20(), open ? 4.75 : 4.05, 4.86, z); }
@@ -1827,6 +2032,38 @@ export function populate(group, rawIndex, zone, anim) {
     for (const sx of [-1, 1]) place(group, balloonBunch(sx > 0 ? 1 : 0), sx * 4.58, 0, -20 + sx * 3);
     const drop = (z) => hillHeight(k * CHUNK - z, HILLS[14][0], ZONE_LEN, HILLS[14][1], HILLS[14][2]);
     for (const s of [-1, 1]) { const z = -rng() * CHUNK; anim.push({ o: place(group, s > 0 ? dinghy(pick(rng, [C.coral, C.yellow, C.white])) : pedalo(pick(rng, [C.red, C.yellow, C.teal, C.rose])), s * (28 + rng() * 22), WATER_Y - drop(z), z, rng() * 6), kind: 'bob', p: rng() * 6 }); }
+  } else if (zone === 15) {
+    // the Glass Tunnel: the tube, the sea bed, and the life of the sea all round it, a little at a time
+    const k = index % ZONE_CHUNKS, H = HILLS[15];
+    const room = (z) => -hillHeight(k * CHUNK - z, H[0], ZONE_LEN, H[1], H[2]) + WATER_Y - 1.2;   // how far above the road the water reaches there (less a little)
+    const side = index % 2 ? 1 : -1;
+    const swim = (o, c, r, w, more) => { o.traverse((m) => { m.frustumCulled = false; }); group.add(o); anim.push({ o, kind: 'swim', c, r, w, p: rng() * 6, ...more }); return o; };
+    place(group, glassTube(), 0, 0, 0);
+    place(group, seaBed(index % 3), 0, 0, 0);
+    for (let i = 0; i < 6; i++) {
+      const x = (i % 2 ? 1 : -1) * (8 + rng() * 22), z = -rng() * CHUNK, y = BED_Y + bedH(x, z + CHUNK / 2) - 0.2, top = room(z) - y;
+      if (top > 3) anim.push({ o: place(group, kelp(Math.floor(rng() * 3)), x, y, z, rng() * 6, Math.min(1.25, top / 9.8)), kind: 'sway', p: rng() * 6 });
+    }
+    // little fish in shoals, close to the glass
+    for (const sx of [-1, 1]) {
+      const z = -6 - rng() * 28, y = 1.2 + rng() * 3.2;
+      if (room(z) > y + 2 && rng() < 0.8) swim(fishSchool((index * 2 + (sx > 0 ? 1 : 0)) % 5), [sx * (10.5 + rng() * 4), y, z], [2.5 + rng() * 2, 0.5, 5 + rng() * 5], (0.22 + rng() * 0.14) * (rng() < 0.5 ? 1 : -1));
+    }
+    // one of the big ones in each deep stretch
+    if (k === 1 || k === 5) { if (room(-28) > 5) swim(turtle(), [side * 10.5, 2.6, -24], [2.6, 0.7, 8], 0.2 * side, { flap: 2.4 }); }
+    else if (k === 2) {
+      swim(shark(0), [0, 9.6, -20], [13, 0.7, 15], 0.17 * side);        // a shark cruising round and round over the glass roof
+      for (let i = 0; i < 3; i++) { const j = place(group, jelly(i), -side * (9 + i * 2.6), 2.5 + i * 1.4, -8 - i * 7, 0, 0.9 + i * 0.25); anim.push({ o: j, kind: 'jelly', p: rng() * 6 }); }
+    } else if (k === 3) {
+      swim(whale(), [side * 62, 9, -20], [8, 1.5, 30], 0.06 * side, { wag: 'z', beat: 1.6 });      // a whale going by, far off in the blue
+      swim(mantaRay(), [0, 9.2, -20], [10, 0.6, 14], -0.2 * side, { flap: 1.7 }).scale.setScalar(1.25);
+      const boat = place(group, sunkBoat(), -side * 11.5, BED_Y + bedH(-side * 11.5, -10) + 0.05, -30, 0.7 * side); boat.rotation.z = 0.1;
+    } else if (k === 4) {
+      swim(shark(1), [side * 17, 5.2, -20], [5.5, 1.0, 14], 0.13 * side).scale.setScalar(1.45);   // a spotted whale shark, slow and enormous
+      const oc = place(group, octoRock(), -side * 8.6, 0, -22, side > 0 ? PI / 2 : -PI / 2); anim.push({ o: oc, kind: 'sway', p: rng() * 6, amp: 0.4 });
+    }
+    // shafts of sunlight slanting down through the deep water
+    if (k >= 2 && k <= 4) for (let i = 0; i < 3; i++) { const m = new THREE.Mesh(SHAFT_GEO, SHAFT); m.position.set((i % 2 ? 1 : -1) * (9 + rng() * 14), 5.5, -6 - i * 13); m.rotation.set(0, rng() * 1.2 - 0.6, 0.32); m.frustumCulled = false; group.add(m); }
   } else if (zone === 8) {
     place(group, sewerShell(), 0, 0, 0);
     place(group, sewerSide(index % 2), 0, 0, 0);
@@ -1863,8 +2100,25 @@ export function populate(group, rawIndex, zone, anim) {
 
 const smoothStep = (x) => x * x * (3 - 2 * x);
 export function animate(anim, t, dt) {
+  CAUSTIC_U.uT.value = t;
   for (const a of anim) {
-    if (a.kind === 'bob') {
+    if (a.kind === 'swim') {
+      // round and round a long loop (c centre, r radii, w speed and which way), nose first, tail or flippers going
+      const g = t * a.w + a.p, o = a.o;
+      o.position.set(a.c[0] + Math.cos(g) * a.r[0], a.c[1] + Math.sin(g * 2 + a.p) * a.r[1], a.c[2] + Math.sin(g) * a.r[2]);
+      o.rotation.y = Math.atan2(-Math.cos(g) * a.r[2] * a.w, -Math.sin(g) * a.r[0] * a.w);
+      if (a.parts === undefined) a.parts = [o.getObjectByName('tail') || null, o.getObjectByName('wl') || null, o.getObjectByName('wr') || null];
+      const [tail, wl, wr] = a.parts;
+      if (tail) tail.rotation[a.wag || 'y'] = Math.sin(t * (a.beat || 4.5) + a.p) * 0.42;
+      if (wl) { const f = Math.sin(t * (a.flap || 2.2) + a.p) * 0.42; wl.rotation.x = -f; wr.rotation.x = f; }
+      if (!tail && !wl) o.rotation.y += Math.sin(t * 5 + a.p) * 0.07;
+    } else if (a.kind === 'sway') {
+      const m = a.amp || 1; a.o.rotation.z = Math.sin(t * 0.8 + a.p) * 0.09 * m; a.o.rotation.x = Math.sin(t * 0.6 + a.p * 1.3) * 0.06 * m;
+    } else if (a.kind === 'jelly') {
+      const u = Math.sin(t * 2.2 + a.p), s0 = a.s0 || (a.s0 = a.o.scale.x);
+      a.o.position.y = (a.baseY ?? (a.baseY = a.o.position.y)) + Math.sin(t * 0.7 + a.p) * 0.9;
+      a.o.scale.set(s0 * (1 - u * 0.08), s0 * (1 + u * 0.14), s0 * (1 - u * 0.08));
+    } else if (a.kind === 'bob') {
       const amp = a.amp || 1;
       a.o.position.y = (a.baseY ?? (a.baseY = a.o.position.y)) + Math.sin(t * 1.3 + a.p) * 0.18 * amp;
       a.o.rotation.z = Math.sin(t * 1.1 + a.p * 1.7) * 0.07 * amp; a.o.rotation.x = Math.sin(t * 0.9 + a.p) * 0.04 * amp;
