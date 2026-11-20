@@ -21,6 +21,7 @@ const PAL = [
   { top: 0x86c8f7, hor: 0xffd3e9, sun: 0xfff1dc, sunI: 2.8, hemiS: 0xffe9f4, hemiG: 0xf3c6d8, hemiI: 1.4, deep: 0xdb5f9c, shal: 0xffc6e0, cloud: 0xffbfdd, el: 0.8, az: 0.3, stars: 0, storm: 0 },   // Marshmallow Shore: candyfloss clouds over a strawberry-milkshake sea
   { top: 0x2a1a8c, hor: 0x46e0d0, sun: 0xfff0d0, sunI: 2.4, hemiS: 0xddd4ff, hemiG: 0x8f7fc0, hemiI: 1.45, deep: 0x3a1f9c, shal: 0x4fe6d6, cloud: 0xff8fd6, el: 0.7, az: -0.3, stars: 0.5, storm: 0, swirl: 1 },   // Spiral Bay: a violet sky with a great pink whirl turning in it
   { top: 0x1f6fdc, hor: 0xd8ecff, sun: 0xfff6e0, sunI: 3.0, hemiS: 0xdfeeff, hemiG: 0xa8b89a, hemiI: 1.4, deep: 0x155a8a, shal: 0x4fb6c8, cloud: 0xffffff, el: 0.8, az: 0.45, stars: 0, storm: 0 },   // Sky-High Mountain: clear, bright mountain air
+  { top: 0x1a9be8, hor: 0xfff0c8, sun: 0xfff4d8, sunI: 2.9, hemiS: 0xe6f4ff, hemiG: 0xd8c8a0, hemiI: 1.4, deep: 0x0f7fa8, shal: 0x4fd8d0, cloud: 0xffffff, el: 0.7, az: -0.5, stars: 0, storm: 0 },   // Rollercoaster World: a bright afternoon at the theme park
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 

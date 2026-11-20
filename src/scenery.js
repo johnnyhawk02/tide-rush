@@ -1,10 +1,10 @@
-// Scenery prefabs and the fourteen levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
-// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier, Christmas Pier, Marshmallow Shore, Spiral Bay and Sky-High Mountain (in zone-id order; config.js sets the order they are played in).
+// Scenery prefabs and the fifteen levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
+// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier, Christmas Pier, Marshmallow Shore, Spiral Bay, Sky-High Mountain and Rollercoaster World (in zone-id order; config.js sets the order they are played in).
 // Chunk-local coordinates: x across, z from 0 (near end) to -CHUNK (far end).
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, SAND, SAND_D } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -1350,6 +1350,91 @@ const pineTree = (v, snowy) => prefab('pinetree' + v + snowy, () => {
   return b.build({ cast: true, receive: false });
 });
 
+// ---------- Rollercoaster World ----------
+// The pier becomes a rollercoaster: tube rails in place of the railings, on a white lattice that goes all the way down to the sea.
+const RC_R = 0xe5383b, RC_Y = 0xffc928, RC_B = 0x2f7fe0, RC_W = 0xf4f6fa, RC_N = 0x22365c, LEG_END = -78;
+// a pair of lattice legs splaying down from (+-x0, y0) to the sea bed, with cross ties, at chunk position z
+function legsInto(b, x0, y0, z, spread = 6.5, col = RC_W, r = 0.2) {
+  const H = y0 - LEG_END, L = Math.hypot(spread, H), th = Math.atan2(spread, H), xAt = (y) => x0 + (spread * (y0 - y)) / H;
+  for (const sx of [-1, 1]) b.cyl(r, r, L, col, sx * (x0 + spread / 2), (y0 + LEG_END) / 2, z, 0, 0, sx * th, { seg: 6 });
+  for (const y of [y0 - 1.2, -9, -19, -31, -45]) if (y < y0 - 1) b.box(xAt(y) * 2, 0.16, 0.16, col, 0, y, z);
+  for (const [ya, yb] of [[y0 - 1.2, -9], [-9, -19], [-19, -31], [-31, -45]]) if (ya < y0 - 1) for (const s of [-1, 1]) {
+    const xa = s * xAt(ya), xb = -s * xAt(yb), len = Math.hypot(xb - xa, yb - ya);
+    b.box(0.1, len, 0.1, col, (xa + xb) / 2, (ya + yb) / 2, z, 0, 0, -Math.atan2(xb - xa, yb - ya) + PI, { grad: 1 });
+  }
+}
+const coasterFrame = () => prefab('coasterframe', () => {
+  const b = new Builder(0.86);
+  for (const sx of [-1, 1]) {
+    b.cyl(0.13, 0.13, CHUNK, RC_R, sx * 4.58, 0.5, -CHUNK / 2, PI / 2, 0, 0, { seg: 8 }).cyl(0.09, 0.09, CHUNK, RC_Y, sx * 4.58, 0.16, -CHUNK / 2, PI / 2, 0, 0, { seg: 6 });
+    b.cyl(0.16, 0.16, CHUNK, RC_W, sx * 4.25, -0.75, -CHUNK / 2, PI / 2, 0, 0, { seg: 6 });
+    for (let i = 0; i < 16; i++) b.cyl(0.05, 0.05, 0.5, RC_W, sx * 4.58, 0.26, -1.25 - i * 2.5, 0, 0, 0, { seg: 5 });
+    for (let i = 0; i < 8; i++) b.sph(0.1, BULBS[i % 4], sx * 4.58, 0.7, -2.5 - i * 5, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
+  }
+  b.box(0.3, 0.4, CHUNK, RC_W, 0, -1.0, -CHUNK / 2);
+  for (let i = 0; i < 20; i++) b.box(8.9, 0.14, 0.22, RC_N, 0, -0.5, -1 - i * 2);
+  for (let i = 0; i < 10; i++) b.box(4.4, 0.1, 0.1, RC_W, 2.1, -0.85, -2 - i * 4, 0, 0.4, 0).box(4.4, 0.1, 0.1, RC_W, -2.1, -0.85, -2 - i * 4, 0, -0.4, 0);
+  for (const z of [-10, -30]) legsInto(b, 4.25, -0.75, z);
+  return b.build({ receive: false });
+});
+// A loop-the-loop that goes right round the pier, with a train whizzing round it (the moving part is called "whirl").
+const loopGate = (v) => prefab('loopgate' + v, () => {
+  const g = new THREE.Group(), b = new Builder(0.9), R = 9, cy = 7.9, c1 = v ? RC_B : RC_Y, c2 = v ? RC_Y : RC_B;
+  for (const z of [-0.6, 0.6]) b.tor(R, 0.14, c1, 0, cy, z, 0, 0, 0, { seg: 52, tseg: 6 });
+  b.tor(R + 0.55, 0.2, RC_W, 0, cy, 0, 0, 0, 0, { seg: 40, tseg: 6 });
+  for (let i = 0; i < 40; i++) { const a = (i / 40) * PI * 2; b.box(0.5, 0.12, 1.5, c2, Math.cos(a) * (R + 0.2), cy + Math.sin(a) * (R + 0.2), 0, 0, 0, a, { grad: 1 }); }
+  for (const sx of [-1, 1]) {
+    b.cyl(0.24, 0.24, cy - LEG_END, RC_W, sx * (R + 0.9), (cy + LEG_END) / 2, 0, 0, 0, 0, { seg: 6 });
+    b.box(0.2, 12.8, 0.2, RC_W, sx * (R + 2.95), cy - 4, 0, 0, 0, sx * 0.329).box(0.16, 7, 0.16, RC_W, sx * (R + 0.2), cy - 5.6, 0, 0, 0, sx * -0.12);
+    b.sph(0.5, c2, sx * (R + 0.9), cy + 0.6, 0, 1, 1, 1, { seg: 8 });
+  }
+  b.cyl(0.08, 0.08, 3, RC_W, 0, cy + R + 2.1, 0, 0, 0, 0, { seg: 5 }).flat([[[0, cy + R + 3.6, 0], [0, cy + R + 2.6, 0], [1.8, cy + R + 3.1, 0]]], RC_R, 0, 0, 0, 0, 0, 0, { grad: 1 });
+  g.add(b.build({ receive: false, material: MAT.double }));
+  const t = new Builder(0.9);
+  for (let k = 0; k < 4; k++) {
+    const a = -PI / 2 + k * 0.2, r = R - 0.62, x = Math.cos(a) * r, y = Math.sin(a) * r, col = [RC_R, 0x18a7a0, 0xff6fae, RC_Y][k];
+    t.box(1.5, 0.62, 1.1, col, x, y, 0, 0, 0, a + PI / 2).box(1.56, 0.12, 1.16, RC_W, Math.cos(a) * (r + 0.26), Math.sin(a) * (r + 0.26), 0, 0, 0, a + PI / 2);
+    for (const sz of [-1, 1]) t.sph(0.2, C.skin, Math.cos(a) * (r - 0.55), Math.sin(a) * (r - 0.55), sz * 0.27, 1, 1, 1, { seg: 6 });
+  }
+  const tm = t.build({ receive: false }); tm.position.y = cy; tm.name = 'whirl'; g.add(tm);
+  return g;
+});
+// legs for a side platform (built for the right-hand side, like the platform itself)
+const stilts = () => prefab('stilts', () => {
+  const b = new Builder(0.86), x0 = DECK_HALF;
+  for (const ix of [2, 11]) for (const iz of [-6, 6]) b.cyl(0.24, 0.24, -4 - LEG_END, RC_W, x0 + ix, (-4 + LEG_END) / 2, iz, 0, 0, 0, { seg: 6 });
+  for (const y of [-6, -16, -28, -42]) { for (const iz of [-6, 6]) b.box(9, 0.16, 0.16, RC_W, x0 + 6.5, y, iz); for (const ix of [2, 11]) b.box(0.16, 0.16, 12, RC_W, x0 + ix, y, 0); }
+  for (const [ya, yb] of [[-6, -16], [-16, -28], [-28, -42]]) for (const iz of [-6, 6]) { const len = Math.hypot(9, yb - ya); b.box(0.1, len, 0.1, RC_W, x0 + 6.5, (ya + yb) / 2, iz, 0, 0, Math.atan2(9, ya - yb), { grad: 1 }); }
+  return b.build({ receive: false });
+});
+// longer legs under the little coaster that runs beside the pier
+const coasterStilts = () => prefab('coasterstilts', () => {
+  const b = new Builder(0.86);
+  for (let z = -2; z > -CHUNK; z -= 4) for (const sx of [-1, 1]) b.box(0.22, WATER_Y + 1 - LEG_END, 0.22, RC_W, sx * 0.86, (WATER_Y + 1 + LEG_END) / 2, z);
+  for (const y of [-10, -22, -36]) b.box(0.14, 0.14, CHUNK, RC_W, 0.86, y, -CHUNK / 2).box(0.14, 0.14, CHUNK, RC_W, -0.86, y, -CHUNK / 2);
+  return b.build({ receive: false });
+});
+// A drop tower: a ring of seats creeps to the top and then plunges (the moving part is called "car").
+const dropTower = () => prefab('droptower', () => {
+  const g = new THREE.Group(), b = new Builder(0.86), H = 19;
+  b.cyl(2.2, 2.5, 0.6, RC_N, 0, 0.3, 0, 0, 0, 0, { seg: 12 });
+  b.add(...painted(new THREE.BoxGeometry(1.5, H, 1.5, 1, 12, 1), (x, y) => (((Math.floor((y + H / 2) / (H / 12)) % 2) + 2) % 2 ? RC_R : RC_W)), 0, H / 2 + 0.6, 0);
+  b.box(2.6, 0.5, 2.6, RC_Y, 0, H + 0.85, 0).cone(1.6, 1.8, RC_B, 0, H + 2, 0, 0, PI / 4, 0, { seg: 4 }).sph(0.3, RC_Y, 0, H + 3.1, 0, 1, 1, 1, { seg: 8 });
+  for (let i = 0; i < 8; i++) b.sph(0.16, BULBS[i % 4], Math.cos(i * 0.785) * 1.4, H + 0.9, Math.sin(i * 0.785) * 1.4, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
+  g.add(b.build({ cast: true }));
+  const c = new Builder(0.88);
+  c.tor(1.9, 0.3, RC_Y, 0, 0, 0, PI / 2, 0, 0, { seg: 16, tseg: 6 });
+  for (let i = 0; i < 8; i++) { const a = i * 0.785, x = Math.cos(a) * 2.2, z = Math.sin(a) * 2.2; c.box(0.6, 0.8, 0.5, [RC_R, RC_B][i % 2], x, 0.1, z, 0, -a, 0).sph(0.2, C.skin, x, 0.72, z, 1, 1, 1, { seg: 6 }).cyl(0.05, 0.05, 0.5, C.skin, Math.cos(a) * 2.5, -0.5, Math.sin(a) * 2.5, 0, 0, 0, { seg: 4 }); }
+  const cm = c.build({ receive: false }); cm.name = 'car'; cm.position.y = 2; g.add(cm);
+  return g;
+});
+// A bunch of balloons tied to the rail.
+const balloonBunch = (v) => prefab('balloonbunch' + v, () => {
+  const b = new Builder(0.9);
+  balloonsInto(b, 0, 0.5, 0, 5 + v, 2.2 + v * 0.5, 0.36);
+  return b.build({ receive: false });
+});
+
 // ---------- the sewers ----------
 // A brick tunnel: walls SEW_W either side of the centre line, then a tall vault that springs at SEW_SPR and rises SEW_RISE.
 const SEW_W = 8.2, SEW_SPR = 3, SEW_RISE = 9, SEW_BOT = -3.6, SLIME = 0x8dff5a;
@@ -1528,9 +1613,9 @@ const asteroidFloat = (v) => prefab('astf' + v, () => {
 });
 
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -1538,7 +1623,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -1549,10 +1634,10 @@ export function populate(group, rawIndex, zone, anim) {
   const index = Math.abs(rawIndex);
   const rng = makeRng(index * 7919 + 13);
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
-  place(group, under40(), 0, 0, 0);
-  place(group, rail40(), L, 0, 0);
-  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12);   // the right-hand side opens onto ground at deck level
-  if (!open && zone !== 2) place(group, rail40(), R, 0, 0);
+  const coast = zone === 14;      // Rollercoaster World has coaster rails and its own frame in place of the pier's
+  if (!coast) { place(group, under40(), 0, 0, 0); place(group, rail40(), L, 0, 0); }
+  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && !coast);   // the right-hand side opens onto ground at deck level
+  if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
     place(group, lamp(), -4.05, 0, z, 0, 1.24); if (flags) place(group, bunting20(), -4.05, 4.86, z);
@@ -1561,7 +1646,7 @@ export function populate(group, rawIndex, zone, anim) {
   }
   // furniture along the shoulders
   const fz = [-4, -16, -24, -36];
-  if (zone !== 8) for (const z of fz) {
+  if (zone !== 8 && !coast) for (const z of fz) {
     const r = rng();
     if (r < 0.4) place(group, bench(), -3.95, 0, z, PI);
     else if (r < 0.55) place(group, lifeRing(), -4.2, 0, z, PI / 2);
@@ -1725,6 +1810,23 @@ export function populate(group, rawIndex, zone, anim) {
     for (let i = 0; i < 2; i++) { const z = -4 - i * 19 - rng() * 12, h = drop(z); place(group, rocks(), -10 - h * 0.48 - rng() * 4, -h, z, rng() * 6, 1 + rng() * 0.5); }
     for (let i = 0; i < 2; i++) { const z = -rng() * CHUNK, h = drop(z); anim.push({ o: place(group, i ? dinghy(pick(rng, [C.coral, C.yellow, C.white])) : rowBoat(pick(rng, [C.red, C.teal, C.blue])), -16 - h * 0.48 - rng() * 26, WATER_Y - h, z, rng() * 6), kind: 'bob', p: rng() * 6 }); }
     for (const z of [-3, -16, -27, -38]) if (rng() < 0.7) place(group, pineTree(rng() < 0.5 ? 0 : 1, snowy), 6.3 + rng() * 1.2, 0, z + rng() * 2, rng() * 6);
+  } else if (zone === 14) {
+    place(group, coasterFrame(), 0, 0, 0);
+    const k = index % ZONE_CHUNKS, side = index % 2 ? 1 : -1, kind = index % 4;
+    if (k % 2 === 1) anim.push({ o: place(group, loopGate(k % 4 === 1 ? 0 : 1), 0, 0, -1), kind: 'whirl', v: k % 4 === 1 ? 2.1 : -2.1 });
+    const plat = place(group, sidePlatform(), 0, 0, -20), st = place(group, stilts(), 0, 0, -20);
+    if (side < 0) { plat.scale.x = -1; st.scale.x = -1; }
+    const cx = side * (DECK_HALF + 6.5);
+    if (kind === 0) { const f = place(group, ferris(), cx + side * 1, 0, -20, 0); anim.push({ o: f, kind: 'wheel' }); }
+    else if (kind === 1) anim.push({ o: place(group, dropTower(), cx, 0, -20), kind: 'drop', p: rng() });
+    else if (kind === 2) { const c = place(group, swingRide(), cx, 0, -20); anim.push({ o: c, kind: 'spin', v: 1.1 }); }
+    else { const c = place(group, carousel(), cx, 0, -20); anim.push({ o: c, kind: 'spin' }); }
+    place(group, kiosk(pick(rng, [C.red, C.teal, C.blue, C.rose]), pick(rng, ['TICKETS', 'RIDE PHOTOS', 'CANDY FLOSS', 'HOT DOGS', 'FAST PASS'])), side * (DECK_HALF + 2.2), 0, -20 + (rng() < 0.5 ? -6 : 6), side > 0 ? -PI / 2 : PI / 2);
+    const co = place(group, coaster(), -side * (DECK_HALF + 8.5), 0, 0); anim.push({ o: co, kind: 'train' });
+    place(group, coasterStilts(), -side * (DECK_HALF + 8.5), 0, 0);
+    for (const sx of [-1, 1]) place(group, balloonBunch(sx > 0 ? 1 : 0), sx * 4.58, 0, -20 + sx * 3);
+    const drop = (z) => hillHeight(k * CHUNK - z, HILLS[14][0], ZONE_LEN, HILLS[14][1], HILLS[14][2]);
+    for (const s of [-1, 1]) { const z = -rng() * CHUNK; anim.push({ o: place(group, s > 0 ? dinghy(pick(rng, [C.coral, C.yellow, C.white])) : pedalo(pick(rng, [C.red, C.yellow, C.teal, C.rose])), s * (28 + rng() * 22), WATER_Y - drop(z), z, rng() * 6), kind: 'bob', p: rng() * 6 }); }
   } else if (zone === 8) {
     place(group, sewerShell(), 0, 0, 0);
     place(group, sewerSide(index % 2), 0, 0, 0);
@@ -1759,6 +1861,7 @@ export function populate(group, rawIndex, zone, anim) {
   }
 }
 
+const smoothStep = (x) => x * x * (3 - 2 * x);
 export function animate(anim, t, dt) {
   for (const a of anim) {
     if (a.kind === 'bob') {
@@ -1772,6 +1875,10 @@ export function animate(anim, t, dt) {
     } else if (a.kind === 'cable') {
       const c = a.c || (a.c = [a.o.getObjectByName('car'), a.o.getObjectByName('car2')]), z = (t * 4.5) % CHUNK;
       c[0].position.z = -z; c[1].position.z = z - CHUNK;
+    } else if (a.kind === 'drop') {
+      // creep to the top, wait a moment, plunge, and bounce a little at the bottom
+      const c = a.c || (a.c = a.o.getObjectByName('car')), p = (t * 0.16 + a.p) % 1;
+      c.position.y = 2 + 15 * (p < 0.6 ? smoothStep(p / 0.6) : p < 0.7 ? 1 : p < 0.8 ? 1 - ((p - 0.7) / 0.1) ** 2 : 0.04 * Math.abs(Math.sin((p - 0.8) * 40)) * (1 - p) * 5);
     } else if (a.kind === 'train') {
       const tr = a.tr || (a.tr = a.o.getObjectByName('train'));
       const z = -((t * 11) % CHUNK), y = coasterY(z), dy = coasterY(z - 0.5) - y;

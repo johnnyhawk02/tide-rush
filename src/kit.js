@@ -13,7 +13,8 @@ import { WATER_Y } from './config.js';
 // and NO_BEND leaves a material alone.
 export const BEND_K = 0.0008, BEND_START = 6;
 // The spiral world also twists everything ahead of Robyn around a line that runs up the middle of the track, so the pier
-// corkscrews away into the distance. TWIST.value is (turn in radians per metre, height of the line, unused); it is zero
+// corkscrews away into the distance. TWIST.value is (turn in radians per metre, height of the line, sideways curve: the
+// rollercoaster level uses that to swing the road ahead to the left and right); it is zero
 // everywhere else. The twist grows gently from nothing at Robyn's feet, so the lanes right in front of her stay level.
 export const TWIST = { value: new THREE.Vector3(0, 3, 0) }, TWIST_SOFT = 34;
 // The mountain and rollercoaster levels are real hills: the road rises and falls with the distance along it, and everything
@@ -35,7 +36,7 @@ float hillAt( float s ) { float hu = clamp( s / uHill.z, 0.0, 1.0 ) * 6.2831853;
 #endif
 `;
 const HILL_BODY = (p) => `if ( uHill.x != 0.0 ) ${p}.y += hillAt( uHill.y - ${p}.z ) - uHill.w;`;
-const TWIST_BODY = (p, d) => `if ( uTwist.x != 0.0 ) { float twA = uTwist.x * ${d} * ${d} / ( ${d} + ${TWIST_SOFT.toFixed(1)} ); float twC = cos( twA ), twS = sin( twA ); vec2 twP = vec2( ${p}.x, ${p}.y - uTwist.y ); ${p}.x = twC * twP.x - twS * twP.y; ${p}.y = twS * twP.x + twC * twP.y + uTwist.y; }`;
+const TWIST_BODY = (p, d) => `if ( uTwist.x != 0.0 ) { float twA = uTwist.x * ${d} * ${d} / ( ${d} + ${TWIST_SOFT.toFixed(1)} ); float twC = cos( twA ), twS = sin( twA ); vec2 twP = vec2( ${p}.x, ${p}.y - uTwist.y ); ${p}.x = twC * twP.x - twS * twP.y; ${p}.y = twS * twP.x + twC * twP.y + uTwist.y; } if ( uTwist.z != 0.0 ) ${p}.x += uTwist.z * ${d} * ${d} / ( 1.0 + ${d} / 140.0 );`;
 export const BEND_GLSL = `${TWIST_DECL}
 vec4 bendWorld(vec4 wp){ float bz = max(0.0, -wp.z - ${BEND_START.toFixed(1)}); ${TWIST_BODY('wp', 'bz')} ${HILL_BODY('wp')} wp.y -= ${BEND_K} * bz * bz; return wp; }
 // the sea and other things that stay at sea level while the road climbs

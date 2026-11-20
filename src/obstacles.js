@@ -787,6 +787,94 @@ def('eagle', 'deco', 3.0, 1.0, 1.7, (b) => {
   }, wingAt: [0.2, 0.12, 0.02],
 });
 
+// ---------- Rollercoaster World ----------
+const RC_RED = 0xe5383b, RC_YEL = 0xffc928, RC_BLUE = 0x2f7fe0, RC_WHITE = 0xf4f6fa, RC_NAVY = 0x22365c, RC_TEAL = 0x18a7a0, RC_PINK = 0xff6fae;
+// A rollercoaster car facing +z, standing at (x, y, z): a scooped body with a grinning front, headlamps, a lap bar and wheels.
+export function carInto(b, x, y, z, col, s = 1, ry = 0, riders = false) {
+  b.at(x, y, z, ry, () => {
+    b.box(1.15, 0.5, 1.5, col, 0, 0.47, 0).box(1.15, 0.32, 0.14, col, 0, 0.86, -0.68).box(1.0, 0.3, 0.5, col, 0, 0.74, 0.56, -0.5, 0, 0);
+    b.box(1.19, 0.1, 1.54, RC_YEL, 0, 0.28, 0).box(0.9, 0.06, 0.06, 0xdfe6ee, 0, 0.92, 0.1);
+    for (const sx of [-1, 1]) {
+      b.sph(0.11, 0xfff6c8, sx * 0.36, 0.56, 0.76, 1, 1, 0.5, { seg: 8, glow: true, grad: 1 });
+      for (const sz of [-1, 1]) b.cyl(0.16, 0.16, 0.1, 0x2a2f36, sx * 0.6, 0.16, sz * 0.48, 0, 0, PI / 2, { seg: 10 }).cyl(0.07, 0.07, 0.12, 0xdfe6ee, sx * 0.6, 0.16, sz * 0.48, 0, 0, PI / 2, { seg: 6 });
+    }
+    b.tor(0.2, 0.035, 0xffffff, 0, 0.5, 0.762, 0, 0, PI, { arc: PI, seg: 9 });                              // a grin on the front
+    if (riders) for (const sx of [-1, 1]) b.sph(0.17, 0xf2c49a, sx * 0.27, 1.12, -0.1, 1, 1, 1, { seg: 7 }).cap(0.14, 0.12, sx > 0 ? RC_TEAL : RC_PINK, sx * 0.27, 0.86, -0.1).cyl(0.04, 0.04, 0.36, 0xf2c49a, sx * 0.42, 1.3, -0.08, 0, 0, sx * -0.5, { seg: 5 });
+  }, s);
+}
+// A bunch of balloons on strings, tied at (x, y, z).
+export function balloonsInto(b, x, y, z, n = 5, h = 1.6, r = 0.3) {
+  const cols = [RC_RED, RC_YEL, RC_BLUE, RC_PINK, 0x6fd06a, 0xb07bff];
+  for (let i = 0; i < n; i++) {
+    const a = i * 2.4, dx = Math.cos(a) * r * (0.9 + (i % 3) * 0.5), dz = Math.sin(a) * r * 0.9, hy = h + (i % 3) * r * 0.9, L = Math.hypot(dx, hy, dz);
+    b.cyl(0.008, 0.008, L, 0xffffff, x + dx / 2, y + hy / 2, z + dz / 2, Math.atan2(dz, hy), 0, -Math.atan2(dx, hy), { seg: 3 });
+    b.sph(r, cols[i % 6], x + dx, y + hy + r * 0.9, z + dz, 1, 1.18, 1, { seg: 9 }).cone(r * 0.2, r * 0.22, cols[i % 6], x + dx, y + hy - r * 0.15, z + dz, 0, 0, 0, { seg: 5 });
+  }
+}
+def('coasterCar', 'low', 1.4, 0.98, 1.5, (b) => carInto(b, 0, 0, 0, RC_RED, 1.0, 0.12));
+def('turnstile', 'low', 1.7, 1.0, 0.8, (b) => {
+  for (const sx of [-1, 1]) b.box(0.3, 0.96, 0.6, RC_BLUE, sx * 0.68, 0.48, 0).box(0.34, 0.08, 0.64, RC_YEL, sx * 0.68, 0.98, 0).sph(0.07, 0x6fd06a, sx * 0.68, 0.8, 0.31, 1, 1, 0.5, { seg: 6, glow: true, grad: 1 });
+  b.cyl(0.09, 0.09, 0.3, 0xdfe6ee, 0, 0.62, 0, 0, 0, PI / 2, { seg: 8 });
+  for (let i = 0; i < 3; i++) b.cyl(0.035, 0.035, 0.62, 0xdfe6ee, 0, 0.62 + Math.cos(i * 2.094) * 0.3, Math.sin(i * 2.094) * 0.3, i * 2.094, 0, 0, { seg: 6 }).cyl(0.035, 0.035, 0.9, 0xdfe6ee, 0, 0.62 + Math.cos(i * 2.094) * 0.58, Math.sin(i * 2.094) * 0.58 * 0.6, 0, 0, PI / 2, { seg: 6 });
+});
+def('duckTub', 'low', 1.5, 0.92, 1.5, (b) => {
+  // hook-a-duck
+  b.cyl(0.72, 0.62, 0.62, RC_RED, 0, 0.31, 0, 0, 0, 0, { seg: 16 }).cyl(0.74, 0.74, 0.07, RC_YEL, 0, 0.63, 0, 0, 0, 0, { seg: 16 }).cyl(0.66, 0.66, 0.02, 0x6fd0f0, 0, 0.66, 0, 0, 0, 0, { seg: 16, grad: 1 });
+  for (let i = 0; i < 4; i++) { const a = i * 1.7 + 0.4, x = Math.cos(a) * 0.36, z = Math.sin(a) * 0.36; b.sph(0.13, 0xffd23f, x, 0.74, z, 1.2, 0.9, 1, { seg: 8 }).sph(0.085, 0xffd23f, x + 0.1, 0.87, z, 1, 1, 1, { seg: 7 }).cone(0.04, 0.09, 0xff8a3c, x + 0.2, 0.86, z, 0, 0, -PI / 2, { seg: 5 }); }
+});
+def('striker', 'tall', 1.5, 3.3, 1.0, (b) => {
+  // test your strength: hit the pad and ring the bell
+  b.box(1.3, 0.2, 0.9, RC_NAVY, 0, 0.1, 0).box(0.5, 0.16, 0.4, RC_RED, 0.3, 0.28, 0.2);
+  b.add(new THREE.BoxGeometry(0.5, 2.6, 0.12, 1, 10, 1), (x, y) => [0x6fd06a, 0x6fd06a, RC_YEL, RC_YEL, 0xff8a3c, RC_RED][Math.max(0, Math.min(5, Math.floor((y - 0.2) / 0.44)))], -0.2, 1.5, -0.1, 0, 0, 0, 1, 1, 1, { grad: 1 });
+  b.box(0.62, 2.72, 0.08, RC_WHITE, -0.2, 1.5, -0.17).box(0.06, 2.5, 0.04, 0x2a2f36, -0.2, 1.5, -0.03);
+  b.sph(0.22, RC_YEL, -0.2, 3.0, -0.1, 1, 0.8, 1, { seg: 10 }).cyl(0.03, 0.03, 0.12, 0x2a2f36, -0.2, 2.82, -0.1, 0, 0, 0, { seg: 5 }).sph(0.07, RC_RED, -0.2, 1.9, 0.0, 1, 1, 1, { seg: 6 });
+  b.cyl(0.035, 0.035, 0.9, 0x8a5a36, 0.42, 0.72, 0.2, 0, 0, -0.35, { seg: 6 }).box(0.34, 0.2, 0.2, 0x5a5f66, 0.58, 1.14, 0.2, 0, 0, -0.35);   // the mallet
+});
+def('balloonCart', 'tall', 1.6, 3.3, 1.2, (b) => {
+  b.box(1.2, 0.6, 0.8, RC_PINK, 0, 0.7, 0).box(1.28, 0.08, 0.88, RC_WHITE, 0, 1.03, 0);
+  for (const sx of [-1, 1]) b.cyl(0.3, 0.3, 0.07, 0x2a2f36, sx * 0.64, 0.3, 0, 0, 0, PI / 2, { seg: 12 }).cyl(0.1, 0.1, 0.09, RC_YEL, sx * 0.64, 0.3, 0, 0, 0, PI / 2, { seg: 8 });
+  b.cyl(0.03, 0.03, 0.7, 0xdfe6ee, 0, 0.5, 0.62, 1.1, 0, 0, { seg: 5 });
+  balloonsInto(b, 0, 1.05, 0, 7, 1.3, 0.34);
+});
+def('ticketBooth', 'tall', 1.7, 3.2, 1.5, (b) => {
+  b.add(...painted(new THREE.BoxGeometry(1.4, 2.2, 1.3, 8, 1, 1), (x) => (((Math.floor((x + 0.7) / 0.175) % 2) + 2) % 2 ? RC_RED : RC_WHITE)), 0, 1.1, 0);
+  b.box(0.9, 0.7, 0.06, 0x8fd8ff, 0, 1.5, 0.66, 0, 0, 0, { grad: 1 }).box(1.1, 0.1, 0.3, RC_YEL, 0, 1.1, 0.76).box(1.0, 0.3, 0.06, RC_NAVY, 0, 2.0, 0.67);
+  b.add(new THREE.ConeGeometry(1.2, 0.9, 4, 1), RC_BLUE, 0, 2.65, 0, 0, PI / 4, 0).sph(0.12, RC_YEL, 0, 3.14, 0, 1, 1, 1, { seg: 7 });
+  b.sph(0.2, 0xf2c49a, 0, 1.52, 0.5, 1, 1, 1, { seg: 8 }).sph(0.22, RC_RED, 0, 1.64, 0.48, 1.05, 0.5, 1.05, { seg: 8 });     // the ticket seller in a cap
+});
+def('carStack', 'tall', 1.6, 3.0, 1.6, (b) => {
+  // spare cars waiting their turn, one on top of another
+  carInto(b, 0, 0, 0, RC_BLUE, 1.0, 0.1); carInto(b, 0.03, 0.98, 0, RC_YEL, 0.98, -0.2); carInto(b, -0.02, 1.94, 0, RC_RED, 0.96, 0.25);
+});
+def('bumperCar', 'low', 1.3, 1.0, 1.5, (b) => {
+  // a dodgem with nobody steering; it faces +x and slides from side to side
+  b.sph(0.72, 0x2a2f36, 0, 0.26, 0, 1.08, 0.3, 0.86, { seg: 16 });                                         // rubber bumper
+  b.sph(0.62, RC_TEAL, 0, 0.42, 0, 1.05, 0.55, 0.82, { seg: 14 }).box(0.5, 0.36, 0.86, 0x1b1f24, -0.12, 0.66, 0).box(0.14, 0.5, 0.8, RC_TEAL, -0.5, 0.74, 0);
+  b.cyl(0.03, 0.03, 0.34, 0xdfe6ee, 0.2, 0.84, 0, 0, 0, -0.6, { seg: 5 }).tor(0.13, 0.03, 0x1b1f24, 0.1, 0.96, 0, 0, PI / 2, -0.6, { seg: 10 });
+  for (const sz of [-1, 1]) b.sph(0.09, 0xfff6c8, 0.62, 0.5, sz * 0.28, 0.6, 1, 1, { seg: 7, glow: true, grad: 1 });
+  b.box(0.5, 0.05, 0.9, RC_YEL, 0.3, 0.63, 0, 0, 0, -0.3);
+});
+def('runawayCar', 'low', 1.25, 0.95, 1.5, (b) => carInto(b, 0, 0, 0, RC_YEL, 0.9, 0, true));
+def('waterBalloon', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the balloon bandits drop: a wobbly balloon full of water
+  b.sph(0.44, 0x4fb6f0, 0, 0, 0, 1.05, 0.92, 1.05, { seg: 14 }).sph(0.16, 0xdff4ff, -0.16, 0.2, 0.2, 1, 0.8, 0.5, { seg: 6 }).cone(0.09, 0.14, 0x4fb6f0, 0, 0.46, 0, 0, 0, 0, { seg: 6 });
+}, { center: true });
+def('bandit', 'deco', 2.2, 2.4, 1.6, (b) => {
+  // a cheeky monkey in a basket under a bunch of balloons
+  const M = 0x8a5a36, F = 0xf2c9a0;
+  b.cyl(0.5, 0.4, 0.5, 0xc99a5a, 0, -0.55, 0, 0, 0, 0, { seg: 12 }).tor(0.5, 0.05, 0x8a5a36, 0, -0.3, 0, PI / 2, 0, 0, { seg: 12 });
+  b.sph(0.3, M, 0, 0.05, 0.05, 1, 1, 0.95, { seg: 12 }).sph(0.2, F, 0, 0.0, 0.24, 1.1, 0.95, 0.6, { seg: 10 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.12, M, sx * 0.31, 0.1, 0.02, 0.5, 1, 1, { seg: 7 }).sph(0.07, F, sx * 0.33, 0.1, 0.06, 0.4, 0.9, 0.8, { seg: 6 });
+    b.sph(0.055, 0xffffff, sx * 0.1, 0.1, 0.33, 1, 1.1, 0.5, { seg: 6, grad: 1 }).sph(0.03, 0x1b1f24, sx * 0.1, 0.09, 0.36, 1, 1, 0.5, { seg: 5, grad: 1 });
+    b.box(0.14, 0.035, 0.03, 0x3a2416, sx * 0.1, 0.19, 0.34, 0, 0, sx * -0.4);
+    b.cap(0.06, 0.2, M, sx * 0.42, -0.2, 0.12, 0, 0, sx * 0.5, { seg: 6 });
+  }
+  b.tor(0.08, 0.02, 0x3a2416, 0, -0.08, 0.34, 0, 0, PI, { arc: PI, seg: 7 });
+  b.sph(0.2, 0x4fb6f0, 0.5, -0.12, 0.2, 1, 0.92, 1, { seg: 9 });                                          // a water balloon ready to drop
+  balloonsInto(b, 0, -0.25, 0, 6, 1.0, 0.36);
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -1373,6 +1461,7 @@ export const TALL_TYPES = {
   11: ['mallowTower', 'lollyBig', 'cupcakeOb', 'jellyOb', 'sundae', 'mallowTower'],
   12: ['hypnoWheel', 'twistPole', 'jackBox', 'shellTower', 'miniHelter', 'hypnoWheel'],
   13: ['pineOb', 'cairn', 'rock', 'fingerpost', 'woodShed', 'pineOb'],
+  14: ['striker', 'balloonCart', 'ticketBooth', 'carStack', 'popcorn', 'striker'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
-export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'] };
+export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'] };

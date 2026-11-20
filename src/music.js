@@ -347,4 +347,23 @@ THEMES[13] = theme('Up and Up', {
   drums: { thump: 'x.......x.......', clap: '....x.......x...', tick: '..x...x...x...x.', bell: '..............x.' },
 });
 
+// ---- 14. Rollercoaster World: "Loop the Loop", fast runs up and long swoops down (A major) ----
+THEMES[14] = theme('Loop the Loop', {
+  key: 9, scale: 'maj', base: 69, gain: 0.9, tempo: 1.14, voice: 'chip', bassVoice: 'synth', stab: 'brass',
+  chords: 'I V vi IV I V IV V',
+  tune: [
+    "1:1 2:1 3:1 4:1 5:2 5:2 3:2 5:2 1':4",
+    "7:1 1':1 2':1 1':1 7:2 5:2 2:2 5:2 7:4",
+    "6:1 7:1 1':1 2':1 3':2 3':2 1':2 6:2 3':4",
+    "4':2 3':2 1':2 6:2 4:2 6:2 1':4",
+    "5':2 3':1 1':1 5:2 3:1 1:1 3:2 5:2 1':4",
+    "2':2 7:1 5:1 2:2 5:1 7:1 2':2 4':2 5':4",
+    "6':2 4':2 1':2 4':2 6':2 4':2 1':4",
+    "5':1 4':1 3':1 2':1 1':1 7:1 6:1 5:1 5:2 7:2 2':4",
+  ],
+  bass: [0, _, 0, _, 7, _, 0, 12, 0, _, 0, _, 7, _, 12, 7],
+  stabs: 'x.....x...x.....',
+  drums: { kick: 'x...x...x...x...', snare: '....x.......x.xx', hat: 'x.x.x.x.x.x.x.x.', cymbal: 'x...............', fill: 1 },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

@@ -409,6 +409,11 @@ export class GameAudio {
   bleat() { if (this.ok) { const t = this.ctx.currentTime; this.tone('sawtooth', 520, t, 0.5, 0.1, null, { slide: 440, lp: 2200, vib: 0.06, vibHz: 17, att: 0.03 }); } }
   eagle() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 2; i++) this.tone('sawtooth', 2700, t + i * 0.34, 0.3, 0.05, null, { slide: 1700, lp: 5200, att: 0.02 }); } }
   yodel() { if (this.ok) { const t = this.ctx.currentTime + 0.1; [[67, 0, 0.14], [72, 0.15, 0.14], [76, 0.3, 0.14], [84, 0.45, 0.34], [76, 0.82, 0.14], [84, 0.97, 0.5]].forEach(([n, d, l]) => { this.tone('triangle', midi(n), t + d, l, 0.11, null, { att: 0.02, vib: l > 0.3 }); this.tone('sine', midi(n), t + d + 0.36, l, 0.035); }); } }
+  // ----- Rollercoaster World -----
+  clack(n = 4) { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < n; i++) { const u = t + i * 0.12; this.tone('square', 170, u, 0.03, 0.08, null, { lp: 1100 }); this.noise(u, 0.025, 0.11, { type: 'bandpass', f: 2300, q: 2 }); } } }
+  whee(vol = 1) { if (this.ok) { const t = this.ctx.currentTime; for (const [f, d] of [[620, 0], [780, 0.04], [930, 0.09]]) { this.tone('triangle', f, t + d, 0.22, 0.05 * vol, null, { slide: f * 1.7, att: 0.03 }); this.tone('triangle', f * 1.7, t + d + 0.22, 0.75, 0.05 * vol, null, { slide: f * 0.8, vib: 0.03, vibHz: 9 }); } this.noise(t, 1.1, 0.07 * vol, { type: 'bandpass', f: 1200, fTo: 2200, q: 0.9, att: 0.3 }); } }
+  honk() { if (this.ok) { const t = this.ctx.currentTime; for (const d of [0, 0.22]) for (const f of [392, 494]) this.tone('square', f, t + d, 0.15, 0.04, null, { lp: 2200 }); } }
+  ding() { if (this.ok) { const t = this.ctx.currentTime; this.tone('sine', 1760, t, 0.7, 0.09); this.tone('sine', 2640, t, 0.4, 0.04); this.tone('sine', 3520, t, 0.25, 0.02); } }
 
   sting(zone) {
     if (!this.ok) return;
@@ -419,6 +424,7 @@ export class GameAudio {
     else if (zone === 3) run([72, 76, 79, 84, 79, 84], 'square', 0.08, 0.06);
     else if (zone === 4) { run([64, 67, 71, 76], 'sawtooth', 0.07, 0.05); this.thunder(0.5); }
     else if (zone === 7) run([87, 91, 94, 99, 103], 'sine', 0.06, 0.06);
+    else if (zone === 14) { run([69, 73, 76, 81, 85, 88, 93, 88, 93], 'square', 0.055, 0.055); this.clack(5); }
     else if (zone === 13) { run([67, 71, 74, 79, 83, 86, 91], 'triangle', 0.07, 0.08); this.cowbell(); }
     else if (zone === 12) { run([76, 79, 83, 88, 91, 88, 83, 79, 76, 81, 88], 'sine', 0.05, 0.07); this.whirl(); }
     else if (zone === 11) { run([82, 86, 89, 94, 89, 94, 98], 'triangle', 0.06, 0.08); this.pop(); }

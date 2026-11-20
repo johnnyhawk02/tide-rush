@@ -11,12 +11,14 @@ export const ZONE_CHUNKS = 7;      // chunks per level
 export const ZONE_LEN = CHUNK * ZONE_CHUNKS;
 // Zone ids: 0 promenade, 1 grand pier, 2 old harbour, 3 midnight funfair, 4 storm point, 5 sandcastle bay, 6 smugglers' cove, 7 frosty pier,
 // 8 the sewers (underground), 9 space pier, 10 Christmas pier (where Grumpy Santa lives), 11 Marshmallow Shore (the sweets world),
-// 12 Spiral Bay (where the whole world corkscrews; see TWIST in kit.js), 13 Sky-High Mountain (one great hill; see HILL in kit.js).
+// 12 Spiral Bay (where the whole world corkscrews; see TWIST in kit.js), 13 Sky-High Mountain (one great hill; see HILL in kit.js),
+// 14 Rollercoaster World (two humps with a dip between, and a road that swings and banks from side to side).
 // The levels are played in this order, then the cycle repeats.
-export const ZONE_ORDER = [0, 8, 12, 13, 10, 11, 1, 9, 5, 2, 3, 6, 4, 7];
-export const XMAS = 10, SPIRAL = 12, MOUNTAIN = 13;
+// (Two hill levels must not be next to each other: the shader draws one hill at a time.)
+export const ZONE_ORDER = [0, 8, 12, 13, 10, 14, 11, 1, 9, 5, 2, 3, 6, 4, 7];
+export const XMAS = 10, SPIRAL = 12, MOUNTAIN = 13, COASTER = 14;
 // The levels whose road is a hill: [height in metres, number of dips along it, how deep the dips are (0 to 1)].
-export const HILLS = { 13: [40, 1, 0] };
+export const HILLS = { 13: [40, 1, 0], 14: [24, 3, 0.8] };
 export const ZONES = ZONE_ORDER.length;
 // underground levels have a roof, so nothing in the sky can be seen from them
 export const ROOFED = (zone) => zone === 6 || zone === 8;
