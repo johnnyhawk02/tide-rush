@@ -16,19 +16,34 @@ export const BEND_K = 0.0008, BEND_START = 6;
 // corkscrews away into the distance. TWIST.value is (turn in radians per metre, height of the line, unused); it is zero
 // everywhere else. The twist grows gently from nothing at Robyn's feet, so the lanes right in front of her stay level.
 export const TWIST = { value: new THREE.Vector3(0, 3, 0) }, TWIST_SOFT = 34;
+// The mountain and rollercoaster levels are real hills: the road rises and falls with the distance along it, and everything
+// standing on it goes up and down with it (the sea and the far coast stay where they are, far below). HILL.value is
+// (height in metres, how far Robyn is into the hill, the hill's length, the height of the road under Robyn) and
+// HILL_SHAPE.value is (number of dips, how deep they are: 0 for one smooth mountain). hillHeight() is the same sum for the camera.
+export const HILL = { value: new THREE.Vector4(0, 0, 280, 0) }, HILL_SHAPE = { value: new THREE.Vector2(1, 0) };
+export function hillHeight(s, A = HILL.value.x, L = HILL.value.z, n = HILL_SHAPE.value.x, dip = HILL_SHAPE.value.y) {
+  const u = Math.max(0, Math.min(1, s / L)) * Math.PI * 2;
+  return A * 0.5 * (1 - Math.cos(u)) * (1 - dip * 0.5 * (1 - Math.cos(u * n)));
+}
 const TWIST_DECL = `
 #ifndef TWIST_DECL
 #define TWIST_DECL
 uniform vec3 uTwist;
+uniform vec4 uHill;
+uniform vec2 uHillB;
+float hillAt( float s ) { float hu = clamp( s / uHill.z, 0.0, 1.0 ) * 6.2831853; return uHill.x * 0.5 * ( 1.0 - cos( hu ) ) * ( 1.0 - uHillB.y * 0.5 * ( 1.0 - cos( hu * uHillB.x ) ) ); }
 #endif
 `;
+const HILL_BODY = (p) => `if ( uHill.x != 0.0 ) ${p}.y += hillAt( uHill.y - ${p}.z ) - uHill.w;`;
 const TWIST_BODY = (p, d) => `if ( uTwist.x != 0.0 ) { float twA = uTwist.x * ${d} * ${d} / ( ${d} + ${TWIST_SOFT.toFixed(1)} ); float twC = cos( twA ), twS = sin( twA ); vec2 twP = vec2( ${p}.x, ${p}.y - uTwist.y ); ${p}.x = twC * twP.x - twS * twP.y; ${p}.y = twS * twP.x + twC * twP.y + uTwist.y; }`;
 export const BEND_GLSL = `${TWIST_DECL}
-vec4 bendWorld(vec4 wp){ float bz = max(0.0, -wp.z - ${BEND_START.toFixed(1)}); ${TWIST_BODY('wp', 'bz')} wp.y -= ${BEND_K} * bz * bz; return wp; }
+vec4 bendWorld(vec4 wp){ float bz = max(0.0, -wp.z - ${BEND_START.toFixed(1)}); ${TWIST_BODY('wp', 'bz')} ${HILL_BODY('wp')} wp.y -= ${BEND_K} * bz * bz; return wp; }
+// the sea and other things that stay at sea level while the road climbs
+vec4 bendSea(vec4 wp){ float bz = max(0.0, -wp.z - ${BEND_START.toFixed(1)}); ${TWIST_BODY('wp', 'bz')} wp.y -= uHill.w + ${BEND_K} * bz * bz; return wp; }
 `;
 THREE.ShaderChunk.common = TWIST_DECL + THREE.ShaderChunk.common;
 // every material shares the one twist uniform
-export const addTwist = (shader) => { shader.uniforms.uTwist = TWIST; };
+export const addTwist = (shader) => { shader.uniforms.uTwist = TWIST; shader.uniforms.uHill = HILL; shader.uniforms.uHillB = HILL_SHAPE; };
 THREE.Material.prototype.onBeforeCompile = addTwist;
 THREE.ShaderChunk.project_vertex = THREE.ShaderChunk.project_vertex.replace('mvPosition = modelViewMatrix * mvPosition;', `
 mvPosition = modelMatrix * mvPosition;
@@ -37,11 +52,13 @@ if ( ! isOrthographic ) {
   float bendZ = max( 0.0, - mvPosition.z - ${BEND_START.toFixed(1)} );
   ${TWIST_BODY('mvPosition', 'bendZ')}
   #ifdef FAR_BEND
+    mvPosition.y -= uHill.w;
     float bendH = max( 0.5, cameraPosition.y - ( ${WATER_Y.toFixed(2)} ) );
     float bendS = max( 1.0, ${BEND_START.toFixed(1)} + cameraPosition.z );
     float bendU = sqrt( bendS * bendS + bendH / ${BEND_K} ) - bendS;
     mvPosition.y += bendH - 2.0 * ${BEND_K} * bendU * max( 0.0, cameraPosition.z - mvPosition.z );
   #else
+    ${HILL_BODY('mvPosition')}
     mvPosition.y -= ${BEND_K} * bendZ * bendZ;
   #endif
 }

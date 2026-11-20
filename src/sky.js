@@ -20,6 +20,7 @@ const PAL = [
   { top: 0x0a1036, hor: 0x6a3a5e, sun: 0xffe6c4, sunI: 2.0, hemiS: 0xffe1cf, hemiG: 0x9a7f96, hemiI: 1.5, deep: 0x10244f, shal: 0x6fa6d8, cloud: 0x4a3a6a, el: 0.6, az: 0.45, stars: 0.9, storm: 0, snow: 1 },   // Christmas pier: a snowy night lit by fairy lights
   { top: 0x86c8f7, hor: 0xffd3e9, sun: 0xfff1dc, sunI: 2.8, hemiS: 0xffe9f4, hemiG: 0xf3c6d8, hemiI: 1.4, deep: 0xdb5f9c, shal: 0xffc6e0, cloud: 0xffbfdd, el: 0.8, az: 0.3, stars: 0, storm: 0 },   // Marshmallow Shore: candyfloss clouds over a strawberry-milkshake sea
   { top: 0x2a1a8c, hor: 0x46e0d0, sun: 0xfff0d0, sunI: 2.4, hemiS: 0xddd4ff, hemiG: 0x8f7fc0, hemiI: 1.45, deep: 0x3a1f9c, shal: 0x4fe6d6, cloud: 0xff8fd6, el: 0.7, az: -0.3, stars: 0.5, storm: 0, swirl: 1 },   // Spiral Bay: a violet sky with a great pink whirl turning in it
+  { top: 0x1f6fdc, hor: 0xd8ecff, sun: 0xfff6e0, sunI: 3.0, hemiS: 0xdfeeff, hemiG: 0xa8b89a, hemiI: 1.4, deep: 0x155a8a, shal: 0x4fb6c8, cloud: 0xffffff, el: 0.8, az: 0.45, stars: 0, storm: 0 },   // Sky-High Mountain: clear, bright mountain air
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 
@@ -163,7 +164,7 @@ export class Sky {
           float fade = 1.0 - smoothstep(120.0, 300.0, length(p.xz));
           float h = (sin(w.x * 0.21 + uTime * 0.9) * 0.2 + sin(w.y * 0.33 + uTime * 1.25 + w.x * 0.12) * 0.16 + sin((w.x - w.y) * 0.5 + uTime * 1.7) * 0.07) * fade * uAmp;
           p.y += h; vH = h; vW = w;
-          vec4 wp = modelMatrix * vec4(p, 1.0); vPos = wp.xyz; wp = bendWorld(wp);
+          vec4 wp = modelMatrix * vec4(p, 1.0); vPos = wp.xyz; wp = bendSea(wp);
           vec4 mv = viewMatrix * wp; vDepth = -mv.z; gl_Position = projectionMatrix * mv; }`,
       fragmentShader: `uniform float uTime, uNear, uFar, uAmp; uniform vec3 uDeep, uShal, uFog, uSun, uSky, uSunDir, uFoam;
         varying vec2 vW; varying float vH; varying float vDepth; varying vec3 vPos;

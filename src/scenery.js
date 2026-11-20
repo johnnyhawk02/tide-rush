@@ -1,10 +1,10 @@
-// Scenery prefabs and the thirteen levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
-// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier, Christmas Pier, Marshmallow Shore and Spiral Bay (in zone-id order; config.js sets the order they are played in).
+// Scenery prefabs and the fourteen levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
+// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier, Christmas Pier, Marshmallow Shore, Spiral Bay and Sky-High Mountain (in zone-id order; config.js sets the order they are played in).
 // Chunk-local coordinates: x across, z from 0 (near end) to -CHUNK (far end).
 import * as THREE from 'three';
-import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture } from './kit.js';
-import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, SAND, SAND_D } from './obstacles.js';
+import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight } from './kit.js';
+import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, SAND, SAND_D } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -1221,6 +1221,135 @@ const floatShell = (v) => prefab('floatshell' + v, () => {
   return b.build({ receive: false });
 });
 
+// ---------- Sky-High Mountain ----------
+// A boardwalk trail over a mountain: a sheer drop to the sea on the left, a meadow and then the mountain wall on the right.
+const MT_GRASS = 0x86c45a, MT_GRASS_D = 0x6fae4c, MT_ROCK = 0x8d9399, MT_ROCK_D = 0x6e757c, MT_SNOW = 0xf6f9ff, MT_SNOW_D = 0xdde6f4;
+const MT_WALL_X = 19, MT_TOP_X = 66, MT_TOP_Y = 42;
+// height of the mountain wall at x (chunk-local), for standing things on it
+const wallY = (x) => (x <= MT_WALL_X ? 0 : ((x - MT_WALL_X) / (MT_TOP_X - MT_WALL_X)) * MT_TOP_Y);
+const mountGround = (snowy, v) => prefab('mountground' + snowy + v, () => {
+  const b = new Builder(0.86), rng = makeRng(1300 + snowy * 7 + v), top = snowy ? MT_SNOW : MT_GRASS, top2 = snowy ? MT_SNOW_D : MT_GRASS_D;
+  b.box(MT_WALL_X - DECK_HALF, 6, CHUNK, top, (MT_WALL_X + DECK_HALF) / 2, -3.02, -CHUNK / 2);                   // the meadow
+  b.box(2.2, 6, CHUNK, MT_ROCK, -DECK_HALF - 1.1, -3.1, -CHUNK / 2).box(DECK_HALF * 2, 1, CHUNK, 0x3d4248, 0, -5.4, -CHUNK / 2);   // the ledge on the cliff side, and the gully under the planks
+  for (let i = 0; i < 20; i++) b.box(0.3, 0.22, 1.94, i % 2 ? MT_ROCK : MT_ROCK_D, DECK_HALF + 0.15, 0.03, -1 - i * 2);   // stone kerb
+  // the cliff below the ledge and the mountain wall above the meadow, each in bands so that the rock is not one flat sheet
+  const N = 8, dz = CHUNK / N, wob = (i, k) => Math.sin(i * 2.3 + k * 1.7 + v) * 1.6;
+  const strip = (pts, cols) => { for (let k = 0; k < pts.length - 1; k++) for (let i = 0; i < N; i++) {
+    const z0 = -i * dz, z1 = -(i + 1) * dz, a = [pts[k][0] + (k ? wob(i, k) : 0), pts[k][1], z0], a2 = [pts[k][0] + (k ? wob(i + 1, k) : 0), pts[k][1], z1], c = [pts[k + 1][0] + wob(i, k + 1), pts[k + 1][1], z0], c2 = [pts[k + 1][0] + wob(i + 1, k + 1), pts[k + 1][1], z1];
+    b.flat(pts[0][0] < 0 ? [[a, c, c2], [a, c2, a2]] : [[a, c2, c], [a, a2, c2]], typeof cols[k] === 'function' ? cols[k](i) : cols[k], 0, 0, 0, 0, 0, 0, { grad: 1 });
+  } };
+  strip([[-DECK_HALF - 2.2, -0.1], [-11, -9], [-17, -26], [-27, -44], [-44, -70]], [MT_ROCK, (i) => (i % 2 ? MT_ROCK_D : 0x7b8289), MT_ROCK, MT_ROCK_D]);
+  strip([[MT_WALL_X, 0], [27, 7], [37, 15], [50, 27], [MT_TOP_X, MT_TOP_Y], [90, 46]], [top2, (i) => (snowy ? MT_SNOW : i % 2 ? MT_GRASS_D : 0x7ba553), snowy ? MT_SNOW_D : MT_ROCK, snowy ? MT_SNOW : (i) => (i % 2 ? MT_ROCK_D : MT_ROCK), MT_SNOW]);
+  for (let i = 0; i < 7; i++) { const x = -8 - rng() * 14; b.add(new THREE.DodecahedronGeometry(1.6 + rng() * 2), i % 2 ? MT_ROCK_D : 0x7b8289, x, (x + 6.7) * 1.9 - 1, -rng() * CHUNK, rng() * 3, rng() * 3, 0); }   // crags on the cliff
+  for (let i = 0; i < 9; i++) { const x = 22 + rng() * 36; b.add(new THREE.DodecahedronGeometry(1.4 + rng() * 2.4), snowy ? (i % 2 ? MT_SNOW_D : MT_ROCK) : i % 2 ? MT_ROCK : MT_ROCK_D, x, wallY(x) + 0.4, -rng() * CHUNK, rng() * 3, rng() * 3, 0, 1.3, 0.7, 1.2); }
+  for (let i = 0; i < 12; i++) { const x = 21 + rng() * 30; pineInto(b, x, wallY(x) - 0.3, -rng() * CHUNK, 4 + rng() * 3.5, !!snowy); }
+  // on the meadow: tussocks, stones, and flowers or drifts
+  for (let i = 0; i < 14; i++) b.sph(1, top2, DECK_HALF + 1.6 + rng() * 12, -0.04, -rng() * CHUNK, 1 + rng() * 2, 0.1 + rng() * 0.16, 0.8 + rng() * 1.6, { seg: 7 });
+  for (let i = 0; i < 6; i++) b.add(new THREE.DodecahedronGeometry(0.3 + rng() * 0.4), i % 2 ? MT_ROCK : MT_ROCK_D, DECK_HALF + 1 + rng() * 13, 0.1, -rng() * CHUNK, rng() * 3, rng() * 3, 0);
+  if (!snowy) for (let i = 0; i < 60; i++) b.box(0.1, 0.16, 0.1, [0xffe24a, 0xffffff, 0xff8fd0, 0x8f7fff, 0xff6a4a][i % 5], DECK_HALF + 0.8 + rng() * 13, 0.07, -rng() * CHUNK, 0, rng() * 3, 0, { grad: 1 });
+  return b.build({ material: MAT.double });
+});
+// The peaks beyond: on the right behind the mountain wall, and far across the water on the left.
+const mountPeaks = (v) => prefab('mountpeaks' + v, () => {
+  const b = new Builder(0.8), rng = makeRng(1340 + v);
+  const peak = (x, z, r, h, y0, c) => {
+    b.add(new THREE.ConeGeometry(r, h, 7, 1), c, x, y0 + h / 2, z, 0, rng() * 3, 0);
+    b.add(new THREE.ConeGeometry(r * 0.42, h * 0.42, 7, 1), MT_SNOW, x, y0 + h * 0.795, z, 0, rng() * 3, 0, 1.04, 1, 1.04, { grad: 0.94 });
+  };
+  for (let i = 0; i < 3; i++) peak(84 + rng() * 40, -4 - i * 13 - rng() * 6, 26 + rng() * 12, 62 + rng() * 34, 20, i % 2 ? 0x7d858f : 0x6b727c);
+  for (let i = 0; i < 2; i++) peak(-150 - rng() * 60, -8 - i * 20 - rng() * 8, 40 + rng() * 20, 120 + rng() * 50, -75, i % 2 ? 0x8b95a3 : 0x7a8492);
+  return b.build({ receive: false });
+});
+// Clouds lying in the valley, below the top of the mountain.
+const valleyCloud = (v) => prefab('valleycloud' + v, () => {
+  const b = new Builder(0.94), rng = makeRng(1360 + v);
+  for (let c = 0; c < 4; c++) { const cx = -30 - rng() * 60, cy = -15 - rng() * 12, cz = -rng() * CHUNK; for (let i = 0; i < 5; i++) b.sph(3 + rng() * 3, 0xffffff, cx + (i - 2) * 4.4, cy + rng() * 1.5, cz + (rng() - 0.5) * 5, 1.5, 0.5, 1.1, { seg: 8 }); }
+  return b.build({ receive: false, material: MAT.glow });
+});
+// A mountain chalet with a wide roof, a balcony and window boxes; the door faces +z.
+const chalet = () => prefab('chalet', () => {
+  const b = new Builder(0.85), W = 0xb07a4a, D = 0x8a5a36;
+  b.box(7, 2.6, 5.4, 0xf3ead8, 0, 1.3, 0).box(7.1, 2.4, 5.5, W, 0, 3.7, 0);
+  for (let i = 0; i < 5; i++) b.box(7.14, 0.05, 5.54, D, 0, 2.75 + i * 0.5, 0);
+  b.prism(8.6, 2.4, 7.4, 0x7a3b2a, 0, 4.9, 0, 0).box(8.9, 0.14, 7.6, 0x5f2c20, 0, 4.9, 0);
+  b.box(1.0, 1.4, 1.0, 0x9a8f86, 2.0, 6.4, -1.4).box(1.2, 0.16, 1.2, 0x5f2c20, 2.0, 7.15, -1.4);
+  b.box(7.4, 0.14, 1.3, D, 0, 2.6, 3.2).box(7.4, 0.1, 0.1, D, 0, 3.5, 3.8);
+  for (let i = 0; i < 12; i++) b.box(0.1, 0.9, 0.1, W, -3.6 + i * 0.655, 3.05, 3.8);
+  b.box(1.2, 2.0, 0.12, 0x6a4028, 0, 1.0, 2.72).sph(0.07, 0xffd24a, 0.4, 1.0, 2.8, 1, 1, 1, { seg: 5 });
+  for (const [x, y] of [[-2.2, 1.4], [2.2, 1.4], [-2.2, 3.8], [0, 3.8], [2.2, 3.8]]) {
+    b.box(0.95, 0.95, 0.1, 0xffe9a8, x, y, 2.74, 0, 0, 0, { glow: true, grad: 1 }).box(0.06, 0.95, 0.12, D, x, y, 2.76).box(0.95, 0.06, 0.12, D, x, y, 2.76);
+    for (const sx of [-1, 1]) b.box(0.42, 1.0, 0.07, 0x2f7d4f, x + sx * 0.72, y, 2.76);
+    b.box(1.1, 0.2, 0.26, D, x, y - 0.62, 2.86);
+    for (let k = 0; k < 5; k++) b.sph(0.11, [0xe5383b, 0xff8fd0, 0xffe24a][k % 3], x - 0.4 + k * 0.2, y - 0.46, 2.92, 1, 1, 1, { seg: 5 });
+  }
+  return b.build({ cast: true });
+});
+// A cable car: pylons every chunk, a cable from end to end, and (as a separate moving part) a gondola.
+const cableCar = () => prefab('cablecar', () => {
+  const g = new THREE.Group(), b = new Builder(0.86), H = 11;
+  for (const z of [-20]) {
+    b.box(0.5, H, 0.5, 0x8f9aa6, 0, H / 2, z).box(2.6, 0.3, 0.5, 0x8f9aa6, 0, H, z).box(1.2, 0.4, 1.2, MT_ROCK_D, 0, 0.2, z);
+    for (let i = 0; i < 5; i++) b.box(0.08, 2.4, 0.08, 0x6f7a86, 0, 1.4 + i * 2.1, z + 0.3, 0.5, 0, 0).box(0.08, 2.4, 0.08, 0x6f7a86, 0, 1.4 + i * 2.1, z - 0.3, -0.5, 0, 0);
+  }
+  for (const x of [-1.1, 1.1]) b.box(0.07, 0.07, CHUNK, 0x3a4048, x, H - 0.05, -CHUNK / 2);
+  g.add(b.build({ receive: false }));
+  const car = (col) => { const c = new Builder(0.86);
+    c.box(0.08, 1.5, 0.08, 0x3a4048, 0, -0.75, 0).box(0.5, 0.2, 0.9, 0x3a4048, 0, -0.02, 0);
+    c.box(1.7, 1.7, 2.4, col, 0, -2.3, 0).box(1.74, 0.75, 2.0, 0xbfe6ff, 0, -2.0, 0, 0, 0, 0, { grad: 1 }).box(1.9, 0.14, 2.6, 0xfff3d6, 0, -1.4, 0).box(1.76, 0.16, 2.44, 0xfff3d6, 0, -2.75, 0);
+    return c.build({ receive: false }); };
+  const up = car(0xe5383b); up.name = 'car'; up.position.set(-1.1, H, 0); g.add(up);
+  const down = car(0xffc928); down.name = 'car2'; down.position.set(1.1, H, 0); g.add(down);
+  return g;
+});
+// Boulders with a mountain goat or two standing on them.
+const goatRock = (v) => prefab('goatrock' + v, () => {
+  const b = new Builder(0.84);
+  boulderInto(b, 0, 0, 0, 1.5, 1); boulderInto(b, 2.0, 0, 0.8, 1.0, 2, false);
+  goatInto(b, -0.1, 1.86, 0, 1.2, v ? 0.5 : -0.4);
+  if (v) goatInto(b, 2.6, 0, -1.4, 0.8, -1.2);
+  return b.build({ cast: true });
+});
+// A few sheep grazing.
+const sheepFlock = (v) => prefab('sheep' + v, () => {
+  const b = new Builder(0.88), rng = makeRng(1380 + v);
+  for (let i = 0; i < 4 + v; i++) {
+    const x = (rng() - 0.5) * 6, z = (rng() - 0.5) * 5, a = rng() * 6, s = 0.8 + rng() * 0.3;
+    b.at(x, 0, z, a, () => {
+      b.sph(0.5, 0xfffdf5, 0, 0.62, 0, 1.3, 0.95, 1, { seg: 8 }).sph(0.2, 0x3a3430, 0.62, 0.72, 0, 1.1, 1, 0.9, { seg: 7 });
+      for (const [lx, lz] of [[0.3, 0.18], [0.3, -0.18], [-0.3, 0.18], [-0.3, -0.18]]) b.cyl(0.05, 0.05, 0.34, 0x3a3430, lx, 0.17, lz, 0, 0, 0, { seg: 5 });
+      for (const sz of [-1, 1]) b.sph(0.07, 0x3a3430, 0.56, 0.84, sz * 0.19, 0.6, 0.5, 1.2, { seg: 5 });
+    }, s);
+  }
+  return b.build({ cast: true });
+});
+// The banner over the very top of the mountain, with a flag and a cairn beside it.
+const summitGate = () => prefab('summitgate', () => {
+  const g = new THREE.Group(), b = new Builder(0.86);
+  for (const sx of [-1, 1]) b.cyl(0.16, 0.2, 6.2, 0x7a5236, sx * 4.9, 3.1, 0, 0, 0, 0, { seg: 8 }).sph(0.3, 0xffd24a, sx * 4.9, 6.4, 0, 1, 1, 1, { seg: 8 });
+  b.box(9.8, 1.5, 0.2, 0xe5383b, 0, 5.3, 0).box(10, 0.12, 0.3, 0xffd24a, 0, 6.08, 0).box(10, 0.12, 0.3, 0xffd24a, 0, 4.52, 0);
+  for (let i = 0; i < 11; i++) b.flat([[[-4.6 + i * 0.92 - 0.36, 4.46, 0.05], [-4.6 + i * 0.92, 3.86, 0.05], [-4.6 + i * 0.92 + 0.36, 4.46, 0.05]]], [0xffd24a, 0x35a7d6, 0xffffff, 0x6fae52][i % 4], 0, 0, 0, 0, 0, 0, { grad: 1 });
+  // a cairn and a great flag on the meadow
+  let y = 0; [[1.3, 0.9], [1.05, 0.8], [0.8, 0.7], [0.55, 0.6]].forEach(([r, h], i) => { b.add(new THREE.DodecahedronGeometry(1), i % 2 ? MT_ROCK : MT_ROCK_D, 8.5, y + h * 0.5, 2, i, i * 2, 0, r, h * 0.62, r); y += h * 0.86; });
+  b.cyl(0.08, 0.08, 6, 0xdfe6ee, 8.5, y + 3, 2, 0, 0, 0, { seg: 6 }).flat([[[8.5, y + 6, 2], [8.5, y + 4.2, 2], [11.6, y + 5.1, 2]]], 0xe5383b, 0, 0, 0, 0, 0, 0, { grad: 1 });
+  g.add(b.build({ cast: true, material: MAT.double }));
+  const s = signMesh('THE TOP!', 7.4, 1.2, '#fff3d6', '#c4412f', '#ffc928'); s.position.set(0, 5.3, 0.12); g.add(s);
+  return g;
+});
+// A waterfall tumbling down the mountain wall into a pool on the meadow.
+const waterfall = () => prefab('waterfall', () => {
+  const b = new Builder(1), W = 0xbfe9ff, pts = [[52, 28.6], [44, 21.6], [36, 14.4], [27, 7.2], [20.5, 1.4], [18, 0.12]];
+  for (let k = 0; k < pts.length - 1; k++) { const [x0, y0] = pts[k], [x1, y1] = pts[k + 1], hw = 1 + k * 0.25; b.flat([[[x0, y0 + 0.5, hw], [x1, y1 + 0.5, hw + 0.2], [x1, y1 + 0.5, -hw - 0.2]], [[x0, y0 + 0.5, hw], [x1, y1 + 0.5, -hw - 0.2], [x0, y0 + 0.5, -hw]]], k % 2 ? W : 0xe4f6ff, 0, 0, 0, 0, 0, 0, { grad: 1 }); }
+  b.sph(3.2, 0x7fd0ee, 15.5, 0.02, 0, 1, 0.03, 0.8, { seg: 14 }).sph(1.4, 0xffffff, 17.6, 0.1, 0, 1, 0.25, 1.5, { seg: 8 });
+  for (let i = 0; i < 6; i++) b.add(new THREE.DodecahedronGeometry(0.5 + (i % 3) * 0.2), i % 2 ? MT_ROCK : MT_ROCK_D, 15.5 + Math.cos(i * 1.05) * 3.2, 0.15, Math.sin(i * 1.05) * 2.6, i, i * 2, 0);
+  return b.build({ receive: false, material: MAT.double });
+});
+
+const pineTree = (v, snowy) => prefab('pinetree' + v + snowy, () => {
+  const b = new Builder(0.85);
+  pineInto(b, 0, 0, 0, 5 + v * 1.4, !!snowy);
+  return b.build({ cast: true, receive: false });
+});
+
 // ---------- the sewers ----------
 // A brick tunnel: walls SEW_W either side of the centre line, then a tall vault that springs at SEW_SPR and rises SEW_RISE.
 const SEW_W = 8.2, SEW_SPR = 3, SEW_RISE = 9, SEW_BOT = -3.6, SLIME = 0x8dff5a;
@@ -1399,9 +1528,9 @@ const asteroidFloat = (v) => prefab('astf' + v, () => {
 });
 
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -1409,7 +1538,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -1580,6 +1709,22 @@ export function populate(group, rawIndex, zone, anim) {
       place(group, twistSpire((index + (s > 0 ? 1 : 0)) % 3), s * (34 + rng() * 14), 0, -rng() * CHUNK, rng() * 6, 0.8 + rng() * 0.4);
       if (rng() < 0.6) anim.push({ o: place(group, floatShell(rng() < 0.5 ? 1 : 0), s * (8 + rng() * 6) + (s === side ? s * 14 : 0), WATER_Y - 0.3, -rng() * CHUNK, rng() * 6), kind: 'bob', p: rng() * 6, amp: 1.2 });
     }
+  } else if (zone === 13) {
+    // the level is one great hill, so the middle chunks are the snowy top of the mountain
+    const k = index % ZONE_CHUNKS, snowy = k >= 2 && k <= 4 ? 1 : 0, m = index % 3;
+    place(group, mountGround(snowy, index % 2), 0, 0, 0);
+    place(group, mountPeaks(index % 3), 0, 0, 0);
+    if (snowy) place(group, valleyCloud(index % 2), 0, 0, 0);
+    anim.push({ o: place(group, cableCar(), 15.2, 0, 0), kind: 'cable' });
+    if (k === 3) place(group, summitGate(), 0, 0, -20);
+    if (m === 0) { place(group, chalet(), 10.6, 0, -11, -PI / 2, 0.9); place(group, goatRock(0), 8.2, 0, -31, rng() * 6); }
+    else if (m === 1) { place(group, waterfall(), 0, 0, -8); place(group, sheepFlock(0), 9.5, 0, -30, rng() * 6); }
+    else { place(group, goatRock(1), 9, 0, -9, rng() * 6); place(group, cabinStall(pick(rng, [C.red, C.teal, C.blue]), pick(rng, ['HOT CHOCOLATE', 'CHEESE', 'WALKING STICKS'])), DECK_HALF + 3.5, 0, -24, -PI / 2); place(group, sheepFlock(1), 12, 0, -35, rng() * 6); }
+    // far below, at the foot of the cliff, the sea: rocks in the surf and little boats, set down at sea level whatever the height of the road here
+    const drop = (z) => hillHeight(k * CHUNK - z, HILLS[13][0], ZONE_LEN, HILLS[13][1], HILLS[13][2]);
+    for (let i = 0; i < 2; i++) { const z = -4 - i * 19 - rng() * 12, h = drop(z); place(group, rocks(), -10 - h * 0.48 - rng() * 4, -h, z, rng() * 6, 1 + rng() * 0.5); }
+    for (let i = 0; i < 2; i++) { const z = -rng() * CHUNK, h = drop(z); anim.push({ o: place(group, i ? dinghy(pick(rng, [C.coral, C.yellow, C.white])) : rowBoat(pick(rng, [C.red, C.teal, C.blue])), -16 - h * 0.48 - rng() * 26, WATER_Y - h, z, rng() * 6), kind: 'bob', p: rng() * 6 }); }
+    for (const z of [-3, -16, -27, -38]) if (rng() < 0.7) place(group, pineTree(rng() < 0.5 ? 0 : 1, snowy), 6.3 + rng() * 1.2, 0, z + rng() * 2, rng() * 6);
   } else if (zone === 8) {
     place(group, sewerShell(), 0, 0, 0);
     place(group, sewerSide(index % 2), 0, 0, 0);
@@ -1624,6 +1769,9 @@ export function animate(anim, t, dt) {
       const s = a.s || (a.s = a.o.getObjectByName('spin')); if (s) s.rotation.y += dt * (a.v || 0.7);
     } else if (a.kind === 'whirl') {
       const w = a.w || (a.w = a.o.getObjectByName('whirl')); if (w) w.rotation.z += dt * (a.v || 1.5);
+    } else if (a.kind === 'cable') {
+      const c = a.c || (a.c = [a.o.getObjectByName('car'), a.o.getObjectByName('car2')]), z = (t * 4.5) % CHUNK;
+      c[0].position.z = -z; c[1].position.z = z - CHUNK;
     } else if (a.kind === 'train') {
       const tr = a.tr || (a.tr = a.o.getObjectByName('train'));
       const z = -((t * 11) % CHUNK), y = coasterY(z), dy = coasterY(z - 0.5) - y;

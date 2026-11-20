@@ -40,9 +40,10 @@ const FLYERS = {
   snowcloud: { y: 5.0, size: 1.3, shot: 'snowball' },
   flosscloud: { y: 5.0, size: 1.3, shot: 'bonbon' },
   twister: { y: 5.0, size: 1.3, shot: 'whirl', crackle: true },
+  eagle: { y: 4.8, size: 1.35, shot: 'pinecone' },
 };
 // Which attacker each level has, and how often a "roller" row is one of them rather than a plain rolling thing.
-const ATTACKER = { 0: ['gull', 0.6], 1: ['gull', 0.6], 2: ['gull', 0.6], 3: ['bat', 0.65], 4: ['stormcloud', 0.75], 5: ['gull', 0.6], 6: ['bat', 0.7], 7: ['snowcloud', 0.7], 8: ['bat', 0.5], 9: ['ufo', 1], 10: ['snowcloud', 0.3], 11: ['flosscloud', 0.65], 12: ['twister', 0.65] };
+const ATTACKER = { 0: ['gull', 0.6], 1: ['gull', 0.6], 2: ['gull', 0.6], 3: ['bat', 0.65], 4: ['stormcloud', 0.75], 5: ['gull', 0.6], 6: ['bat', 0.7], 7: ['snowcloud', 0.7], 8: ['bat', 0.5], 9: ['ufo', 1], 10: ['snowcloud', 0.3], 11: ['flosscloud', 0.65], 12: ['twister', 0.65], 13: ['eagle', 0.6] };
 
 export class Track {
   constructor(scene) {
@@ -226,10 +227,10 @@ export class Track {
     } else if (type === 'trolley') {
       // something that crosses all three lanes: a runaway luggage trolley, or a giant crab on the beach levels
       // (a waddling penguin on the Frosty Pier)
-      // (a scurrying giant rat in the sewers, a moon rover in space, a clockwork toy train on Christmas Pier, a runaway gingerbread man on Marshmallow Shore, a humming top in Spiral Bay)
-      const rat = zone === 8, rover = zone === 9, train = zone === 10, ginger = zone === 11, top = zone === 12;
+      // (a scurrying giant rat in the sewers, a moon rover in space, a clockwork toy train on Christmas Pier, a runaway gingerbread man on Marshmallow Shore, a humming top in Spiral Bay, a mountain goat on Sky-High Mountain)
+      const rat = zone === 8, rover = zone === 9, train = zone === 10, ginger = zone === 11, top = zone === 12, goat = zone === 13;
       const crab = zone < 7 && rng() < (zone === 0 || zone === 4 || zone === 5 ? 0.75 : 0.2), penguin = zone === 7 && rng() < 0.8;
-      this.spawnObstacle(rat ? 'ratRun' : rover ? 'rover' : train ? 'toyTrain' : ginger ? 'gingerMan' : top ? 'spinTop' : crab ? 'crab' : penguin ? 'penguin' : 'trolley', 0, s, { mover: { type: 'cross', amp: LANE_W, w: crab ? 2.2 : penguin || rover || train || ginger || top ? 1.9 : 2.5, phase: rng() * 6.28, crab, penguin, rat, ginger, top } });
+      this.spawnObstacle(rat ? 'ratRun' : rover ? 'rover' : train ? 'toyTrain' : ginger ? 'gingerMan' : top ? 'spinTop' : goat ? 'goat' : crab ? 'crab' : penguin ? 'penguin' : 'trolley', 0, s, { mover: { type: 'cross', amp: LANE_W, w: crab ? 2.2 : penguin || rover || train || ginger || top || goat ? 1.9 : 2.5, phase: rng() * 6.28, crab, penguin, rat, ginger, top, goat } });
       needJump = true;
     } else if (type === 'pad') {
       // a bounce pad on the safe path, with a high arc of shells and a pearl at the top
@@ -294,7 +295,7 @@ export class Track {
             const o = this.spawnObstacle(F.shot, l, s + 2 + k * 3, { mover: { type: 'roll', v: 6, on: false, range: 34, shot: true, plasma: F.crackle, drop: F.y - 1.2, age: 0 } });
             o.mesh.visible = false; this.addUfo(l, o.s, o, kind);
           } else if (zone === 8) this.spawnObstacle('ratCharge', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6.5, on: false, run: true } });     // a rat charging down the lane
-          else this.spawnObstacle(zone === 5 ? 'beachball' : zone === 7 ? 'snowball' : zone === 10 ? 'bauble' : zone === 11 ? 'gobstopper' : zone === 12 ? 'marble' : 'barrel', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false } });
+          else this.spawnObstacle(zone === 5 ? 'beachball' : zone === 7 || zone === 13 ? 'snowball' : zone === 10 ? 'bauble' : zone === 11 ? 'gobstopper' : zone === 12 ? 'marble' : 'barrel', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false } });
           skip.push(l);
         });
         extra = (count - 1) * 3;   // the second roller trails the row, so leave room to cut back in behind it
@@ -405,6 +406,7 @@ export class Track {
         else if (m.top) { o.mesh.rotation.y = this.t * 11; o.mesh.rotation.z = Math.sin(this.t * 3.1) * 0.14; o.mesh.rotation.x = Math.cos(this.t * 3.1) * 0.14; }      // it whirls and wobbles
         else if (m.crab) { o.mesh.rotation.y = 0; o.mesh.position.y = Math.abs(Math.sin(this.t * 13)) * 0.07; o.mesh.rotation.z = Math.sin(this.t * 13) * 0.05; }
         else o.mesh.rotation.y = Math.cos(this.t * m.w + m.phase) > 0 ? 0 : Math.PI;
+        if (m.goat) o.mesh.position.y = Math.abs(Math.sin(this.t * 9)) * 0.22;      // it skips along
         if (m.penguin) o.mesh.rotation.z = Math.sin(this.t * 11) * 0.16;      // waddle
         if (m.rat) o.mesh.position.y = Math.abs(Math.sin(this.t * 15)) * 0.09;   // scurry
       }

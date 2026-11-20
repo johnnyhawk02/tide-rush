@@ -328,4 +328,23 @@ THEMES[12] = theme('Round and Round', {
   drums: { kick: 'x...x...x...x...', clap: '....x.......x...', shake: 'x.xxx.xxx.xxx.xx', rim: '......x.......x.' },
 });
 
+// ---- 13. Sky-High Mountain: "Up and Up", an oom-pah climb that leaps about like a yodel on the way down (G major) ----
+THEMES[13] = theme('Up and Up', {
+  key: 7, scale: 'maj', base: 67, gain: 1.1, tempo: 1.06, voice: 'clarinet', bassVoice: 'tuba', stab: 'reed',
+  chords: 'I I IV V I IV V I',
+  tune: [
+    "1:2 3:2 5:2 3:2 1:2 3:2 5:4",
+    "3:2 5:2 1':2 5:2 3:2 5:2 1':4",
+    "4:2 6:2 1':2 6:2 1':2 2':2 4':4",
+    "5:2 7:2 2':2 7:2 2':2 4':2 5':4",
+    "5':4 3':2 1':2 5':4 3':2 1':2",
+    "4':4 1':2 6:2 4':4 1':2 6:2",
+    "2':2 7:2 5:2 7:2 2':2 7:2 5:4",
+    "3:2 2:2 1:4 5,:2 7,:2 1:4",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 0, _, _, _, 7, _, 12, _],
+  stabs: '..x...x...x...x.',
+  drums: { thump: 'x.......x.......', clap: '....x.......x...', tick: '..x...x...x...x.', bell: '..............x.' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

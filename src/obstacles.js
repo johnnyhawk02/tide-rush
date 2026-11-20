@@ -667,6 +667,126 @@ def('twister', 'deco', 2.2, 2.0, 1.8, (b) => {
   b.tor(0.09, 0.03, 0x15151f, 0, 0.2, 0.8, 0, 0, 0, { seg: 9 });                                         // puckered up to blow
 });
 
+// ---------- Sky-High Mountain ----------
+const BARK = 0x7a5236, BARK_D = 0x5f3f2a, WOOD_END = 0xe2c08a, STONE = 0x8d9399, STONE_D = 0x70767c, MOSS = 0x6fae52, PINE = 0x2f7d4f, PINE_D = 0x286c45;
+// A log lying along x, centred on (x, y, z): bark, pale sawn ends with a ring, and a knot.
+export function logInto(b, x, y, z, len, r, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    b.cyl(r, r, len, BARK, 0, 0, 0, 0, 0, PI / 2, { seg: 10 });
+    for (const sx of [-1, 1]) b.cyl(r * 0.9, r * 0.9, 0.02, WOOD_END, sx * (len / 2 + 0.006), 0, 0, 0, 0, PI / 2, { seg: 10, grad: 1 }).cyl(r * 0.45, r * 0.45, 0.02, 0xcfa56e, sx * (len / 2 + 0.012), 0, 0, 0, 0, PI / 2, { seg: 8, grad: 1 });
+    b.sph(r * 0.3, BARK_D, len * 0.18, r * 0.86, r * 0.3, 1, 0.5, 1, { seg: 6 });
+  });
+}
+// A mountain goat facing +x, standing at (x, y, z); s is its size (about 1 high).
+export function goatInto(b, x, y, z, s = 1, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    const W = 0xf6f1e7, D = 0xd9d0bf, H = 0x4a4038;
+    b.sph(0.3, W, 0, 0.56, 0, 1.45, 0.95, 0.9, { seg: 12 });
+    for (const [lx, lz] of [[0.28, 0.13], [0.28, -0.13], [-0.28, 0.13], [-0.28, -0.13]]) b.cyl(0.045, 0.035, 0.36, D, lx, 0.2, lz, 0, 0, 0, { seg: 6 }).cyl(0.045, 0.05, 0.07, H, lx, 0.035, lz, 0, 0, 0, { seg: 6 });
+    b.sph(0.17, W, 0.47, 0.84, 0, 1.15, 1, 0.9, { seg: 10 }).sph(0.09, D, 0.62, 0.78, 0, 1.1, 0.8, 0.9, { seg: 8 }).sph(0.03, 0x2a2420, 0.7, 0.8, 0, 1, 0.8, 1.4, { seg: 5 });
+    b.cone(0.06, 0.22, W, 0.56, 0.62, 0, PI, 0, 0.2, { seg: 6 });                                         // beard
+    for (const sz of [-1, 1]) {
+      b.cone(0.035, 0.26, 0xb8a888, 0.4, 1.06, sz * 0.08, 0, 0, 0.5, { seg: 6 });                          // horns
+      b.sph(0.06, D, 0.38, 0.9, sz * 0.16, 0.6, 0.4, 1.2, { seg: 6 });                                    // ears
+      b.sph(0.032, 0x1b1f24, 0.57, 0.89, sz * 0.12, 1, 1.2, 0.6, { seg: 6, grad: 1 });
+    }
+    b.sph(0.07, W, -0.44, 0.7, 0, 1, 1, 1, { seg: 6 });                                                   // tail
+    b.tor(0.13, 0.022, 0xd8342f, 0.38, 0.72, 0, 0, PI / 2, 0.5, { seg: 10 }).sph(0.05, 0xffd24a, 0.44, 0.58, 0, 1, 1.1, 1, { seg: 6 });   // collar and bell
+  }, s);
+}
+// A pine tree standing at (x, y, z).
+export function pineInto(b, x, y, z, h, snowy = false) {
+  b.cyl(h * 0.04, h * 0.055, h * 0.24, BARK_D, x, y + h * 0.12, z, 0, 0, 0, { seg: 6 });
+  for (let i = 0; i < 4; i++) {
+    const r = h * 0.25 * (1 - i * 0.2), ty = y + h * (0.18 + i * 0.2), th = h * 0.36;
+    b.cone(r, th, i % 2 ? PINE : PINE_D, x, ty + th / 2, z, 0, i * 0.6, 0, { seg: 8 });
+    if (snowy) b.cone(r * 0.6, th * 0.6, 0xf4f8ff, x, ty + th * 0.71, z, 0, i * 0.6, 0, { seg: 8 });
+  }
+}
+// A grey boulder sitting at (x, y, z), about 2 r across, with moss on top.
+export function boulderInto(b, x, y, z, r, seed = 0, moss = true) {
+  b.add(new THREE.DodecahedronGeometry(r), seed % 2 ? STONE : STONE_D, x, y + r * 0.62, z, seed * 0.9, seed * 1.7, 0.3, 1.15, 0.8, 1);
+  b.add(new THREE.DodecahedronGeometry(r * 0.55), seed % 2 ? STONE_D : STONE, x + r * 0.75, y + r * 0.34, z + r * 0.3, seed, seed * 0.6, 0);
+  if (moss) b.sph(r * 0.62, MOSS, x - r * 0.1, y + r * 1.02, z, 1, 0.22, 0.9, { seg: 7 });
+}
+def('log', 'low', 1.7, 0.86, 0.9, (b) => {
+  logInto(b, 0, 0.38, 0, 1.56, 0.38, 0.06);
+  b.cyl(0.07, 0.09, 0.4, BARK, -0.36, 0.78, -0.05, 0.2, 0, 0.5, { seg: 6 }).sph(0.14, 0x6fae52, -0.52, 0.95, -0.08, 1.2, 0.5, 0.9, { seg: 6 });
+  for (const [x, c] of [[0.2, 0xe5383b], [0.42, 0xfff1dc]]) b.cyl(0.03, 0.035, 0.12, 0xfff6ee, x, 0.8, 0.12, 0, 0, 0, { seg: 5 }).sph(0.09, c, x, 0.88, 0.12, 1, 0.6, 1, { seg: 7 });   // toadstools
+});
+def('boulder', 'low', 1.45, 0.95, 1.2, (b) => {
+  boulderInto(b, -0.1, 0, 0, 0.56, 1);
+  for (let i = 0; i < 3; i++) b.sph(0.045, [0xffe24a, 0xffffff, 0xff8fd0][i], -0.35 + i * 0.22, 0.68 - Math.abs(i - 1) * 0.04, 0.2 + (i % 2) * 0.12, 1, 0.7, 1, { seg: 5 });   // alpine flowers in the moss
+});
+def('cheese', 'low', 1.35, 0.92, 1.35, (b) => {
+  // two wheels of mountain cheese, one with a wedge out of it
+  const Y = 0xf6c64a, R = 0xe2a02c;
+  b.cyl(0.62, 0.62, 0.42, R, 0, 0.21, 0, 0, 0, 0, { seg: 18 }).cyl(0.58, 0.58, 0.02, Y, 0, 0.425, 0, 0, 0, 0, { seg: 18, grad: 1 });
+  b.add(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16, 1, false, 0.5, PI * 1.7), R, 0.05, 0.64, 0.02).add(new THREE.CylinderGeometry(0.47, 0.47, 0.02, 16, 1, false, 0.5, PI * 1.7), Y, 0.05, 0.845, 0.02, 0, 0, 0, 1, 1, 1, { grad: 1 });
+  b.box(0.02, 0.38, 0.48, Y, 0.17, 0.64, 0.23, 0, 0.5 - PI / 2, 0, { grad: 1 }).box(0.02, 0.38, 0.48, Y, 0.07, 0.64, 0.26, 0, 0.5 + PI * 1.7 - PI / 2, 0, { grad: 1 });
+  for (const [x, y, z] of [[0.3, 0.2, 0.55], [-0.2, 0.26, 0.59], [-0.45, 0.16, 0.43], [0.52, 0.28, 0.34]]) b.sph(0.06, 0xc98a1e, x, y, z, 1, 1, 0.4, { seg: 6 });
+});
+def('hay', 'low', 1.5, 0.98, 1.0, (b) => {
+  // a round bale of mountain hay with a pitchfork in it
+  b.add(...painted(new THREE.CylinderGeometry(0.49, 0.49, 1.36, 16, 1), (x, y, z) => (((Math.floor((Math.atan2(z, x) / (PI * 2)) * 16) % 2) + 2) % 2 ? 0xe8c860 : 0xd9b64a)), 0, 0.49, 0, 0, 0, PI / 2);
+  for (const sx of [-1, 1]) b.add(...swirlDisc(0.47, 0xf2d878, 0xd9b64a, 1, 2.5, 20, 5), sx * 0.685, 0.49, 0, 0, sx * PI / 2, 0, 1, 1, 1, { grad: 1 });
+  for (const x of [-0.3, 0.3]) b.tor(0.5, 0.02, 0xc0563a, x, 0.49, 0, 0, PI / 2, 0, { seg: 16, tseg: 4 });
+});
+def('pineOb', 'tall', 1.8, 3.4, 1.8, (b) => {
+  b.sph(0.7, MOSS, 0, 0, 0, 1, 0.12, 1, { seg: 9 });
+  pineInto(b, 0, 0, 0, 3.4);
+  for (let i = 0; i < 5; i++) b.sph(0.06, 0x8a5a3a, Math.cos(i * 1.4) * (0.6 - i * 0.08), 0.95 + i * 0.42, Math.sin(i * 1.4) * (0.6 - i * 0.08) + 0.1, 0.8, 1.4, 0.8, { seg: 5 });   // cones
+});
+def('cairn', 'tall', 1.6, 3.0, 1.6, (b) => {
+  // a walkers' cairn: stones balanced one on top of another, with a little flag
+  let y = 0;
+  [[0.78, 0.5], [0.66, 0.46], [0.56, 0.42], [0.46, 0.38], [0.36, 0.34], [0.27, 0.3], [0.19, 0.24]].forEach(([r, h], i) => {
+    b.add(new THREE.DodecahedronGeometry(1), i % 2 ? STONE : STONE_D, Math.sin(i * 2.1) * 0.07, y + h * 0.5, Math.cos(i * 1.7) * 0.06, i * 1.3, i * 2.1, 0.2, r, h * 0.62, r * 0.92);
+    y += h * 0.86;
+  });
+  b.cyl(0.02, 0.02, 0.6, BARK_D, 0, y + 0.25, 0, 0, 0, 0, { seg: 5 }).flat([[[0, y + 0.55, 0], [0, y + 0.3, 0], [0.42, y + 0.42, 0]]], 0xe5383b);
+});
+def('fingerpost', 'tall', 1.8, 3.2, 0.8, (b) => {
+  // a signpost pointing every way at once
+  b.cyl(0.36, 0.42, 0.16, STONE_D, 0, 0.08, 0, 0, 0, 0, { seg: 10 }).cyl(0.085, 0.1, 3.0, BARK, 0, 1.6, 0, 0, 0, 0, { seg: 8 }).cone(0.14, 0.2, 0xffd24a, 0, 3.2, 0, 0, 0, 0, { seg: 8 });
+  [[2.75, 1, 0xe5383b], [2.3, -1, 0xffd24a], [1.85, 1, 0x35a7d6], [1.4, -1, 0x6fae52]].forEach(([y, sx, c], i) => {
+    b.box(0.74, 0.3, 0.07, c, sx * 0.4, y, 0.06, 0, 0, sx * (i % 2 ? -0.06 : 0.08));
+    b.flat([[[sx * 0.77, y + 0.2, 0.06], [sx * 0.77, y - 0.2, 0.06], [sx * 1.0, y, 0.06]]], c, 0, 0, 0, 0, 0, 0, { grad: 1 });
+    b.box(0.5, 0.05, 0.02, 0xffffff, sx * 0.4, y, 0.105, 0, 0, sx * (i % 2 ? -0.06 : 0.08), { grad: 1 });
+  });
+});
+def('woodShed', 'tall', 1.8, 2.95, 1.2, (b) => {
+  // a store of firewood for the winter
+  for (const sx of [-1, 1]) b.box(0.12, 2.3, 1.0, BARK, sx * 0.8, 1.15, 0);
+  b.box(1.72, 2.3, 0.08, BARK_D, 0, 1.15, -0.46).box(1.72, 0.1, 1.0, BARK, 0, 0.05, 0);
+  for (let r = 0; r < 6; r++) for (let c = 0; c < 5 - (r % 2); c++) { const x = -0.6 + c * 0.3 + (r % 2) * 0.15, y = 0.27 + r * 0.33; b.cyl(0.16, 0.16, 0.9, (r + c) % 2 ? BARK : BARK_D, x, y, 0, PI / 2, 0, 0, { seg: 8 }).cyl(0.14, 0.14, 0.02, WOOD_END, x, y, 0.455, PI / 2, 0, 0, { seg: 8, grad: 1 }); }
+  b.prism(2.1, 0.6, 1.3, 0xa33a2c, 0, 2.3, 0, 0).box(2.14, 0.08, 1.34, 0x8a2f24, 0, 2.3, 0);
+});
+def('goat', 'low', 1.2, 1.0, 1.0, (b) => goatInto(b, 0, 0, 0, 0.98));
+def('pinecone', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the eagles drop: a giant pine cone that tumbles down the lane
+  for (let i = 0; i < 6; i++) { const t = i / 5, r = 0.44 * Math.sin(0.5 + t * 2.3); for (let k = 0; k < 7; k++) { const a = k * 0.898 + i * 0.45; b.cone(0.15, 0.3, (i + k) % 2 ? 0x8a5a3a : 0x6f4528, -0.4 + t * 0.8, Math.cos(a) * r * 0.8, Math.sin(a) * r * 0.8, a + PI / 2, 0, -0.9, { seg: 5 }); } }
+  b.sph(0.3, 0x5f3f2a, 0, 0, 0, 1.45, 1, 1, { seg: 8 });
+}, { center: true });
+const EAGLE_B = 0x6b4a2e, EAGLE_D = 0x4f3520;
+def('eagle', 'deco', 3.0, 1.0, 1.7, (b) => {
+  // a grumpy eagle with a pine cone in its claws
+  b.sph(0.4, EAGLE_B, 0, 0, 0, 0.95, 0.85, 1.5, { seg: 14 });
+  b.sph(0.27, 0xfaf7ef, 0, 0.2, 0.5, 1, 1, 1, { seg: 12 });
+  b.cone(0.1, 0.3, 0xffb300, 0, 0.14, 0.82, PI / 2 + 0.25, 0, 0, { seg: 8 }).cone(0.06, 0.14, 0xffb300, 0, 0.03, 0.92, PI, 0, 0, { seg: 6 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.07, 0xffe27a, sx * 0.13, 0.27, 0.71, 1, 1, 0.5, { seg: 8, grad: 1 }).sph(0.035, 0x1b1f24, sx * 0.13, 0.26, 0.75, 1, 1, 0.5, { seg: 6, grad: 1 });
+    b.box(0.2, 0.05, 0.04, EAGLE_D, sx * 0.13, 0.38, 0.72, 0, 0, sx * -0.5);                              // fierce brows
+    b.cap(0.035, 0.12, 0xffb300, sx * 0.12, -0.36, 0.1, 0.4, 0, 0).sph(0.08, 0xffb300, sx * 0.12, -0.46, 0.16, 1, 0.5, 1.3, { seg: 6 });
+  }
+  for (const k of [-1, 0, 1]) b.sph(0.24, k ? EAGLE_D : 0xfaf7ef, k * 0.15, 0.0, -0.7 + Math.abs(k) * 0.05, 0.5, 0.12, 1.15, { seg: 8 });   // tail
+}, {
+  wings: (b, sx) => {
+    b.sph(0.55, EAGLE_B, sx * 0.66, 0, 0, 1.3, 0.09, 0.7, { seg: 12 });
+    for (let i = 0; i < 4; i++) b.sph(0.2, EAGLE_D, sx * (1.05 + i * 0.12), 0.005, 0.3 - i * 0.24, 1.3, 0.1, 0.5, { seg: 6 });   // fingered wing tips
+  }, wingAt: [0.2, 0.12, 0.02],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -1252,6 +1372,7 @@ export const TALL_TYPES = {
   10: ['giftStack', 'nutcracker', 'candyCanes', 'firPot', 'nutcracker', 'giftStack', 'snowman'],
   11: ['mallowTower', 'lollyBig', 'cupcakeOb', 'jellyOb', 'sundae', 'mallowTower'],
   12: ['hypnoWheel', 'twistPole', 'jackBox', 'shellTower', 'miniHelter', 'hypnoWheel'],
+  13: ['pineOb', 'cairn', 'rock', 'fingerpost', 'woodShed', 'pineOb'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
-export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'] };
+export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'] };

@@ -1,7 +1,7 @@
 // Tide Rush: game loop, player physics, collisions, scoring and camera.
 import * as THREE from 'three';
-import { setMaxAniso, TWIST } from './kit.js';
-import { laneX, WATER_Y, JUMP_H, ZONE_LEN, ROOFED, SPIRAL, speedAt, diffAt, jumpTimeAt, clamp, lerp, damp, smooth } from './config.js';
+import { setMaxAniso, TWIST, HILL, HILL_SHAPE, hillHeight } from './kit.js';
+import { laneX, WATER_Y, JUMP_H, ZONE_LEN, ROOFED, SPIRAL, MOUNTAIN, HILLS, zoneOfLevel, speedAt, diffAt, jumpTimeAt, clamp, lerp, damp, smooth } from './config.js';
 import { Sky } from './sky.js';
 import { Track, zoneAtS, LETTERS, WARP_SPEED, PAD_BOOST } from './track.js';
 import { Robyn, OUTFITS } from './robyn.js';
@@ -29,12 +29,12 @@ const SPACE = 9;
 // the flying attackers: what to call each one when it is zapped, and the colours of its puff
 const FLYER = {
   ufo: ['UFO', [0xff7ad9, 0x8ff0ff, 0xffe27a, 0xffffff]], gull: ['Bomber gull', [0xffffff, 0xf5a623, 0xdfe6ee, 0xffe27a]], bat: ['Slime bat', [0x8dff5a, 0xb59cff, 0xffe27a, 0xffffff]],
-  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]], flosscloud: ['Candyfloss cloud', [0xff9fd0, 0xffffff, 0xffe24a, 0x8fd8ff]], twister: ['Little twister', [0x9fece4, 0xffffff, 0xff8fd6, 0xffd23f]],
+  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]], flosscloud: ['Candyfloss cloud', [0xff9fd0, 0xffffff, 0xffe24a, 0x8fd8ff]], twister: ['Little twister', [0x9fece4, 0xffffff, 0xff8fd6, 0xffd23f]], eagle: ['Grumpy eagle', [0x6b4a2e, 0xffffff, 0xffb300, 0xd9c7a8]],
 };
 // picking up a laser while one is already running powers it up: it fires faster and reaches further
 const LASER_LV = [null, { name: 'Laser zapper!', gap: 0.16, reach: 0, col: 0x6ff6ff, size: 1.1 }, { name: 'Double laser!', gap: 0.1, reach: 4, col: 0x9dff6a, size: 1.25 }, { name: 'Triple laser!', gap: 0.065, reach: 8, col: 0xffb347, size: 1.4 }];
 // what her footsteps sound like in each world
-const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal', 10: 'snow', 12: 'wood' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
+const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal', 10: 'snow', 12: 'wood', 13: 'wood' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
 const PET_POP = { izzi: ['Izzi is here! She rounds up shells', "Izzi's off for a sniff"], pixel: ['Pixel is here! Shells count double', 'Pixel wandered off'] };
 const FW_COLORS = [0xffe27a, 0xff8ab0, 0x8ff0ff, 0xa6ff9a, 0xffb36b, 0xd9a6ff];
 const rnd = (a = 1) => (Math.random() - 0.5) * 2 * a;
@@ -364,6 +364,18 @@ class Game {
       this.twist = damp(this.twist || 0, want, 3, dt);
       TWIST.value.x = Math.abs(this.twist) < 1e-5 ? 0 : this.twist;
     }
+    {
+      // the hill levels: tell the shader where Robyn is on the nearest hill (this one, or one coming up ahead)
+      const lv = Math.floor(Math.max(0, this.dist) / ZONE_LEN);
+      let hill = null, s0 = 0;
+      if (!this.warp) for (let k = lv; k <= lv + 2 && !hill; k++) { hill = HILLS[zoneOfLevel(k)]; s0 = k * ZONE_LEN; }
+      const sl = this.dist - s0, was = this.hillU;
+      if (hill) { HILL_SHAPE.value.set(hill[1], hill[2]); HILL.value.set(hill[0], sl, ZONE_LEN, hillHeight(sl, hill[0], ZONE_LEN, hill[1], hill[2])); } else HILL.value.set(0, 0, ZONE_LEN, 0);
+      const slope = hill ? (hillHeight(sl + 1.5) - hillHeight(sl - 1.5)) / 3 : 0;
+      this.slope = damp(this.slope || 0, slope, 5, dt);
+      this.hillU = hill ? sl / ZONE_LEN : -1;
+      if (hill && this.mode === 'run' && was < 0.5 && this.hillU >= 0.5 && was > 0.4) this.summit(zoneOfLevel(lv));
+    }
     this.audio.setSea(1 - Math.min(1, Math.max(this.sky.cur.under, this.sky.cur.space)));
     if (this.warp) {
       // inside the tunnel the lighting is the tunnel's own
@@ -611,6 +623,7 @@ class Game {
       else if (o.name === 'toyTrain') A.toot();
       else if (o.name === 'gingerMan') A.giggle();
       else if (o.name === 'spinTop') A.topHum();
+      else if (o.name === 'goat') A.bleat();
       else if (o.name === 'springLow' || o.name === 'jackBox') A.twang();
       else if (o.name === 'rover') A.roverBeep();
       else if (m && m.type === 'roll' && !m.shot) A.rumble();
@@ -631,6 +644,7 @@ class Game {
       else if (z === 6) { this.gullT = 2 + Math.random() * 4; if (r < 0.7) A.drip(); else A.squeak(3, 1.6); }
       else if (z === 9) A.blips();
       else if (z === 7) { if (r < 0.5) A.gust(); else A.chime(); }
+      else if (z === 13) { this.gullT = 2.5 + Math.random() * 4; if (r < 0.5) A.cowbell(); else if (r < 0.75) A.gust(); else if (r < 0.9) A.bleat(); else A.eagle(); }
       else if (z === 12) { this.gullT = 2.5 + Math.random() * 4; if (r < 0.6) A.whirl(); else if (r < 0.8) A.chime(); else A.gull(); }
       else if (z === 11) { this.gullT = 2.5 + Math.random() * 4; if (r < 0.7) A.pop(); else A.gull(); }
       else if (z === 10) { this.gullT = 3 + Math.random() * 4; if (r < 0.6) A.jingle(3 + ((Math.random() * 3) | 0), 0.05); else A.chime(); }
@@ -869,6 +883,13 @@ class Game {
   }
   celebrate(n) { for (let i = 0; i < n; i++) this.firework(rnd(7), 5 + Math.random() * 5, -(12 + Math.random() * 18), pickOf(FW_COLORS), 26, 0.28, 0.9, i ? 0 : 0.8); }
   // Fireworks over the Midnight Funfair; lightning, thunder and sea spray at Storm Point.
+  // Robyn has reached the top of a hill level.
+  summit(zone) {
+    const pts = 500 * this.x2; this.score += pts;
+    this.ui.popup((zone === MOUNTAIN ? 'Top of the mountain! +' : 'Over the top! +') + pts, 'gold');
+    if (zone === MOUNTAIN) this.audio.yodel(); else this.audio.cheer();
+  }
+
   ambience(dt) {
     if (this.warp || (this.mode !== 'run' && this.mode !== 'title')) return;
     const c = this.sky.cur;
@@ -951,16 +972,19 @@ class Game {
     const want = this._v || (this._v = new THREE.Vector3());
     want.set(tx + Math.sin(ang) * rad, hgt, -Math.cos(ang) * rad);
     if (this.mode === 'over') { const a = Math.PI - 0.5 + Math.sin(t * 0.25) * 0.25; want.set(P.x * 0.5 + Math.sin(a) * 7.5 * back, 4.4, -Math.cos(a) * 7.5 * back); }
+    const slope = (this.slope || 0) * k;      // on a hill the camera rides the slope: it sits lower going up, higher coming down, and looks along the road
+    want.y -= slope * rad * 0.55;
     this.camPos.lerp(want, 1 - Math.exp(-(this.mode === 'over' ? 1.5 : 9) * dt));
     const look = this._l || (this._l = new THREE.Vector3());
     look.set(P.x * lerp(1, 0.78, k), lerp(1.32, 1.25 + P.y * 0.5 + this.flyK * 1.6, k), lerp(0, -7.5, k));
+    look.y += slope * 7.5 * 0.8;
     this.camLook.lerp(look, 1 - Math.exp(-10 * dt));
     this.shake = Math.max(0, this.shake - dt * 2.2);
     const sh = this.shake * this.shake * 0.35;
     cam.position.set(this.camPos.x + (Math.random() - 0.5) * sh, this.camPos.y + (Math.random() - 0.5) * sh, this.camPos.z);
     cam.lookAt(this.camLook);
     if (this.debugCam) { cam.position.fromArray(this.debugCam.pos); cam.lookAt(new THREE.Vector3().fromArray(this.debugCam.look)); }
-    const fov = this.baseFov + (this.mode === 'run' ? diff * 9 + (this.pw.gem > 0 ? 1 : 0) + (this.warp || this.pw.rocket > 0 ? 7 : 0) : 0) * (this.baseFov > 75 ? 0.4 : 1);
+    const fov = this.baseFov + (this.mode === 'run' ? diff * 9 + (this.pw.gem > 0 ? 1 : 0) + (this.warp || this.pw.rocket > 0 ? 7 : 0) + Math.max(0, -(this.slope || 0)) * 22 : 0) * (this.baseFov > 75 ? 0.4 : 1);
     if (Math.abs(fov - cam.fov) > 0.05) { cam.fov = lerp(cam.fov, fov, 1 - Math.exp(-3 * dt)); cam.updateProjectionMatrix(); }
   }
 

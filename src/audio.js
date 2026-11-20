@@ -297,6 +297,7 @@ export class GameAudio {
     if (kind === 'ufo') this.ufoHum();
     else if (kind === 'gull') for (let i = 0; i < 3; i++) this.tone('sawtooth', 1350, t + i * 0.17, 0.14, 0.07, null, { slide: 820, lp: 2800, att: 0.02 });
     else if (kind === 'bat') { this.squeak(4, 1.5); this.noise(t, 0.5, 0.05, { type: 'bandpass', f: 900, q: 1, att: 0.2 }); }
+    else if (kind === 'eagle') this.eagle();
     else { this.noise(t, 1.1, 0.16, { type: 'lowpass', f: 160, fTo: 320, att: 0.5 }); this.tone('sine', 70, t, 1.0, 0.1, null, { slide: 95, att: 0.4 }); }
   }
   attack(kind) {
@@ -403,6 +404,11 @@ export class GameAudio {
   whirl() { if (this.ok) { const t = this.ctx.currentTime; this.wobble('sine', 280, 820, t, 1.3, 0.05, 6, 50, { att: 0.5 }); this.noise(t, 1.4, 0.08, { type: 'bandpass', f: 400, fTo: 1900, q: 2.5, att: 0.7 }); } }
   topHum() { if (this.ok) { const t = this.ctx.currentTime; this.wobble('triangle', 430, 390, t, 0.9, 0.08, 15, 22, { att: 0.08 }); this.tone('sine', 860, t, 0.9, 0.03, null, { att: 0.08, slide: 780 }); } }
   twang() { if (this.ok) { const t = this.ctx.currentTime; this.wobble('sine', 520, 240, t, 0.45, 0.09, 26, 110); } }
+  // ----- Sky-High Mountain -----
+  cowbell() { if (this.ok) { const t = this.ctx.currentTime, n = 2 + ((Math.random() * 2) | 0); for (let i = 0; i < n; i++) { const u = t + i * (0.22 + Math.random() * 0.12); this.tone('square', 587, u, 0.16, 0.035, null, { lp: 2400 }); this.tone('square', 845, u, 0.13, 0.025, null, { lp: 2800 }); } } }
+  bleat() { if (this.ok) { const t = this.ctx.currentTime; this.tone('sawtooth', 520, t, 0.5, 0.1, null, { slide: 440, lp: 2200, vib: 0.06, vibHz: 17, att: 0.03 }); } }
+  eagle() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 2; i++) this.tone('sawtooth', 2700, t + i * 0.34, 0.3, 0.05, null, { slide: 1700, lp: 5200, att: 0.02 }); } }
+  yodel() { if (this.ok) { const t = this.ctx.currentTime + 0.1; [[67, 0, 0.14], [72, 0.15, 0.14], [76, 0.3, 0.14], [84, 0.45, 0.34], [76, 0.82, 0.14], [84, 0.97, 0.5]].forEach(([n, d, l]) => { this.tone('triangle', midi(n), t + d, l, 0.11, null, { att: 0.02, vib: l > 0.3 }); this.tone('sine', midi(n), t + d + 0.36, l, 0.035); }); } }
 
   sting(zone) {
     if (!this.ok) return;
@@ -413,6 +419,7 @@ export class GameAudio {
     else if (zone === 3) run([72, 76, 79, 84, 79, 84], 'square', 0.08, 0.06);
     else if (zone === 4) { run([64, 67, 71, 76], 'sawtooth', 0.07, 0.05); this.thunder(0.5); }
     else if (zone === 7) run([87, 91, 94, 99, 103], 'sine', 0.06, 0.06);
+    else if (zone === 13) { run([67, 71, 74, 79, 83, 86, 91], 'triangle', 0.07, 0.08); this.cowbell(); }
     else if (zone === 12) { run([76, 79, 83, 88, 91, 88, 83, 79, 76, 81, 88], 'sine', 0.05, 0.07); this.whirl(); }
     else if (zone === 11) { run([82, 86, 89, 94, 89, 94, 98], 'triangle', 0.06, 0.08); this.pop(); }
     else if (zone === 10) { run([84, 87, 91, 96, 91, 96], 'sine', 0.07, 0.07); this.jingle(5, 0.05); }
