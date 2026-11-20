@@ -1,10 +1,10 @@
-// Scenery prefabs and the twelve levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
-// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier, Christmas Pier and Marshmallow Shore (in zone-id order; config.js sets the order they are played in).
+// Scenery prefabs and the thirteen levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
+// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier, Christmas Pier, Marshmallow Shore and Spiral Bay (in zone-id order; config.js sets the order they are played in).
 // Chunk-local coordinates: x across, z from 0 (near end) to -CHUNK (far end).
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, SAND, SAND_D } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, SAND, SAND_D } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -1149,6 +1149,78 @@ const floatSweet = (v) => prefab('floatsweet' + v, () => {
   return b.build({ receive: false });
 });
 
+// ---------- Spiral Bay ----------
+const SP_A = 0xff5fb0, SP_B = 0x35d6c8, SP_C = 0xffd23f, SP_D = 0x7a4fe0, SP_W = 0xfff8ee, SP_DK = 0x3a2a7a;
+// A great hoop right round the pier, centred on the line the world twists about, with a spiral medallion at the top:
+// one after another they show the corkscrew.
+const spiralHoop = (v) => prefab('spiralhoop' + v, () => {
+  const b = new Builder(0.92), R = 7.6, cy = 3, c1 = v ? SP_B : SP_A, c2 = SP_W;
+  b.add(...painted(new THREE.TorusGeometry(R, 0.3, 7, 56), (x, y) => ((((Math.floor((Math.atan2(y, x) / (PI * 2)) * 28) % 2) + 2) % 2) ? c1 : c2)), 0, cy, 0, 0, 0, 0, 1, 1, 1, { grad: 0.9 });
+  swirlWheelInto(b, 1.25, 0, cy + R, 0.1, v ? SP_A : SP_D, SP_W, SP_C, 1, 2.2, 36);
+  b.add(...swirlDisc(1.16, v ? SP_A : SP_D, SP_W, 1, 2.2, 36, 8), 0, cy + R, 0.1 - 0.11, 0, PI, 0, 1, 1, 1, { grad: 1 });
+  for (let i = 1; i < 8; i++) { const a = PI / 2 + i * PI / 4; b.sph(0.42, [SP_C, SP_B, SP_A, SP_D][i % 4], Math.cos(a) * R, cy + Math.sin(a) * R, 0, 1, 1, 1, { seg: 9, glow: i % 2 === 0, grad: i % 2 ? 0.85 : 1 }); }
+  return b.build({ receive: false });
+});
+// A twisted spire of rock standing in the sea, like a stick of barley sugar.
+const twistSpire = (v) => prefab('twistspire' + v, () => {
+  const b = new Builder(0.8), n = 16, h = 26 + v * 8, cols = v === 1 ? [0x8f6fe0, 0x6a4ac8] : v === 2 ? [0x3fc8c0, 0x2aa3a8] : [0xe070b8, 0xc050a0];
+  for (let i = 0; i < n; i++) { const t = i / n, w = 6.5 * (1 - t * 0.78); b.box(w, h / n + 0.05, w, cols[i % 2], 0, WATER_Y - 1 + (h * (i + 0.5)) / n, 0, 0, i * 0.3, 0); }
+  b.sph(1.1, SP_C, 0, WATER_Y - 1 + h + 0.8, 0, 1, 1, 1, { seg: 10, glow: true, grad: 1 });
+  b.sph(5.2, 0xffffff, 0, WATER_Y, 0, 1, 0.06, 1, { seg: 12 });      // foam round the foot
+  return b.build({ receive: false });
+});
+// A whirlpool turning in the sea.
+const whirlpool = (v) => prefab('whirlpool' + v, () => {
+  const g = new THREE.Group(), b = new Builder(1), R = v ? 5 : 7.5;
+  b.add(...swirlDisc(R, 0xffffff, v ? 0x8ff0e6 : 0xb9a8ff, 2, 1.4, 48, 10), 0, 0, 0, -PI / 2, 0, 0, 1, 1, 1, { grad: 1 });
+  const m = b.build({ material: MAT.double, receive: false }); m.name = 'spin'; g.add(m);
+  return g;
+});
+// A giant spiral wheel turning on top of a striped tower.
+const hypnoTower = () => prefab('hypnotower', () => {
+  const g = new THREE.Group(), b = new Builder(0.86);
+  b.cyl(2.3, 2.6, 0.5, SP_DK, 0, 0.25, 0, 0, 0, 0, { seg: 16 });
+  b.add(...painted(new THREE.CylinderGeometry(1.1, 1.7, 7.4, 16, 12), helix(SP_D, SP_W, 6, 0.5)), 0, 4.2, 0);
+  b.cyl(1.5, 1.2, 0.4, SP_C, 0, 8.0, 0, 0, 0, 0, { seg: 14 }).cyl(0.3, 0.3, 1.2, SP_DK, 0, 8.3, 0.9, PI / 2, 0, 0, { seg: 8 });
+  for (let i = 0; i < 16; i++) { const a = i * PI / 8; b.sph(0.16, i % 2 ? SP_C : 0xffffff, Math.cos(a) * 4.25, 8.3 + Math.sin(a) * 4.25, 1.3, 1, 1, 1, { seg: 6, glow: true, grad: 1 }); }
+  b.tor(4.25, 0.14, SP_DK, 0, 8.3, 1.3, 0, 0, 0, { seg: 40, tseg: 6 });
+  g.add(b.build({ cast: true }));
+  const w = new Builder(1);
+  swirlWheelInto(w, 4.1, 0, 0, 0, SP_A, SP_W, SP_C, 2, 1.6, 56);
+  const wm = w.build({ receive: false }); wm.position.set(0, 8.3, 1.5); wm.name = 'whirl'; g.add(wm);
+  return g;
+});
+// A house made out of an enormous turret shell.
+const shellHouse = () => prefab('shellhouse', () => {
+  const b = new Builder(0.86);
+  b.sph(3.6, SAND, 0, 0, 0, 1, 0.12, 1, { seg: 12 });
+  turretInto(b, 0, 0, 0, 12.5, 3.3, 0xffb86b, SP_W, 30);
+  b.box(1.3, 2.1, 0.3, 0x7a3f8a, 0, 1.05, 3.1).sph(0.65, 0x7a3f8a, 0, 2.1, 3.1, 1, 1, 0.23, { seg: 10 }).sph(0.09, SP_C, 0.4, 1.05, 3.28, 1, 1, 1, { seg: 6 });
+  for (const [x, y, z] of [[-1.5, 3.4, 2.0], [1.3, 5.2, 1.3]]) b.sph(0.5, 0xffe9a8, x, y, z, 1, 1, 0.5, { seg: 9, glow: true, grad: 1 }).tor(0.52, 0.09, 0x7a3f8a, x, y, z + 0.14, 0, 0, 0, { seg: 12 });
+  b.cyl(0.05, 0.05, 1.6, SP_DK, 0, 13.2, 0, 0, 0, 0, { seg: 5 }).flat([[[0, 14.0, 0], [0, 13.4, 0], [1.1, 13.7, 0]]], SP_A);
+  return b.build({ cast: true, material: MAT.double });
+});
+// Seaside pinwheels as tall as houses, whirling in the wind.
+const pinwheel = (v) => prefab('pinwheel' + v, () => {
+  const g = new THREE.Group(), b = new Builder(0.86), h = 6.5 + v * 2.2;
+  b.add(...painted(new THREE.CylinderGeometry(0.16, 0.2, h, 10, 12), helix([SP_A, SP_B, SP_D][v % 3], SP_W, 4, 1.2)), 0, h / 2, 0);
+  g.add(b.build({ cast: true }));
+  const w = new Builder(1), cols = [[SP_A, SP_C], [SP_B, SP_W], [SP_D, SP_A]][v % 3], r = 2.3 + v * 0.3;
+  for (let i = 0; i < 4; i++) {
+    const a = i * PI / 2, c = Math.cos(a), s = Math.sin(a), P = (x, y, z = 0) => [x * c - y * s, x * s + y * c, z];
+    w.flat([[P(0, 0), P(r, 0), P(r * 0.5, r * 0.5, 0.45)]], cols[0], 0, 0, 0, 0, 0, 0, { grad: 1 }).flat([[P(0, 0), P(r * 0.5, r * 0.5, 0.45), P(0, r * 0.55, 0.1)]], cols[1], 0, 0, 0, 0, 0, 0, { grad: 1 });
+  }
+  w.sph(0.28, SP_C, 0, 0, 0.3, 1, 1, 0.7, { seg: 8 });
+  const wm = w.build({ material: MAT.double, receive: false }); wm.position.set(0, h, 0.3); wm.name = 'whirl'; g.add(wm);
+  return g;
+});
+// A coiled shell bobbing in the sea.
+const floatShell = (v) => prefab('floatshell' + v, () => {
+  const b = new Builder(0.88);
+  coilInto(b, 0, 0.5, 0, 1.7, v ? SP_B : SP_A, SP_W, 16);
+  return b.build({ receive: false });
+});
+
 // ---------- the sewers ----------
 // A brick tunnel: walls SEW_W either side of the centre line, then a tall vault that springs at SEW_SPR and rises SEW_RISE.
 const SEW_W = 8.2, SEW_SPR = 3, SEW_RISE = 9, SEW_BOT = -3.6, SLIME = 0x8dff5a;
@@ -1327,9 +1399,9 @@ const asteroidFloat = (v) => prefab('astf' + v, () => {
 });
 
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -1337,7 +1409,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -1350,7 +1422,7 @@ export function populate(group, rawIndex, zone, anim) {
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   place(group, under40(), 0, 0, 0);
   place(group, rail40(), L, 0, 0);
-  const open = zone === 0 || zone === 5 || zone === 7 || zone >= 9;   // the right-hand side opens onto ground at deck level
+  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2) place(group, rail40(), R, 0, 0);
   if (zone !== 8) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
@@ -1491,6 +1563,23 @@ export function populate(group, rawIndex, zone, anim) {
     for (const z of [-3, -16, -27, -38]) if (rng() < 0.75) place(group, lollyTree(Math.floor(rng() * 5)), 6.3 + rng() * 1.2 + (rng() < 0.3 ? 12 : 0), 0, z + rng() * 2, -PI / 2 + (rng() - 0.5) * 0.8, 0.85 + rng() * 0.3);
     for (let i = 0; i < 2; i++) anim.push({ o: place(group, floatSweet((index + i) % 3), -9 - rng() * 14, WATER_Y + 0.2, -5 - i * 19 - rng() * 10, rng() * 6), kind: 'bob', p: rng() * 6, amp: 1.2 });
     if (rng() < 0.5) anim.push({ o: place(group, buoy(pick(rng, [C.red, C.green])), -16 - rng() * 10, WATER_Y, -rng() * CHUNK), kind: 'bob', p: rng() * 6 });
+  } else if (zone === 12) {
+    for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
+    for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }
+    const side = index % 2 ? 1 : -1, kind = index % 4;
+    const plat = place(group, sidePlatform(), 0, 0, -20);
+    if (side < 0) plat.scale.x = -1;
+    const cx = side * (DECK_HALF + 6.5);
+    if (kind === 0) place(group, helter(), cx, 0, -20, side > 0 ? PI : 0);
+    else if (kind === 1) anim.push({ o: place(group, hypnoTower(), cx, 0, -20, side > 0 ? -0.5 : 0.5), kind: 'whirl', v: side * 0.9 });
+    else if (kind === 2) place(group, shellHouse(), cx, 0, -20, side > 0 ? -PI / 2 : PI / 2, 0.8);
+    else for (let i = 0; i < 3; i++) anim.push({ o: place(group, pinwheel(i), cx + side * (i - 1) * 2.2, 0, -24 + i * 4.2, side > 0 ? -0.6 : 0.6), kind: 'whirl', v: (i % 2 ? -1 : 1) * (2.2 + i * 0.5) });
+    place(group, kiosk(pick(rng, [C.rose, C.teal, C.blue, C.red]), pick(rng, ['SPINNING TOPS', 'YO-YOS', 'PINWHEELS', 'SEA SHELLS', 'TWISTY ROCK'])), side * (DECK_HALF + 2.2), 0, -20 + (rng() < 0.5 ? -6 : 6), side > 0 ? -PI / 2 : PI / 2);
+    for (const s of [-1, 1]) {
+      anim.push({ o: place(group, whirlpool(s === side ? 1 : 0), s * (16 + rng() * 8) + (s === side ? s * 12 : 0), WATER_Y + 0.5, -4 - rng() * 30), kind: 'spin', v: s * (0.8 + rng() * 0.5) });
+      place(group, twistSpire((index + (s > 0 ? 1 : 0)) % 3), s * (34 + rng() * 14), 0, -rng() * CHUNK, rng() * 6, 0.8 + rng() * 0.4);
+      if (rng() < 0.6) anim.push({ o: place(group, floatShell(rng() < 0.5 ? 1 : 0), s * (8 + rng() * 6) + (s === side ? s * 14 : 0), WATER_Y - 0.3, -rng() * CHUNK, rng() * 6), kind: 'bob', p: rng() * 6, amp: 1.2 });
+    }
   } else if (zone === 8) {
     place(group, sewerShell(), 0, 0, 0);
     place(group, sewerSide(index % 2), 0, 0, 0);
@@ -1533,6 +1622,8 @@ export function animate(anim, t, dt) {
       a.o.rotation.z = Math.sin(t * 1.1 + a.p * 1.7) * 0.07 * amp; a.o.rotation.x = Math.sin(t * 0.9 + a.p) * 0.04 * amp;
     } else if (a.kind === 'spin') {
       const s = a.s || (a.s = a.o.getObjectByName('spin')); if (s) s.rotation.y += dt * (a.v || 0.7);
+    } else if (a.kind === 'whirl') {
+      const w = a.w || (a.w = a.o.getObjectByName('whirl')); if (w) w.rotation.z += dt * (a.v || 1.5);
     } else if (a.kind === 'train') {
       const tr = a.tr || (a.tr = a.o.getObjectByName('train'));
       const z = -((t * 11) % CHUNK), y = coasterY(z), dy = coasterY(z - 0.5) - y;

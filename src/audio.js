@@ -399,6 +399,10 @@ export class GameAudio {
   pop() { if (this.ok) { const t = this.ctx.currentTime, n = 1 + ((Math.random() * 3) | 0); for (let i = 0; i < n; i++) { const u = t + i * 0.13, f = rnd(500, 900); this.tone('sine', f, u, 0.07, 0.12, null, { slide: f * 2.4 }); this.noise(u + 0.05, 0.03, 0.06, { type: 'highpass', f: 3000 }); } } }
   giggle() { if (this.ok) { const t = this.ctx.currentTime; [1050, 1250, 1100, 1400].forEach((f, i) => this.tone('triangle', f, t + i * 0.09, 0.07, 0.1, null, { slide: f * 1.25, vib: 0.02, vibHz: 30 })); } }
   toot() { if (this.ok) { const t = this.ctx.currentTime; for (const f of [740, 932]) { this.tone('square', f, t, 0.12, 0.035, null, { lp: 2600 }); this.tone('square', f, t + 0.17, 0.3, 0.035, null, { lp: 2600 }); } } }
+  // ----- Spiral Bay -----
+  whirl() { if (this.ok) { const t = this.ctx.currentTime; this.wobble('sine', 280, 820, t, 1.3, 0.05, 6, 50, { att: 0.5 }); this.noise(t, 1.4, 0.08, { type: 'bandpass', f: 400, fTo: 1900, q: 2.5, att: 0.7 }); } }
+  topHum() { if (this.ok) { const t = this.ctx.currentTime; this.wobble('triangle', 430, 390, t, 0.9, 0.08, 15, 22, { att: 0.08 }); this.tone('sine', 860, t, 0.9, 0.03, null, { att: 0.08, slide: 780 }); } }
+  twang() { if (this.ok) { const t = this.ctx.currentTime; this.wobble('sine', 520, 240, t, 0.45, 0.09, 26, 110); } }
 
   sting(zone) {
     if (!this.ok) return;
@@ -409,6 +413,7 @@ export class GameAudio {
     else if (zone === 3) run([72, 76, 79, 84, 79, 84], 'square', 0.08, 0.06);
     else if (zone === 4) { run([64, 67, 71, 76], 'sawtooth', 0.07, 0.05); this.thunder(0.5); }
     else if (zone === 7) run([87, 91, 94, 99, 103], 'sine', 0.06, 0.06);
+    else if (zone === 12) { run([76, 79, 83, 88, 91, 88, 83, 79, 76, 81, 88], 'sine', 0.05, 0.07); this.whirl(); }
     else if (zone === 11) { run([82, 86, 89, 94, 89, 94, 98], 'triangle', 0.06, 0.08); this.pop(); }
     else if (zone === 10) { run([84, 87, 91, 96, 91, 96], 'sine', 0.07, 0.07); this.jingle(5, 0.05); }
     else if (zone === 6) { this.tone('sine', 147, t, 0.9, 0.16); this.tone('sine', 147, t + 0.35, 0.9, 0.06); }

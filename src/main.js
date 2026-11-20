@@ -1,7 +1,7 @@
 // Tide Rush: game loop, player physics, collisions, scoring and camera.
 import * as THREE from 'three';
-import { setMaxAniso } from './kit.js';
-import { laneX, WATER_Y, JUMP_H, ZONE_LEN, ROOFED, speedAt, diffAt, jumpTimeAt, clamp, lerp, damp, smooth } from './config.js';
+import { setMaxAniso, TWIST } from './kit.js';
+import { laneX, WATER_Y, JUMP_H, ZONE_LEN, ROOFED, SPIRAL, speedAt, diffAt, jumpTimeAt, clamp, lerp, damp, smooth } from './config.js';
 import { Sky } from './sky.js';
 import { Track, zoneAtS, LETTERS, WARP_SPEED, PAD_BOOST } from './track.js';
 import { Robyn, OUTFITS } from './robyn.js';
@@ -22,18 +22,19 @@ const POWER_POP = { magnet: 'Shell magnet!', shield: 'Bubble shield!', boots: 'S
 // Robyn can take five stumbles: each lets the tide gain a fifth of the way (TIDE_STEP), and a stumble while it is
 // closer than TIDE_LIMIT ends the run. The tide falls back all the way in TIDE_FADE seconds, so a stumble is
 // forgiven after about eight seconds of clean running.
+const TWIST_MAX = 0.013;   // how tightly Spiral Bay corkscrews, in radians per metre
 const TIDE_STEP = 0.2, TIDE_LIMIT = 0.81, TIDE_FADE = 40;
 const ROCKET_SPEED = 1.5, FLY_Y = 6.0;
 const SPACE = 9;
 // the flying attackers: what to call each one when it is zapped, and the colours of its puff
 const FLYER = {
   ufo: ['UFO', [0xff7ad9, 0x8ff0ff, 0xffe27a, 0xffffff]], gull: ['Bomber gull', [0xffffff, 0xf5a623, 0xdfe6ee, 0xffe27a]], bat: ['Slime bat', [0x8dff5a, 0xb59cff, 0xffe27a, 0xffffff]],
-  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]], flosscloud: ['Candyfloss cloud', [0xff9fd0, 0xffffff, 0xffe24a, 0x8fd8ff]],
+  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]], flosscloud: ['Candyfloss cloud', [0xff9fd0, 0xffffff, 0xffe24a, 0x8fd8ff]], twister: ['Little twister', [0x9fece4, 0xffffff, 0xff8fd6, 0xffd23f]],
 };
 // picking up a laser while one is already running powers it up: it fires faster and reaches further
 const LASER_LV = [null, { name: 'Laser zapper!', gap: 0.16, reach: 0, col: 0x6ff6ff, size: 1.1 }, { name: 'Double laser!', gap: 0.1, reach: 4, col: 0x9dff6a, size: 1.25 }, { name: 'Triple laser!', gap: 0.065, reach: 8, col: 0xffb347, size: 1.4 }];
 // what her footsteps sound like in each world
-const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal', 10: 'snow' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
+const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal', 10: 'snow', 12: 'wood' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
 const PET_POP = { izzi: ['Izzi is here! She rounds up shells', "Izzi's off for a sniff"], pixel: ['Pixel is here! Shells count double', 'Pixel wandered off'] };
 const FW_COLORS = [0xffe27a, 0xff8ab0, 0x8ff0ff, 0xa6ff9a, 0xffb36b, 0xd9a6ff];
 const rnd = (a = 1) => (Math.random() - 0.5) * 2 * a;
@@ -356,6 +357,13 @@ class Game {
     }
     this.track.update(this.dist, dt);
     this.sky.update(this.dist, this.time, dt);
+    {
+      // Spiral Bay corkscrews: the twist winds one way through the first half of the level, unwinds, then winds the other way
+      const zf = Math.max(0, this.dist) / ZONE_LEN, u = zf - Math.floor(zf);
+      const want = this.twistForce ?? (zoneAtS(this.dist) === SPIRAL && !this.warp ? Math.sin(u * Math.PI * 2) * TWIST_MAX : 0);
+      this.twist = damp(this.twist || 0, want, 3, dt);
+      TWIST.value.x = Math.abs(this.twist) < 1e-5 ? 0 : this.twist;
+    }
     this.audio.setSea(1 - Math.min(1, Math.max(this.sky.cur.under, this.sky.cur.space)));
     if (this.warp) {
       // inside the tunnel the lighting is the tunnel's own
@@ -602,6 +610,8 @@ class Game {
       else if (o.name === 'trolley') A.trolley();
       else if (o.name === 'toyTrain') A.toot();
       else if (o.name === 'gingerMan') A.giggle();
+      else if (o.name === 'spinTop') A.topHum();
+      else if (o.name === 'springLow' || o.name === 'jackBox') A.twang();
       else if (o.name === 'rover') A.roverBeep();
       else if (m && m.type === 'roll' && !m.shot) A.rumble();
     }
@@ -621,6 +631,7 @@ class Game {
       else if (z === 6) { this.gullT = 2 + Math.random() * 4; if (r < 0.7) A.drip(); else A.squeak(3, 1.6); }
       else if (z === 9) A.blips();
       else if (z === 7) { if (r < 0.5) A.gust(); else A.chime(); }
+      else if (z === 12) { this.gullT = 2.5 + Math.random() * 4; if (r < 0.6) A.whirl(); else if (r < 0.8) A.chime(); else A.gull(); }
       else if (z === 11) { this.gullT = 2.5 + Math.random() * 4; if (r < 0.7) A.pop(); else A.gull(); }
       else if (z === 10) { this.gullT = 3 + Math.random() * 4; if (r < 0.6) A.jingle(3 + ((Math.random() * 3) | 0), 0.05); else A.chime(); }
       else if (z === 4) A.gust();

@@ -12,20 +12,36 @@ import { WATER_Y } from './config.js';
 // Materials with the define FAR_BEND (the far coastline, sails, lightning) are set down on the curved sea horizon instead,
 // and NO_BEND leaves a material alone.
 export const BEND_K = 0.0008, BEND_START = 6;
-export const BEND_GLSL = `
-vec4 bendWorld(vec4 wp){ float bz = max(0.0, -wp.z - ${BEND_START.toFixed(1)}); wp.y -= ${BEND_K} * bz * bz; return wp; }
+// The spiral world also twists everything ahead of Robyn around a line that runs up the middle of the track, so the pier
+// corkscrews away into the distance. TWIST.value is (turn in radians per metre, height of the line, unused); it is zero
+// everywhere else. The twist grows gently from nothing at Robyn's feet, so the lanes right in front of her stay level.
+export const TWIST = { value: new THREE.Vector3(0, 3, 0) }, TWIST_SOFT = 34;
+const TWIST_DECL = `
+#ifndef TWIST_DECL
+#define TWIST_DECL
+uniform vec3 uTwist;
+#endif
 `;
+const TWIST_BODY = (p, d) => `if ( uTwist.x != 0.0 ) { float twA = uTwist.x * ${d} * ${d} / ( ${d} + ${TWIST_SOFT.toFixed(1)} ); float twC = cos( twA ), twS = sin( twA ); vec2 twP = vec2( ${p}.x, ${p}.y - uTwist.y ); ${p}.x = twC * twP.x - twS * twP.y; ${p}.y = twS * twP.x + twC * twP.y + uTwist.y; }`;
+export const BEND_GLSL = `${TWIST_DECL}
+vec4 bendWorld(vec4 wp){ float bz = max(0.0, -wp.z - ${BEND_START.toFixed(1)}); ${TWIST_BODY('wp', 'bz')} wp.y -= ${BEND_K} * bz * bz; return wp; }
+`;
+THREE.ShaderChunk.common = TWIST_DECL + THREE.ShaderChunk.common;
+// every material shares the one twist uniform
+export const addTwist = (shader) => { shader.uniforms.uTwist = TWIST; };
+THREE.Material.prototype.onBeforeCompile = addTwist;
 THREE.ShaderChunk.project_vertex = THREE.ShaderChunk.project_vertex.replace('mvPosition = modelViewMatrix * mvPosition;', `
 mvPosition = modelMatrix * mvPosition;
 #ifndef NO_BEND
 if ( ! isOrthographic ) {
+  float bendZ = max( 0.0, - mvPosition.z - ${BEND_START.toFixed(1)} );
+  ${TWIST_BODY('mvPosition', 'bendZ')}
   #ifdef FAR_BEND
     float bendH = max( 0.5, cameraPosition.y - ( ${WATER_Y.toFixed(2)} ) );
     float bendS = max( 1.0, ${BEND_START.toFixed(1)} + cameraPosition.z );
     float bendU = sqrt( bendS * bendS + bendH / ${BEND_K} ) - bendS;
     mvPosition.y += bendH - 2.0 * ${BEND_K} * bendU * max( 0.0, cameraPosition.z - mvPosition.z );
   #else
-    float bendZ = max( 0.0, - mvPosition.z - ${BEND_START.toFixed(1)} );
     mvPosition.y -= ${BEND_K} * bendZ * bendZ;
   #endif
 }

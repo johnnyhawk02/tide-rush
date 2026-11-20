@@ -308,4 +308,24 @@ THEMES[11] = theme('Sherbet Skip', {
   drums: { kick: 'x.......x.......', clap: '....x.......x...', shake: 'x.x.x.x.x.x.x.x.', snap: '..........x...x.' },
 });
 
+// ---- 12. Spiral Bay: "Round and Round", a tune that keeps circling down the same four chords (A minor) ----
+THEMES[12] = theme('Round and Round', {
+  key: 9, scale: 'min', base: 69, gain: 1.0, tempo: 1.08, echo: 0.3, voice: 'pan', bassVoice: 'synth', stab: 'pluck',
+  chords: 'i bVII bVI V i bVII bVI V',
+  tune: [
+    "1:2 2:2 3:2 2:2 1:2 3:2 5:4",
+    "7,:2 1:2 2:2 1:2 7,:2 2:2 4:4",
+    "6,:2 7,:2 1:2 7,:2 6,:2 1:2 3:4",
+    "5,:2 6,:2 #7,:2 6,:2 5,:2 #7,:2 2:4",
+    "5:2 1':2 3':2 1':2 5:2 1':2 3':4",
+    "4:2 7:2 2':2 7:2 4:2 7:2 2':4",
+    "3:2 6:2 1':2 6:2 3:2 6:2 1':4",
+    "2:2 5:2 #7:2 5:2 2':4 -:4",
+  ],
+  bass: [0, _, 0, 12, _, 0, 7, _, 0, _, 0, 12, _, 7, 12, _],
+  stabs: '....x.......x...',
+  arp: { pat: [0, 1, 2, 1], wave: 'sine', oct: 12, vol: 0.024 },
+  drums: { kick: 'x...x...x...x...', clap: '....x.......x...', shake: 'x.xxx.xxx.xxx.xx', rim: '......x.......x.' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

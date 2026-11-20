@@ -19,6 +19,7 @@ const PAL = [
   { top: 0x03031a, hor: 0x2b1660, sun: 0xdfe6ff, sunI: 2.1, hemiS: 0xbcaaff, hemiG: 0x6a5aa0, hemiI: 1.45, deep: 0x0a0630, shal: 0x7a4ae0, cloud: 0x3a2a80, el: 0.6, az: -0.4, stars: 1, storm: 0, space: 1 },   // space pier: deep space
   { top: 0x0a1036, hor: 0x6a3a5e, sun: 0xffe6c4, sunI: 2.0, hemiS: 0xffe1cf, hemiG: 0x9a7f96, hemiI: 1.5, deep: 0x10244f, shal: 0x6fa6d8, cloud: 0x4a3a6a, el: 0.6, az: 0.45, stars: 0.9, storm: 0, snow: 1 },   // Christmas pier: a snowy night lit by fairy lights
   { top: 0x86c8f7, hor: 0xffd3e9, sun: 0xfff1dc, sunI: 2.8, hemiS: 0xffe9f4, hemiG: 0xf3c6d8, hemiI: 1.4, deep: 0xdb5f9c, shal: 0xffc6e0, cloud: 0xffbfdd, el: 0.8, az: 0.3, stars: 0, storm: 0 },   // Marshmallow Shore: candyfloss clouds over a strawberry-milkshake sea
+  { top: 0x2a1a8c, hor: 0x46e0d0, sun: 0xfff0d0, sunI: 2.4, hemiS: 0xddd4ff, hemiG: 0x8f7fc0, hemiI: 1.45, deep: 0x3a1f9c, shal: 0x4fe6d6, cloud: 0xff8fd6, el: 0.7, az: -0.3, stars: 0.5, storm: 0, swirl: 1 },   // Spiral Bay: a violet sky with a great pink whirl turning in it
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 
@@ -26,7 +27,7 @@ export class Sky {
   constructor(scene, quality) {
     this.scene = scene;
     this.group = new THREE.Group(); scene.add(this.group);
-    this.cur = { top: col(0), hor: col(0), sun: col(0), hemiS: col(0), hemiG: col(0), deep: col(0), shal: col(0), cloud: col(0), stars: 0, storm: 0, fun: 0, snow: 0, aurora: 0, under: 0, space: 0 };
+    this.cur = { top: col(0), hor: col(0), sun: col(0), hemiS: col(0), hemiG: col(0), deep: col(0), shal: col(0), cloud: col(0), stars: 0, storm: 0, fun: 0, snow: 0, aurora: 0, under: 0, space: 0, swirl: 0 };
     this.flash = 0; this.boltT = 0; this.hidden = false;
     this.sunDir = new THREE.Vector3(0, 1, 0);
 
@@ -34,9 +35,9 @@ export class Sky {
 
     this.dome = new THREE.Mesh(new THREE.SphereGeometry(900, 32, 20), new THREE.ShaderMaterial({
       side: THREE.BackSide, depthWrite: false, fog: false,
-      uniforms: { uTop: { value: col(0) }, uHor: { value: col(0) }, uSun: { value: col(0) }, uSunDir: { value: this.sunDir }, uStars: { value: 0 }, uFlash: { value: 0 }, uAurora: { value: 0 }, uTime: { value: 0 } },
+      uniforms: { uTop: { value: col(0) }, uHor: { value: col(0) }, uSun: { value: col(0) }, uSunDir: { value: this.sunDir }, uStars: { value: 0 }, uFlash: { value: 0 }, uAurora: { value: 0 }, uSwirl: { value: 0 }, uTime: { value: 0 } },
       vertexShader: `varying vec3 vDir; void main(){ vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-      fragmentShader: `varying vec3 vDir; uniform vec3 uTop, uHor, uSun, uSunDir; uniform float uStars, uFlash, uAurora, uTime;
+      fragmentShader: `varying vec3 vDir; uniform vec3 uTop, uHor, uSun, uSunDir; uniform float uStars, uFlash, uAurora, uSwirl, uTime;
         float hash(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
         void main(){ vec3 d = normalize(vDir);
           float h = clamp(d.y, 0.0, 1.0);
@@ -61,6 +62,13 @@ export class Sky {
             float cur = smoothstep(0.0, 0.025, band) * smoothstep(0.38, 0.0, band);
             float rays = 0.55 + 0.45 * sin(az * 64.0 + sin(az * 9.0 + uTime * 0.5) * 4.0);
             c += mix(vec3(0.15, 1.0, 0.55), vec3(0.62, 0.3, 1.0), smoothstep(0.0, 0.3, band)) * cur * rays * 0.7 * uAurora;
+          }
+          if (uSwirl > 0.01) {   // Spiral Bay: a great whirl turning slowly in the sky straight ahead
+            vec3 ax = normalize(vec3(0.0, 0.42, -1.0)), rt = normalize(cross(ax, vec3(0.0, 1.0, 0.0))), up = cross(rt, ax);
+            float r = acos(clamp(dot(d, ax), -1.0, 1.0)), a = atan(dot(d, up), dot(d, rt));
+            float arm = smoothstep(-0.3, 0.3, sin(a * 3.0 + log(r + 0.04) * 6.5 + uTime * 0.6));
+            c = mix(c, vec3(1.0, 0.24, 0.7), arm * smoothstep(1.7, 0.15, r) * 0.42 * uSwirl);
+            c += vec3(1.0, 0.85, 0.95) * smoothstep(0.22, 0.0, r) * 0.7 * uSwirl;
           }
           c = mix(c, uHor, smoothstep(0.03, -0.02, d.y));
           c += vec3(0.55, 0.6, 0.75) * uFlash;
@@ -272,7 +280,7 @@ export class Sky {
     const c = this.cur;
     for (const key of ['top', 'hor', 'sun', 'hemiS', 'hemiG', 'deep', 'shal', 'cloud']) c[key].copy(this._a.set(A[key])).lerp(this._b.set(B[key]), k);
     c.stars = lerp(A.stars, B.stars, k); c.storm = lerp(A.storm, B.storm, k);
-    for (const key of ['fun', 'snow', 'aurora', 'under', 'space']) c[key] = lerp(A[key] || 0, B[key] || 0, k);
+    for (const key of ['fun', 'snow', 'aurora', 'under', 'space', 'swirl']) c[key] = lerp(A[key] || 0, B[key] || 0, k);
     const el = lerp(A.el, B.el, k), az = lerp(A.az, B.az, k);
     this.sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)).normalize();
     this.flash = Math.max(0, this.flash - dt * 2.6); this.boltT = Math.max(0, this.boltT - dt);
@@ -280,7 +288,7 @@ export class Sky {
     if (this.bolt) this.bolt.visible = this.boltT > 0.2 || (this.boltT > 0 && this.boltT < 0.12);
 
     const du = this.dome.material.uniforms;
-    du.uTop.value.copy(c.top); du.uHor.value.copy(c.hor); du.uSun.value.copy(c.sun); du.uStars.value = c.stars + c.space; du.uFlash.value = fl; du.uAurora.value = c.aurora; du.uTime.value = t % 1000;
+    du.uTop.value.copy(c.top); du.uHor.value.copy(c.hor); du.uSun.value.copy(c.sun); du.uStars.value = c.stars + c.space; du.uFlash.value = fl; du.uAurora.value = c.aurora; du.uSwirl.value = c.swirl; du.uTime.value = t % 1000;
     this.scene.fog.color.copy(c.hor).lerp(this._a.set(0xdfe8ff), fl * 0.5);
     this.cloudMat.color.copy(c.cloud).lerp(this._a.set(0xffffff), fl * 0.6);
     this.farMat.color.copy(c.hor).lerp(this._a.set(0xffffff), 0.35).multiplyScalar(1 - 0.45 * Math.max(c.stars, c.storm));

@@ -1,7 +1,7 @@
 // Obstacle, platform and pickup models. Each prefab is centred on its lane with its base at y = 0.
 // "low" obstacles can be jumped; "tall" ones are full height and must be dodged. Nothing needs ducking.
 import * as THREE from 'three';
-import { Builder, C, MAT, signMesh, BEND_GLSL } from './kit.js';
+import { Builder, C, MAT, signMesh, BEND_GLSL, addTwist } from './kit.js';
 import { PLAT_H } from './config.js';
 
 const PI = Math.PI;
@@ -524,6 +524,149 @@ cloudDef('flosscloud', 0xff9fd0, 0xe772ae, (b) => {
   for (let i = 0; i < 4; i++) b.sph(0.07, [0xffe24a, 0x5ac8ff, 0x7be07b, 0xffffff][i], -0.55 + i * 0.36, -0.6 - (i % 2) * 0.12, 0.25, 1, 1, 1, { seg: 6 });
 });
 
+// ---------- Spiral Bay ----------
+const SWIRL_A = 0xff5fb0, SWIRL_B = 0x35d6c8, SWIRL_C = 0xffd23f, SWIRL_D = 0x7a4fe0, SWIRL_W = 0xfff8ee;
+// Paint a geometry one flat colour per triangle, chosen from the middle of each triangle (in the geometry's own
+// coordinates). Returns [geometry, colour function], ready to spread into Builder.add.
+export function painted(geo, pickCol) {
+  const g = geo.index ? geo.toNonIndexed() : geo, p = g.attributes.position, cols = [];
+  for (let i = 0; i < p.count; i += 3) cols.push(pickCol((p.getX(i) + p.getX(i + 1) + p.getX(i + 2)) / 3, (p.getY(i) + p.getY(i + 1) + p.getY(i + 2)) / 3, (p.getZ(i) + p.getZ(i + 1) + p.getZ(i + 2)) / 3));
+  return [g, (x, y, z, i) => cols[(i / 3) | 0]];
+}
+// barber-pole stripes round the y axis: n bands (an even number) that climb "pitch" bands for every metre of height
+export const helix = (c1, c2, n = 4, pitch = 2) => (x, y, z) => ((((Math.floor((Math.atan2(z, x) / (PI * 2)) * n + y * pitch) % 2) + 2) % 2) ? c1 : c2);
+// A flat disc facing +z painted with a spiral: "arms" arms of each colour that wind "turns" times on the way out.
+export function swirlDisc(R, c1, c2, arms = 1, turns = 2, seg = 40, rings = 9) {
+  return painted(new THREE.RingGeometry(0.0001, R, seg, rings), (x, y) => ((((Math.floor(((Math.atan2(y, x) / (PI * 2)) + (Math.hypot(x, y) / R) * turns) * arms * 2) % 2) + 2) % 2) ? c1 : c2));
+}
+// A spiral wheel: a thick disc facing +z with a swirl on its face and a rim.
+export function swirlWheelInto(b, R, x, y, z, c1, c2, rim = SWIRL_C, arms = 1, turns = 2, seg = 36) {
+  b.cyl(R, R, R * 0.16, rim, x, y, z, PI / 2, 0, 0, { seg: Math.round(seg * 0.6) });
+  b.add(...swirlDisc(R * 0.93, c1, c2, arms, turns, seg, 8), x, y, z + R * 0.085, 0, 0, 0, 1, 1, 1, { grad: 1 });
+  b.sph(R * 0.11, rim, x, y, z + R * 0.09, 1, 1, 0.6, { seg: 8 });
+}
+// A coiled snail shell facing +z (the coil turns in the x-y plane); (x, y, z) is its middle and R its radius.
+export function coilInto(b, x, y, z, R, c1, c2, n = 15) {
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1), a = -0.6 - t * PI * 3.4, r = R * 0.74 * Math.pow(1 - t, 1.25) + 0.001, s = R * (0.3 - 0.21 * t);
+    b.sph(s, i % 2 ? c1 : c2, x + Math.cos(a) * r, y + Math.sin(a) * r, z + t * R * 0.16, 1, 1, 1.15, { seg: 9 });
+  }
+}
+// A tall pointed turret shell standing on its open end at (x, y, z): whorl upon whorl, narrowing to the tip.
+export function turretInto(b, x, y, z, h, R, c1, c2, n = 26) {
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1), a = i * 0.82, r = R * 0.3 * (1 - t), s = R * (0.74 - 0.64 * t);
+    b.sph(s, i % 2 ? c1 : c2, x + Math.cos(a) * r, y + R * 0.4 + t * (h - R * 0.5), z + Math.sin(a) * r, 1, 0.82, 1, { seg: 9 });
+  }
+}
+// A coil spring standing at (x, y, z).
+export function springInto(b, x, y, z, r, h, turns, col, tube = 0.05) {
+  for (let i = 0; i < turns; i++) b.tor(r, tube, col, x, y + (h * (i + 0.5)) / turns, z, PI / 2 + (i % 2 ? 0.14 : -0.14), 0, 0, { seg: 14, tseg: 5 });
+}
+def('snail', 'low', 1.35, 0.98, 1.0, (b) => {
+  // a giant sea snail crossing the pier, in no hurry at all; side on, so its shell shows its spiral
+  const S = 0xf2c49a;
+  b.sph(0.5, S, 0, 0.14, 0, 1.25, 0.28, 0.62, { seg: 12 }).sph(0.2, S, 0.5, 0.36, 0, 0.9, 1.25, 0.9, { seg: 10 });
+  coilInto(b, -0.08, 0.55, 0, 0.44, SWIRL_A, SWIRL_W);
+  coilInto(b, -0.08, 0.55, 0, 0.44, SWIRL_A, SWIRL_W, 6); // thicken the outer whorl
+  for (const sz of [-1, 1]) {
+    b.cyl(0.022, 0.022, 0.3, S, 0.56, 0.68, sz * 0.09, 0, 0, -0.2, { seg: 5 }).sph(0.07, 0xffffff, 0.6, 0.85, sz * 0.09, 1, 1, 1, { seg: 7, grad: 1 }).sph(0.035, 0x1b1f24, 0.63, 0.86, sz * 0.09 + 0.045, 1, 1, 0.6, { seg: 5, grad: 1 });
+  }
+  b.tor(0.07, 0.016, 0x8a5a3a, 0.6, 0.36, 0.17, 0, 0, PI, { arc: PI, seg: 7 });
+});
+def('springLow', 'low', 1.25, 0.95, 1.25, (b) => {
+  // a fat rainbow spring, the sort that walks down stairs, with a ball balanced on top
+  b.cyl(0.56, 0.6, 0.07, SWIRL_D, 0, 0.035, 0, 0, 0, 0, { seg: 16 });
+  [SWIRL_A, SWIRL_C, SWIRL_B, SWIRL_D, SWIRL_A].forEach((c, i) => b.tor(0.46 - i * 0.012, 0.06, c, i % 2 ? 0.03 : -0.03, 0.14 + i * 0.125, 0, PI / 2 + (i % 2 ? 0.12 : -0.12), 0, 0, { seg: 16, tseg: 6 }));
+  b.add(new THREE.SphereGeometry(0.2, 12, 9), helix(SWIRL_W, SWIRL_A, 4, 6), 0, 0.76, 0, 0, 0, 0, 1, 1, 1, { grad: 0.9 });
+});
+def('ammonite', 'low', 1.3, 0.98, 0.6, (b) => {
+  // a spiral shell as big as a cartwheel, propped up on a stand
+  b.box(1.1, 0.08, 0.5, 0x6a4a8a, 0, 0.04, 0).box(0.12, 0.2, 0.4, 0x6a4a8a, -0.34, 0.14, 0).box(0.12, 0.2, 0.4, 0x6a4a8a, 0.34, 0.14, 0);
+  swirlWheelInto(b, 0.44, 0, 0.53, 0.05, SWIRL_B, SWIRL_W, SWIRL_D, 1, 2.2, 32);
+  b.add(...swirlDisc(0.41, SWIRL_B, SWIRL_W, 1, 2.2, 32, 8), 0, 0.53, 0.05 - 0.038, 0, PI, 0, 1, 1, 1, { grad: 1 });
+});
+def('whelk', 'low', 1.45, 0.9, 1.0, (b) => {
+  // a pointed whelk shell lying on its side
+  const n = 16;
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1), a = i * 0.9, r = 0.16 * (1 - t), s = 0.4 - 0.33 * t;
+    b.sph(s, i % 2 ? 0xffb86b : SWIRL_W, -0.36 + t * 1.02, 0.4 - t * 0.27 + Math.cos(a) * r, Math.sin(a) * r, 0.8, 1, 1, { seg: 9 });
+  }
+  b.sph(0.26, 0x8a4a5a, -0.56, 0.36, 0.1, 0.5, 1, 0.85, { seg: 8 });
+});
+def('hypnoWheel', 'tall', 1.9, 3.1, 0.9, (b) => {
+  // a great hypnotic wheel on an easel
+  for (const sx of [-1, 1]) b.box(0.1, 2.3, 0.1, SWIRL_D, sx * 0.62, 1.1, -0.12, 0.1, 0, sx * -0.2);
+  b.box(0.1, 2.2, 0.1, SWIRL_D, 0, 1.05, -0.42, -0.32, 0, 0).box(1.5, 0.1, 0.12, SWIRL_D, 0, 0.5, -0.08);
+  swirlWheelInto(b, 0.94, 0, 2.12, 0.06, SWIRL_A, SWIRL_W, SWIRL_C, 1, 2.6, 44);
+  for (let i = 0; i < 12; i++) b.sph(0.055, i % 2 ? 0xffffff : SWIRL_B, Math.cos(i * 0.5236) * 0.94, 2.12 + Math.sin(i * 0.5236) * 0.94, 0.16, 1, 1, 1, { seg: 5, glow: true, grad: 1 });
+});
+def('twistPole', 'tall', 1.6, 3.2, 1.6, (b) => {
+  // three twisty barber poles
+  b.cyl(0.74, 0.8, 0.14, 0x4a3a8a, 0, 0.07, 0, 0, 0, 0, { seg: 16 });
+  for (const [x, z, h, c1, r] of [[0, -0.1, 2.75, SWIRL_A, 0.2], [-0.42, 0.22, 1.9, SWIRL_B, 0.17], [0.44, 0.2, 2.3, SWIRL_D, 0.17]]) {
+    b.add(...painted(new THREE.CylinderGeometry(r, r, h, 12, Math.round(h * 4)), helix(c1, SWIRL_W, 4, 2.6)), x, 0.14 + h / 2, z);
+    b.cyl(r * 1.3, r * 1.3, 0.08, SWIRL_C, x, 0.16 + h, z, 0, 0, 0, { seg: 10 }).sph(r * 1.25, SWIRL_C, x, 0.16 + h + r * 1.2, z, 1, 1, 1, { seg: 10 });
+  }
+});
+def('jackBox', 'tall', 1.5, 3.1, 1.5, (b) => {
+  // a jack-in-the-box, sprung
+  b.box(1.25, 1.1, 1.25, SWIRL_D, 0, 0.55, 0).box(1.3, 0.1, 1.3, SWIRL_C, 0, 1.12, 0).box(1.3, 0.1, 1.3, SWIRL_C, 0, 0.05, 0);
+  b.add(...swirlDisc(0.42, SWIRL_C, SWIRL_D, 1, 1.8, 28, 6), 0, 0.58, 0.632, 0, 0, 0, 1, 1, 1, { grad: 1 });
+  b.box(1.25, 0.08, 1.25, SWIRL_D, 0, 1.5, -0.86, -1.15, 0, 0);                                           // the lid, flung open
+  b.cyl(0.04, 0.04, 0.3, 0xdfe6ee, 0.7, 0.6, 0, 0, 0, PI / 2, { seg: 6 }).sph(0.09, 0xe5383b, 0.9, 0.6, 0, 1, 1, 1, { seg: 7 });   // the crank
+  springInto(b, 0, 1.15, 0, 0.26, 0.95, 5, 0xdfe6ee, 0.04);
+  b.cone(0.42, 0.34, SWIRL_A, 0, 2.2, 0, PI, 0, 0, { seg: 10 });                                         // ruff
+  b.sph(0.34, 0xffe2c8, 0, 2.52, 0, 1, 1, 1, { seg: 12 });
+  for (const sx of [-1, 1]) b.sph(0.05, 0x1b1f24, sx * 0.12, 2.58, 0.31, 1, 1.2, 0.5, { seg: 6, grad: 1 }).sph(0.07, 0xff8fb0, sx * 0.2, 2.46, 0.28, 1, 0.7, 0.4, { seg: 6, grad: 1 });
+  b.sph(0.07, 0xe5383b, 0, 2.5, 0.34, 1, 1, 1, { seg: 7 }).tor(0.12, 0.022, 0x8a2a2a, 0, 2.44, 0.3, 0, 0, PI, { arc: PI, seg: 8 });
+  b.add(...painted(new THREE.ConeGeometry(0.3, 0.55, 10, 4), helix(SWIRL_B, SWIRL_W, 4, 5)), 0, 3.0, 0);
+  b.sph(0.08, SWIRL_C, 0, 3.3, 0, 1, 1, 1, { seg: 6 });
+});
+def('shellTower', 'tall', 1.6, 3.2, 1.6, (b) => {
+  // a turret shell as tall as a lamp post, with somebody peeping out of it
+  b.sph(0.8, SAND, 0, 0, 0, 1, 0.14, 1, { seg: 10 });
+  turretInto(b, 0, 0, 0, 3.1, 0.78, 0xffb86b, SWIRL_W);
+  for (const sx of [-1, 1]) b.sph(0.1, 0xffffff, sx * 0.15, 0.62, 0.72, 1, 1.1, 0.6, { seg: 8, grad: 1 }).sph(0.05, 0x1b1f24, sx * 0.15, 0.61, 0.78, 1, 1, 0.5, { seg: 6, grad: 1 });
+  b.tor(0.09, 0.02, 0x8a4a2a, 0, 0.42, 0.78, 0, 0, PI, { arc: PI, seg: 7 });
+});
+def('miniHelter', 'tall', 1.8, 3.25, 1.8, (b) => {
+  // a toy helter-skelter
+  b.cyl(0.86, 0.9, 0.12, 0x4a3a8a, 0, 0.06, 0, 0, 0, 0, { seg: 16 });
+  b.add(...painted(new THREE.CylinderGeometry(0.42, 0.66, 2.3, 14, 9), helix(0xe5383b, SWIRL_W, 6, 1.3)), 0, 1.27, 0);
+  b.cyl(0.56, 0.48, 0.12, SWIRL_D, 0, 2.48, 0, 0, 0, 0, { seg: 12 }).cone(0.6, 0.6, SWIRL_D, 0, 2.84, 0, 0, 0, 0, { seg: 12 }).sph(0.08, SWIRL_C, 0, 3.17, 0, 1, 1, 1, { seg: 6 });
+  for (let i = 0; i < 44; i++) { const t = i / 44, a = t * PI * 5, y = 2.32 - t * 2.1, r = 0.42 + 0.24 * t + 0.15; b.box(0.3, 0.05, 0.3, SWIRL_C, Math.cos(a) * r, y, Math.sin(a) * r, 0, -a, 0, { grad: 1 }).box(0.04, 0.14, 0.3, SWIRL_B, Math.cos(a) * (r + 0.15), y + 0.07, Math.sin(a) * (r + 0.15), 0, -a, 0, { grad: 1 }); }
+});
+def('spinTop', 'low', 1.15, 1.0, 1.15, (b) => {
+  // a humming top that whirls from side to side across the pier
+  b.cone(0.5, 0.42, SWIRL_D, 0, 0.21, 0, PI, 0, 0, { seg: 16 });
+  b.add(...painted(new THREE.SphereGeometry(0.52, 16, 8), (x, y, z) => helix([SWIRL_A, SWIRL_C, SWIRL_B][Math.max(0, Math.min(2, Math.floor((y + 0.52) / 0.35)))], SWIRL_W, 4, 3)(x, y, z)), 0, 0.52, 0, 0, 0, 0, 1, 0.42, 1, { grad: 0.92 });
+  b.cyl(0.07, 0.1, 0.26, SWIRL_C, 0, 0.84, 0, 0, 0, 0, { seg: 8 }).sph(0.1, 0xe5383b, 0, 1.0, 0, 1, 0.9, 1, { seg: 8 });
+});
+def('marble', 'low', 1.1, 1.0, 1.0, (b) => {
+  // a giant glass marble with a twist of colour through it, rolling down the lane
+  const band = [SWIRL_A, SWIRL_W, SWIRL_B, SWIRL_W, SWIRL_C, SWIRL_W];
+  b.add(...painted(new THREE.SphereGeometry(0.5, 20, 12).rotateZ(PI / 2), (x, y, z) => band[((Math.floor((Math.atan2(z, y) / (PI * 2)) * 6 + x * 5) % 6) + 6) % 6]), 0, 0, 0, 0, 0, 0, 1, 1, 1, { grad: 0.9 });
+}, { center: true });
+def('whirl', 'low', 1.05, 1.0, 1.0, (b) => {
+  // what the little twisters fling: a ball of spinning wind
+  b.add(...painted(new THREE.SphereGeometry(0.4, 14, 9), helix(0xbff6f0, SWIRL_W, 4, 5)), 0, 0, 0, 0, 0, 0, 1, 1, 1, { grad: 0.92 });
+  for (let i = 0; i < 3; i++) b.tor(0.5 - i * 0.08, 0.035, i % 2 ? SWIRL_W : SWIRL_B, 0, -0.2 + i * 0.2, 0, PI / 2 + 0.2 * (i - 1), 0, 0.15, { seg: 14, tseg: 5, arc: PI * 1.5 });
+}, { center: true });
+def('twister', 'deco', 2.2, 2.0, 1.8, (b) => {
+  // a cheeky little whirlwind
+  const cols = [0xdffbf7, 0x9fece4, 0xdffbf7, 0x7fdcd2, 0xdffbf7, 0x9fece4, 0x7fdcd2];
+  for (let i = 0; i < 7; i++) { const t = i / 6, r = 1.05 - 0.86 * t; b.sph(r, cols[i], Math.sin(i * 1.1) * 0.12 * t * 2, 0.38 - t * 1.5, Math.cos(i * 1.3) * 0.06, 1, 0.3 / Math.max(r, 0.3), 0.8, { seg: 12 }); }
+  b.tor(1.12, 0.045, 0xffffff, 0, 0.44, 0, PI / 2 + 0.12, 0, 0, { seg: 18, tseg: 5, arc: PI * 1.6 }).tor(0.7, 0.04, 0xffffff, 0.05, -0.3, 0, PI / 2 - 0.15, 0, 2, { seg: 14, tseg: 5, arc: PI * 1.5 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.14, 0xffffff, sx * 0.26, 0.42, 0.74, 1, 1.15, 0.5, { seg: 8, grad: 1 }).sph(0.065, 0x15151f, sx * 0.24, 0.4, 0.8, 1, 1, 0.5, { seg: 6, grad: 1 });
+    b.box(0.28, 0.055, 0.04, 0x15151f, sx * 0.26, 0.62, 0.78, 0, 0, sx * -0.45);
+    b.sph(0.1, 0xf5a9b0, sx * 0.46, 0.26, 0.68, 1, 0.7, 0.4, { seg: 6, grad: 1 });
+  }
+  b.tor(0.09, 0.03, 0x15151f, 0, 0.2, 0.8, 0, 0, 0, { seg: 9 });                                         // puckered up to blow
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -851,7 +994,7 @@ def('spark', 'low', 1.05, 1.0, 1.0, (b) => {
 // Tide Rush's own little invaders: three kinds, one for each row of the formation. Each rides a glowing hover-jet.
 // They are lit partly by their own colours so that they stand out against a night sky.
 const INV_MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
-INV_MAT.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * 0.6;'); };
+INV_MAT.onBeforeCompile = (sh) => { addTwist(sh); sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * 0.6;'); };
 INV_MAT.customProgramCacheKey = () => 'invader';
 function hoverJet(b, col = 0x58e6ff) { b.cyl(0.24, 0.13, 0.09, col, 0, -0.52, 0, 0, 0, 0, { seg: 10, glow: true, grad: 0.7 }).cone(0.1, 0.22, 0xffffff, 0, -0.66, 0, PI, 0, 0, { seg: 6, glow: true, grad: 1 }); }
 def('invTop', 'deco', 1.2, 1.1, 0.9, (b) => {
@@ -1108,6 +1251,7 @@ export const TALL_TYPES = {
   8: ['ratBig', 'pipeStack', 'ratBig', 'valve', 'slimeTank', 'ratBig'], 9: ['asteroid', 'rocketOb', 'satDish', 'alienPod', 'asteroid', 'rocketOb'],
   10: ['giftStack', 'nutcracker', 'candyCanes', 'firPot', 'nutcracker', 'giftStack', 'snowman'],
   11: ['mallowTower', 'lollyBig', 'cupcakeOb', 'jellyOb', 'sundae', 'mallowTower'],
+  12: ['hypnoWheel', 'twistPole', 'jackBox', 'shellTower', 'miniHelter', 'hypnoWheel'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
-export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'] };
+export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'] };
