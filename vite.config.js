@@ -1,0 +1,11 @@
+import { defineConfig } from 'vite';
+
+// One self-contained script and relative paths, so the build runs from any folder or static host.
+export default defineConfig({
+  base: './',
+  build: {
+    target: 'es2020',
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: { output: { entryFileNames: 'game.js', chunkFileNames: 'game-[name].js', assetFileNames: '[name][extname]', inlineDynamicImports: true } },
+  },
+});
