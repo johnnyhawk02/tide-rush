@@ -1,10 +1,10 @@
-// Scenery prefabs and the sixteen levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
-// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier, Christmas Pier, Marshmallow Shore, Spiral Bay, Sky-High Mountain, Rollercoaster World and the Glass Tunnel (in zone-id order; config.js sets the order they are played in).
+// Scenery prefabs and the levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
+// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier, Christmas Pier, Marshmallow Shore, Spiral Bay, Sky-High Mountain, Rollercoaster World, the Glass Tunnel and Chocolate Coast (in zone-id order; config.js sets the order they are played in).
 // Chunk-local coordinates: x across, z from 0 (near end) to -CHUNK (far end).
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -1817,10 +1817,126 @@ const sunkBoat = () => prefab('sunkboat', () => {
   return b.build({ receive: false, material: MAT.double });
 });
 
+// ---------- Chocolate Coast ----------
+const FUDGE = 0x5a3018, FUDGE_L = 0x6f3e20, WAFER = 0xe9c27a, WAFER_D = 0xd2a55c;
+// A wafer roll standing up: a biscuit tube with a chocolate stripe winding round it.
+function waferRollInto(b, x, z, r, h, y = 0) {
+  b.cyl(r, r, h, WAFER, x, y + h / 2, z, 0, 0, 0, { seg: 12 });
+  for (let i = 0; i < Math.floor(h / 0.7); i++) b.tor(r + 0.01, r * 0.14, DARKC, x, y + 0.4 + i * 0.7, z, PI / 2 + 0.22, 0, 0, { seg: 12, tseg: 4 });
+  b.cyl(r * 0.7, r * 0.7, 0.04, DARKC, x, y + h + 0.01, z, 0, 0, 0, { seg: 10 });
+}
+// Ground made of the squares of an enormous chocolate bar, with chocolate fingers for a kerb.
+const chocGround = () => prefab('chocGround', () => {
+  const b = new Builder(0.86), rng = makeRng(1611);
+  b.box(46, 3.6, CHUNK, 0x6b3c20, DECK_HALF + 23, -1.9, -CHUNK / 2);
+  for (let i = 0; i < 6; i++) for (let j = 0; j < 10; j++) b.box(3.66, 0.12, 3.66, (i + j) % 2 ? MILK : 0x86502a, DECK_HALF + 2.45 + i * 4, -0.07, -2 - j * 4);
+  for (let i = 0; i < 20; i++) b.cyl(0.14, 0.14, 1.9, i % 2 ? DARKC : MILK, DECK_HALF + 0.2, 0.1, -1 - i * 2, PI / 2, 0, 0, { seg: 8 });      // chocolate-finger kerb
+  for (let i = 0; i < 9; i++) b.sph(1, i % 3 ? CARAMEL : WHITEC, DECK_HALF + 2.5 + rng() * 19, -0.02, -rng() * CHUNK, 0.9 + rng() * 1.8, 0.06 + rng() * 0.05, 0.7 + rng() * 1.4, { seg: 8 });      // puddles of caramel and white chocolate
+  for (let i = 0; i < 26; i++) { const x = DECK_HALF + 1 + rng() * 15, z = -rng() * CHUNK; if (i % 2) b.cyl(0.26, 0.26, 0.08, WHITEC, x, 0.03, z, 0, 0, 0, { seg: 9 }); else b.cone(0.16, 0.2, DARKC, x, 0.1, z, 0, 0, 0, { seg: 7 }); }      // chocolate buttons and chips
+  return b.build();
+});
+// Far hills: giant truffles with icing and a nut on top, chocolate mountains with white-chocolate snow, and wafer rolls.
+const chocHills = (v) => prefab('chochills' + v, () => {
+  const b = new Builder(0.84), rng = makeRng(1620 + v);
+  for (let i = 0; i < 6; i++) {
+    const cx = 28 + rng() * 14, cz = -rng() * CHUNK, sx = 6 + rng() * 5, sy = 3 + rng() * 3.5 + (cx - 28) * 0.25, sz = 6 + rng() * 5, k = (i + v) % 3;
+    b.sph(1, [MILK, DARKC, 0x8a5230][k], cx, 0, cz, sx, sy, sz, { seg: 10 }).sph(1, [WHITEC, CARAMEL, DARKC][k], cx, sy * 0.72, cz, sx * 0.62, sy * 0.32, sz * 0.62, { seg: 9 });
+    for (let d = 0; d < 5; d++) { const a = d * 1.26 + i; b.sph(1, [WHITEC, CARAMEL, DARKC][k], cx + Math.cos(a) * sx * 0.6, sy * 0.6, cz + Math.sin(a) * sz * 0.6, sx * 0.1, sy * 0.2, sz * 0.1, { seg: 6 }); }      // drips
+    b.sph(0.8, 0xc98a4a, cx, sy * 1.04 + 0.4, cz, 1, 0.8, 1, { seg: 8 });
+  }
+  for (let i = 0; i < 2; i++) { const cx = 42 + rng() * 5, cz = -8 - i * 20 - rng() * 6, h = 15 + rng() * 6; b.cone(8, h, FUDGE, cx, h / 2, cz, 0, 0, 0, { seg: 7 }).cone(3.4, h * 0.42, WHITEC, cx, h * 0.8, cz, 0, 0, 0, { seg: 7 }); }
+  for (let i = 0; i < 3; i++) waferRollInto(b, 21 + rng() * 5, -5 - i * 13 - rng() * 4, 0.55, 4 + rng() * 2.5);
+  return b.build({ receive: false });
+});
+// The chocolate falls: chocolate pours over a cliff of fudge into a pool; the front faces +z.
+const chocFalls = () => prefab('chocfalls', () => {
+  const b = new Builder(0.86), rng = makeRng(1630);
+  for (let j = 0; j < 5; j++) for (let i = 0; i < 6; i++) {
+    const w = 2.1, x = -5.25 + i * w + (j % 2 ? 0.5 : 0), d = 3.2 - j * 0.3;
+    if (j > 2 && (i === 0 || i === 5)) continue;
+    b.box(w - 0.08, 1.7, d, (i + j) % 2 ? FUDGE : FUDGE_L, x, 0.85 + j * 1.7, -d / 2 + (rng() - 0.5) * 0.3);
+  }
+  b.box(4.6, 8.6, 0.5, MILK, 0, 4.3, 0.2).box(4.9, 0.5, 2.6, MILK, 0, 8.55, -1.0);
+  for (let i = 0; i < 6; i++) b.box(0.3 + (i % 2) * 0.2, 8.4, 0.08, i % 2 ? MILK_L : 0x86502a, -1.9 + i * 0.76, 4.2, 0.47);      // streaks in the falling chocolate
+  b.cyl(4.2, 4.4, 0.24, FUDGE, 0, 0.12, 1.8, 0, 0, 0, { seg: 16 }).cyl(3.8, 3.8, 0.1, MILK, 0, 0.26, 1.8, 0, 0, 0, { seg: 16 });
+  for (let i = 0; i < 7; i++) b.sph(0.6 + (i % 3) * 0.15, WHITEC, -2.1 + i * 0.7, 0.42, 0.8 + (i % 2) * 0.3, 1, 0.6, 1, { seg: 8 });      // cream froth at the foot
+  for (let i = 0; i < 4; i++) b.tor(1.1 + i * 0.6, 0.05, MILK_L, 0, 0.32, 2.0, PI / 2, 0, 0, { seg: 16, tseg: 4 });
+  for (const sx of [-1, 1]) dippedInto(b, sx * 5.2, 9.3 + sx * 0.4, -1.2, 2.2, sx > 0 ? DARKC : WHITEC);
+  return b.build({ cast: true });
+});
+// The Cocoa Works: a little chocolate factory with wafer-roll chimneys puffing cream; the front faces +z.
+const chocFactory = () => prefab('chocfactory', () => {
+  const b = new Builder(0.86);
+  b.box(8.4, 0.4, 6.4, DARKC, 0, 0.2, 0).box(8, 4.2, 6, 0xd9a25a, 0, 2.5, 0);
+  for (let i = 0; i < 5; i++) b.box(1.5, 0.12, 6.3, i % 2 ? MILK : MILK_L, -3.2 + i * 1.6, 4.72, 0).box(1.5, 0.3, 0.3, i % 2 ? MILK : MILK_L, -3.2 + i * 1.6, 4.5, 3.05);      // a roof of chocolate squares
+  b.box(8.5, 0.24, 6.5, DARKC, 0, 4.6, 0);
+  b.box(1.7, 2.5, 0.2, DARKC, -2.2, 1.65, 3.02).cyl(0.85, 0.85, 0.2, DARKC, -2.2, 2.9, 3.02, PI / 2, 0, 0, { seg: 14 }).sph(0.1, FOIL, -1.65, 1.6, 3.16, 1, 1, 1, { seg: 6 });
+  for (const x of [0.4, 2.6]) b.box(1.3, 1.5, 0.12, 0xffe9a8, x, 2.4, 3.02, 0, 0, 0, { glow: true, grad: 0.85 }).box(1.5, 0.14, 0.2, WHITEC, x, 3.22, 3.06).box(1.5, 0.14, 0.2, WHITEC, x, 1.58, 3.06).box(0.1, 1.5, 0.16, WHITEC, x, 2.4, 3.06);
+  waferRollInto(b, -2.6, -1.2, 0.6, 4.4, 4.7); waferRollInto(b, 2.4, -1.4, 0.5, 3.2, 4.7);
+  for (const [x, y, z, r] of [[-2.6, 10.2, -1.2, 1.0], [-2.0, 11.3, -1.0, 1.2], [-1.1, 12.5, -0.9, 0.9], [2.4, 8.9, -1.4, 0.8], [3.0, 9.9, -1.3, 0.95]]) b.sph(r, WHITEC, x, y, z, 1, 0.85, 1, { seg: 9 });
+  // a vat of chocolate at the side, filled from a pipe
+  b.cyl(1.5, 1.3, 1.8, 0xb9c4cc, 5.6, 0.9, 1.0, 0, 0, 0, { seg: 14 }).cyl(1.4, 1.4, 0.06, MILK, 5.6, 1.78, 1.0, 0, 0, 0, { seg: 14 }).cyl(0.22, 0.22, 2.4, 0xb9c4cc, 4.8, 3.2, 1.0, 0, 0, PI / 2, { seg: 8 }).cyl(0.22, 0.22, 0.7, 0xb9c4cc, 5.8, 2.95, 1.0, 0, 0, 0, { seg: 8 }).cyl(0.14, 0.18, 0.9, MILK, 5.8, 2.2, 1.0, 0, 0, 0, { seg: 7 });
+  const g = new THREE.Group(); g.add(b.build({ cast: true }));
+  const s = signMesh('COCOA WORKS', 4.6, 0.7, '#fff0d8', '#4a2412', '#f2c230'); s.position.set(1.0, 3.95, 3.2); g.add(s);
+  return g;
+});
+// A cottage built of chocolate, with a wafer roof and cream along the ridge; the front faces +z.
+const chocHouse = () => prefab('chochouse', () => {
+  const b = new Builder(0.86);
+  b.box(5, 3, 4.4, MILK, 0, 1.5, 0);
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) if (!(i === 1 && j === 0) && !(i === 2 && j === 0)) b.box(1.06, 1.2, 0.1, MILK_L, -1.83 + i * 1.22, 0.85 + j * 1.38, 2.22);
+  for (const sx of [-1, 1]) b.box(3.6, 0.22, 5.0, WAFER, sx * 1.42, 3.85, 0, 0, 0, sx * -0.62).box(3.6, 0.06, 5.04, WAFER_D, sx * 1.42, 3.99, 0, 0, 0, sx * -0.62);
+  b.flat([[[-2.5, 3, 2.2], [2.5, 3, 2.2], [0, 4.78, 2.2]], [[2.5, 3, -2.2], [-2.5, 3, -2.2], [0, 4.78, -2.2]]], MILK);
+  for (let i = 0; i < 7; i++) b.sph(0.34, WHITEC, 0, 4.95, -2.2 + i * 0.73, 1, 0.8, 1, { seg: 8 });      // piped cream along the ridge
+  for (let i = 0; i < 6; i++) for (const sx of [-1, 1]) b.sph(0.16, WHITEC, sx * 2.82, 2.9, -2.1 + i * 0.84, 1, 1.7 + (i % 2), 1, { seg: 6 });      // and dripping from the eaves
+  b.box(1.0, 1.9, 0.14, BISC, 0, 0.95, 2.24).cyl(0.5, 0.5, 0.14, BISC, 0, 1.9, 2.24, PI / 2, 0, 0, { seg: 12 }).sph(0.08, FOIL, 0.3, 1.0, 2.34, 1, 1, 1, { seg: 6 });
+  for (const sx of [-1, 1]) b.box(0.8, 0.8, 0.1, 0xffe9a8, sx * 1.75, 1.9, 2.24, 0, 0, 0, { glow: true, grad: 0.85 }).box(0.94, 0.1, 0.16, WHITEC, sx * 1.75, 1.46, 2.27).box(0.08, 0.8, 0.14, WHITEC, sx * 1.75, 1.9, 2.27);
+  b.cyl(0.3, 0.3, 1.6, DARKC, 1.5, 4.6, -0.8, 0, 0, 0, { seg: 9 }).sph(0.5, WHITEC, 1.6, 5.9, -0.8, 1, 0.8, 1, { seg: 8 }).sph(0.4, WHITEC, 2.0, 6.6, -0.7, 1, 0.8, 1, { seg: 8 });
+  for (let i = 0; i < 6; i++) for (const sx of [-1, 1]) b.cyl(0.11, 0.11, 0.9 + (i % 2) * 0.12, i % 2 ? DARKC : MILK, sx * (0.95 + i * 0.4), 0.45, 3.4, 0, 0, 0, { seg: 7 });      // a fence of chocolate fingers
+  return b.build({ cast: true });
+});
+// Trees: cocoa trees hung with pods, a dipped strawberry on a stick, and a clump of chocolate fingers.
+const cocoaTree = (v) => prefab('cocoatree' + v, () => {
+  const b = new Builder(0.86);
+  b.sph(1, 0x86502a, 0, 0, 0, 1.0, 0.16, 1.0, { seg: 8 });
+  if (v < 2) {
+    const h = 3.6 + v * 0.8;
+    b.cyl(0.2, 0.3, h, 0x6a4326, 0, h / 2, 0, 0, 0, 0.04, { seg: 8 });
+    for (let i = 0; i < 6; i++) { const a = i * 1.05; b.sph(1, i % 2 ? 0x3f9a4a : 0x4fae56, Math.cos(a) * 1.0, h + 0.3 + (i % 2) * 0.3, Math.sin(a) * 1.0, 1.3, 0.34, 0.75, { seg: 8 }); }
+    b.sph(0.9, 0x4fae56, 0, h + 0.7, 0, 1, 0.6, 1, { seg: 8 });
+    for (let i = 0; i < 5; i++) { const a = i * 1.4 + v; b.sph(0.2, [0xffc23a, 0xff8a3c, 0xe5483b][i % 3], Math.cos(a) * 0.34, 1.4 + i * 0.42, Math.sin(a) * 0.34, 1, 1.7, 1, { seg: 8 }); }      // cocoa pods growing on the trunk
+  } else if (v === 2) {
+    b.cyl(0.07, 0.07, 3.2, 0xfff6ee, 0, 1.6, 0, 0, 0, 0, { seg: 6 });
+    dippedInto(b, 0, 3.6, 0, 2.6, MILK);
+  } else {
+    for (let i = 0; i < 4; i++) { const x = Math.cos(i * 1.7) * 0.36, z = Math.sin(i * 1.7) * 0.36, h = 3.0 + (i % 3) * 0.7; b.cyl(0.2, 0.2, h * 0.24, BISC, x, h * 0.12, z, 0, 0, 0, { seg: 9 }).cyl(0.22, 0.22, h * 0.76, i % 2 ? DARKC : MILK, x, h * 0.62, z, 0, 0, 0, { seg: 9 }).sph(0.22, i % 2 ? DARKC : MILK, x, h, z, 1, 0.6, 1, { seg: 8 }); }
+  }
+  return b.build({ cast: true, receive: false });
+});
+// An eclair laid across two wafer rolls, over the pier.
+const eclairArch = () => prefab('eclairarch', () => {
+  const b = new Builder(0.9);
+  for (const sx of [-1, 1]) { b.cyl(0.6, 0.66, 0.24, 0xd9a25a, sx * 4.95, 0.12, 0, 0, 0, 0, { seg: 12 }); waferRollInto(b, sx * 4.95, 0, 0.3, 4.9, 0.2); }
+  b.cap(0.55, 9.6, 0xd9a25a, 0, 5.62, 0, 0, 0, PI / 2, { seg: 10 });
+  b.add(new THREE.CapsuleGeometry(0.5, 9.3, 4, 10), DARKC, 0, 5.86, 0, 0, 0, PI / 2, 1, 1, 0.92);
+  for (let i = 0; i < 9; i++) b.sph(0.13, DARKC, -4.2 + i * 1.05, 5.5 - (i % 3) * 0.12, 0.47, 1, 1.6 + (i % 3) * 0.5, 0.7, { seg: 6 });      // icing running down the side
+  for (let i = 0; i < 12; i++) b.sph(0.17, WHITEC, -4.6 + i * 0.84, 6.38, 0, 1, 0.8, 1, { seg: 7 });
+  for (let i = 0; i < 3; i++) b.sph(0.16, 0xe5283b, -3.36 + i * 3.36, 6.56, 0, 1, 1, 1, { seg: 7 });
+  return b.build({ cast: true });
+});
+// Things bobbing in the chocolate.
+const floatChoc = (v) => prefab('floatchoc' + v, () => {
+  const b = new Builder(0.86);
+  if (v === 0) { b.cyl(1.7, 1.6, 0.4, 0xd9a25a, 0, 0.05, 0, 0, 0, 0, { seg: 14 }); for (let i = 0; i < 9; i++) { const a = i * 2.4, r = 0.4 + (i % 3) * 0.45; b.sph(0.16, DARKC, Math.cos(a) * r, 0.27, Math.sin(a) * r, 1, 0.6, 1, { seg: 6 }); } }
+  else if (v === 1) { dippedInto(b, 0, 0.3, 0, 2.4, WHITEC); dippedInto(b, 2.6, 0.2, 0.9, 1.9, DARKC); }
+  else { sandwichInto(b, 1.3, 0, -0.35, 0); b.cyl(0.9, 0.9, 0.2, 0xff9a3c, -2.7, 0.05, 0.6, 0.3, 0, 0, { seg: 12 }).cyl(0.74, 0.74, 0.22, 0xffc66a, -2.7, 0.05, 0.6, 0.3, 0, 0, { seg: 12 }); }
+  return b.build({ receive: false });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -1828,7 +1944,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -1982,6 +2098,17 @@ export function populate(group, rawIndex, zone, anim) {
     for (const z of [-3, -16, -27, -38]) if (rng() < 0.75) place(group, lollyTree(Math.floor(rng() * 5)), 6.3 + rng() * 1.2 + (rng() < 0.3 ? 12 : 0), 0, z + rng() * 2, -PI / 2 + (rng() - 0.5) * 0.8, 0.85 + rng() * 0.3);
     for (let i = 0; i < 2; i++) anim.push({ o: place(group, floatSweet((index + i) % 3), -9 - rng() * 14, WATER_Y + 0.2, -5 - i * 19 - rng() * 10, rng() * 6), kind: 'bob', p: rng() * 6, amp: 1.2 });
     if (rng() < 0.5) anim.push({ o: place(group, buoy(pick(rng, [C.red, C.green])), -16 - rng() * 10, WATER_Y, -rng() * CHUNK), kind: 'bob', p: rng() * 6 });
+  } else if (zone === 16) {
+    // Chocolate Coast: a chocolate-bar shore beside a sea of melted chocolate
+    place(group, chocGround(), 0, 0, 0);
+    place(group, chocHills(index % 2), 0, 0, 0);
+    if (index % 2 === 0) place(group, eclairArch(), 0, 0, -20);
+    const k = index % 3, stall = (z) => place(group, kiosk(pick(rng, [C.red, C.teal, C.blue, C.rose]), pick(rng, ['HOT COCOA', 'TRUFFLES', 'BROWNIES', 'CHOC ICES', 'FUDGE'])), DECK_HALF + 2.6, 0, z, -PI / 2);
+    if (k === 0) place(group, chocFactory(), DECK_HALF + 9.5, 0, -15, -PI / 2);
+    else if (k === 1) { stall(-7); place(group, chocFalls(), 17.5, 0, -25, -PI / 2); }
+    else { place(group, chocHouse(), DECK_HALF + 7.5, 0, -12, -PI / 2); stall(-31); }
+    for (const z of [-3, -16, -27, -38]) if (rng() < 0.7) place(group, cocoaTree(Math.floor(rng() * 4)), 6.4 + rng() * 1.0 + (k !== 1 && rng() < 0.3 ? 13 : 0), 0, z + rng() * 2, rng() * 6, 0.85 + rng() * 0.3);
+    for (let i = 0; i < 2; i++) anim.push({ o: place(group, floatChoc((index + i) % 3), -9 - rng() * 14, WATER_Y + 0.2, -5 - i * 19 - rng() * 10, rng() * 6), kind: 'bob', p: rng() * 6, amp: 1.2 });
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }

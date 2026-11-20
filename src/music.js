@@ -386,4 +386,23 @@ THEMES[15] = theme('Deep Blue', {
   drums: { kick: 'x.......x.......', rim: '....x.......x...', shake: 'x.x.x.x.x.x.x.x.', tick: '......x.......x.' },
 });
 
+// ---- 16. Chocolate Coast: "Cocoa Stroll", a smooth, swinging stroll with a walking bass (F major) ----
+THEMES[16] = theme('Cocoa Stroll', {
+  key: 5, scale: 'maj', base: 65, gain: 1.1, tempo: 1.0, swing: 0.3, voice: 'clarinet', bassVoice: 'pizz', stab: 'organ',
+  chords: 'I vi ii V I IV ii V',
+  tune: [
+    "5:3 3:1 5:2 6:2 1':4 6:2 5:2",
+    "3:3 1:1 3:2 5:2 6:4 -:4",
+    "4:3 2:1 4:2 6:2 2':4 1':2 6:2",
+    "5:2 7:2 2':2 4':2 3':2 2':2 7:4",
+    "1':3 5:1 1':2 3':2 5':4 3':2 1':2",
+    "6:2 1':2 4':2 6':2 5':2 4':2 1':4",
+    "2':3 6:1 4:2 6:2 2':2 4':2 6':4",
+    "5':2 4':2 2':2 7:2 5:2 7:2 2':4",
+  ],
+  bass: [0, _, 7, _, 12, _, 7, _, 0, _, 7, _, 12, 12, 7, _],
+  stabs: '....x.....x.....',
+  drums: { kick: 'x.......x.......', brush: 'x.x.x.x.x.x.x.x.', rim: '....x.......x...', snap: '..............x.' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

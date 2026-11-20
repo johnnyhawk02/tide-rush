@@ -38,7 +38,7 @@ const SPACE = 9;
 // the flying attackers: what to call each one when it is zapped, and the colours of its puff
 const FLYER = {
   ufo: ['UFO', [0xff7ad9, 0x8ff0ff, 0xffe27a, 0xffffff]], gull: ['Bomber gull', [0xffffff, 0xf5a623, 0xdfe6ee, 0xffe27a]], bat: ['Slime bat', [0x8dff5a, 0xb59cff, 0xffe27a, 0xffffff]],
-  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]], flosscloud: ['Candyfloss cloud', [0xff9fd0, 0xffffff, 0xffe24a, 0x8fd8ff]], twister: ['Little twister', [0x9fece4, 0xffffff, 0xff8fd6, 0xffd23f]], eagle: ['Grumpy eagle', [0x6b4a2e, 0xffffff, 0xffb300, 0xd9c7a8]], bandit: ['Balloon bandit', [0xe5383b, 0xffc928, 0x2f7fe0, 0xff6fae]], inkOcto: ['Inky octopus', [0x9a6fe0, 0x3a2a6a, 0xffd23f, 0xffffff]],
+  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]], flosscloud: ['Candyfloss cloud', [0xff9fd0, 0xffffff, 0xffe24a, 0x8fd8ff]], twister: ['Little twister', [0x9fece4, 0xffffff, 0xff8fd6, 0xffd23f]], eagle: ['Grumpy eagle', [0x6b4a2e, 0xffffff, 0xffb300, 0xd9c7a8]], bandit: ['Balloon bandit', [0xe5383b, 0xffc928, 0x2f7fe0, 0xff6fae]], inkOcto: ['Inky octopus', [0x9a6fe0, 0x3a2a6a, 0xffd23f, 0xffffff]], chocJug: ['Chocolate jug', [0x7a4526, 0xfff6ee, 0x4f8fe0, 0xffe27a]],
 };
 // picking up a laser while one is already running powers it up: it fires faster and reaches further
 const LASER_LV = [null, { name: 'Laser zapper!', gap: 0.16, reach: 0, col: 0x6ff6ff, size: 1.1 }, { name: 'Double laser!', gap: 0.1, reach: 4, col: 0x9dff6a, size: 1.25 }, { name: 'Triple laser!', gap: 0.065, reach: 8, col: 0xffb347, size: 1.4 }];
@@ -667,6 +667,7 @@ class Game {
       else if (z === 6) { this.gullT = 2 + Math.random() * 4; if (r < 0.7) A.drip(); else A.squeak(3, 1.6); }
       else if (z === 9) A.blips();
       else if (z === 7) { if (r < 0.5) A.gust(); else A.chime(); }
+      else if (z === 16) { this.gullT = 2.5 + Math.random() * 4; if (r < 0.6) A.glug(); else if (r < 0.8) A.crunch(); else A.gull(); }
       else if (z === 15) { this.gullT = 2.5 + Math.random() * 4; if (this.dive < 0.5) A.gull(); else if (r < 0.7) A.blub(); else if (r < 0.85) A.whaleSong(); else A.sonar(); }
       else if (z === 14) { this.gullT = 2.5 + Math.random() * 4; if (r < 0.35) A.whee(0.5); else if (r < 0.6) A.cheer(); else if (r < 0.8) A.organToot(); else A.gull(); }
       else if (z === 13) { this.gullT = 2.5 + Math.random() * 4; if (r < 0.5) A.cowbell(); else if (r < 0.75) A.gust(); else if (r < 0.9) A.bleat(); else A.eagle(); }

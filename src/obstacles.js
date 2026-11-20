@@ -969,6 +969,139 @@ def('inkOcto', 'deco', 1.8, 1.7, 1.2, (b) => {
   b.dome(0.26, 0xff5a4a, 0, 0.44, 0, 0, 0, 0, 1, 0.7, 1, { seg: 10 }).cyl(0.025, 0.025, 0.24, 0x2a2f36, 0, 0.74, 0, 0, 0, 0, { seg: 5 }).sph(0.05, 0xffd23f, 0, 0.87, 0, 1, 1, 1, { seg: 6 });
 });
 
+// ---------- Chocolate Coast ----------
+export const MILK = 0x7a4526, MILK_L = 0x93592f, DARKC = 0x4a2412, WHITEC = 0xfff0d8, FOIL = 0xf2c230, CARAMEL = 0xd9902f, BISC = 0xe0b070, WRAP = 0xd2302c;
+// A strawberry dipped in chocolate, point down; (x, y, z) is its middle, s its size.
+export function dippedInto(b, x, y, z, s = 1, choc = DARKC) {
+  b.cone(0.3 * s, 0.62 * s, 0xe5283b, x, y, z, PI, 0, 0, { seg: 10 }).cone(0.31 * s, 0.4 * s, choc, x, y - 0.12 * s, z, PI, 0, 0, { seg: 10 });
+  for (let i = 0; i < 5; i++) b.cone(0.07 * s, 0.22 * s, 0x3fa85a, x + Math.cos(i * 1.26) * 0.14 * s, y + 0.33 * s, z + Math.sin(i * 1.26) * 0.14 * s, Math.sin(i * 1.26) * 0.9, 0, -Math.cos(i * 1.26) * 0.9, { seg: 4 });
+}
+// A sandwich biscuit lying flat: two dark biscuits with cream between; (x, y, z) is the middle of its base.
+export function sandwichInto(b, r, x, y, z) {
+  b.cyl(r, r, r * 0.22, DARKC, x, y + r * 0.11, z, 0, 0, 0, { seg: 16 }).cyl(r * 0.93, r * 0.93, r * 0.16, WHITEC, x, y + r * 0.3, z, 0, 0, 0, { seg: 16 }).cyl(r, r, r * 0.22, DARKC, x, y + r * 0.49, z, 0, 0, 0, { seg: 16 });
+  for (let i = 0; i < 8; i++) b.sph(r * 0.07, MILK, x + Math.cos(i * 0.785) * r * 0.72, y + r * 0.6, z + Math.sin(i * 0.785) * r * 0.72, 1, 0.5, 1, { seg: 5 });
+}
+def('chocBar', 'low', 1.6, 0.92, 0.6, (b) => {
+  // a giant bar of chocolate on its edge, half out of its wrapper
+  b.box(1.5, 0.86, 0.26, MILK, 0, 0.43, 0);
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) for (const sz of [-1, 1]) b.box(0.2, 0.2, 0.05, MILK_L, -0.02 + i * 0.235, 0.17 + j * 0.26, sz * 0.14);
+  b.box(0.62, 0.9, 0.3, WRAP, -0.46, 0.45, 0).box(0.63, 0.3, 0.31, WHITEC, -0.46, 0.45, 0).box(0.07, 0.92, 0.32, FOIL, -0.13, 0.45, 0);
+  for (let i = 0; i < 5; i++) b.cone(0.06, 0.14, FOIL, -0.08, 0.1 + i * 0.18, 0, 0, 0, -PI / 2, { seg: 4 });
+  for (const sz of [-1, 1]) b.sph(0.09, 0x7a1a18, -0.46, 0.45, sz * 0.16, 1.6, 1, 0.3, { seg: 8 });
+});
+def('truffleBox', 'low', 1.5, 0.96, 1.2, (b) => {
+  // an open box of chocolates
+  b.box(1.36, 0.22, 1.0, 0xb5202c, 0, 0.11, 0.05).box(1.24, 0.04, 0.88, 0x3a1d10, 0, 0.23, 0.05);
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) {
+    const x = -0.4 + i * 0.4, z = -0.17 + j * 0.42, k = i + j * 3, c = [MILK, WHITEC, DARKC, DARKC, MILK, WHITEC][k];
+    b.cyl(0.17, 0.13, 0.08, FOIL, x, 0.27, z, 0, 0, 0, { seg: 10 });
+    if (k % 3 === 0) b.sph(0.15, c, x, 0.31, z, 1, 0.9, 1, { seg: 9 }); else if (k % 3 === 1) b.box(0.24, 0.16, 0.24, c, x, 0.36, z, 0, 0.5, 0); else b.cone(0.15, 0.24, c, x, 0.4, z, 0, 0, 0, { seg: 9 });
+    b.sph(0.04, k % 2 ? 0xe5283b : WHITEC, x, k % 3 === 2 ? 0.51 : 0.45, z, 1, 0.7, 1, { seg: 5 });
+  }
+  b.box(1.36, 0.92, 0.05, 0xb5202c, 0, 0.6, -0.6, -0.36, 0, 0).box(0.12, 0.94, 0.06, FOIL, 0, 0.6, -0.59, -0.36, 0, 0).box(1.38, 0.12, 0.06, FOIL, 0, 0.62, -0.585, -0.36, 0, 0);
+  for (const sx of [-1, 1]) b.sph(0.14, FOIL, sx * 0.14, 0.66, -0.56, 1.2, 0.7, 0.4, { seg: 7 });
+});
+def('cocoaMug', 'low', 1.4, 1.0, 1.1, (b) => {
+  // a mug of hot chocolate piled with cream
+  b.cyl(0.6, 0.5, 0.05, 0xffffff, 0, 0.025, 0, 0, 0, 0, { seg: 16 }).cyl(0.42, 0.36, 0.6, 0xe84a4a, 0, 0.35, 0, 0, 0, 0, { seg: 16 }).tor(0.17, 0.045, 0xe84a4a, 0.5, 0.36, 0, 0, 0, 0, { seg: 10 });
+  for (let i = 0; i < 6; i++) b.sph(0.06, 0xffffff, Math.cos(i * 1.05 + 0.5) * 0.4, 0.26 + (i % 2) * 0.2, Math.sin(i * 1.05 + 0.5) * 0.4, 1, 1, 1, { seg: 6 });
+  b.cyl(0.39, 0.39, 0.03, MILK, 0, 0.65, 0, 0, 0, 0, { seg: 14 });
+  b.sph(0.3, WHITEC, 0, 0.72, 0, 1, 0.6, 1, { seg: 10 }).sph(0.21, WHITEC, 0.02, 0.86, 0, 1, 0.6, 1, { seg: 9 }).sph(0.11, WHITEC, 0, 0.96, 0.01, 1, 0.8, 1, { seg: 8 });
+  b.box(0.09, 0.5, 0.03, BISC, 0.22, 0.86, -0.08, 0, 0, -0.4);
+  for (let i = 0; i < 5; i++) b.box(0.03, 0.025, 0.09, DARKC, Math.cos(i * 1.4) * 0.18, 0.86 + (i % 2) * 0.06, Math.sin(i * 1.4) * 0.18, 0, i, 0);
+});
+def('cookies', 'low', 1.4, 0.95, 1.3, (b) => {
+  // a wobbly stack of chocolate-chip cookies
+  for (let i = 0; i < 4; i++) {
+    const x = Math.sin(i * 2.1) * 0.08, z = Math.cos(i * 1.7) * 0.07, y = 0.11 + i * 0.22;
+    b.cyl(0.56, 0.52, 0.2, i % 2 ? 0xd9a25a : 0xcf9548, x, y, z, 0, i, 0, { seg: 14 });
+    for (let k = 0; k < 7; k++) { const a = k * 0.9 + i; b.sph(0.065, DARKC, x + Math.cos(a) * 0.52, y + ((k % 3) - 1) * 0.04, z + Math.sin(a) * 0.52, 1, 1, 1, { seg: 5 }); }
+    if (i === 3) for (let k = 0; k < 6; k++) { const a = k * 1.05, r = k % 2 ? 0.34 : 0.16; b.sph(0.07, DARKC, x + Math.cos(a) * r, y + 0.1, z + Math.sin(a) * r, 1, 0.6, 1, { seg: 5 }); }
+  }
+});
+def('chocFountain', 'tall', 1.6, 2.8, 1.6, (b) => {
+  // a chocolate fountain, with strawberries ready for dipping
+  const SV = 0xdfe6ee;
+  b.cyl(0.74, 0.6, 0.3, SV, 0, 0.15, 0, 0, 0, 0, { seg: 16 }).cyl(0.68, 0.68, 0.06, MILK, 0, 0.31, 0, 0, 0, 0, { seg: 16 }).cyl(0.1, 0.1, 2.3, SV, 0, 1.4, 0, 0, 0, 0, { seg: 8 });
+  for (const [rt, rb, h, y] of [[0.44, 0.6, 0.7, 0.7], [0.3, 0.46, 0.6, 1.42], [0.16, 0.32, 0.55, 2.08]]) {
+    b.cyl(rt, rb, h, MILK, 0, y, 0, 0, 0, 0, { seg: 16 }).cyl(rt + 0.07, rt * 0.6, 0.1, SV, 0, y + h / 2 + 0.03, 0, 0, 0, 0, { seg: 16 }).cyl(rt + 0.03, rt + 0.03, 0.03, MILK_L, 0, y + h / 2 + 0.09, 0, 0, 0, 0, { seg: 16 });
+  }
+  b.sph(0.17, MILK, 0, 2.48, 0, 1, 1.1, 1, { seg: 9 });
+  for (let i = 0; i < 3; i++) dippedInto(b, Math.cos(i * 2.09 + 0.6) * 0.62, 0.62, Math.sin(i * 2.09 + 0.6) * 0.62, 0.55, MILK);
+});
+def('chocBunny', 'tall', 1.4, 2.75, 1.2, (b) => {
+  // a chocolate bunny in gold foil, with a red ribbon and a bell
+  const G = FOIL, GD = 0xd9a520;
+  b.cyl(0.62, 0.66, 0.1, DARKC, 0, 0.05, 0, 0, 0, 0, { seg: 14 });
+  b.sph(0.52, G, 0, 0.78, -0.04, 1, 1.28, 0.9, { seg: 14 }).sph(0.4, G, 0, 1.7, 0.08, 1, 1, 0.95, { seg: 14 }).sph(0.17, G, 0, 0.5, -0.5, 1, 1, 1, { seg: 8 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.3, GD, sx * 0.34, 0.36, 0.1, 0.8, 1, 1.25, { seg: 10 }).sph(0.13, GD, sx * 0.2, 0.98, 0.4, 1, 1.4, 1, { seg: 8 });
+    b.sph(0.14, G, sx * 0.17, 2.36, 0, 1, 3.0, 0.55, { seg: 9 }).sph(0.07, 0xff9fb0, sx * 0.17, 2.36, 0.07, 1, 3.4, 0.3, { seg: 7 });
+    b.sph(0.055, 0x3a1d10, sx * 0.15, 1.78, 0.43, 1, 1.2, 0.5, { seg: 7 }).sph(0.1, 0xffe9a8, sx * 0.1, 1.6, 0.42, 1, 0.8, 0.6, { seg: 7 });
+  }
+  b.sph(0.05, 0xff7a9a, 0, 1.67, 0.47, 1.2, 0.8, 0.6, { seg: 6 });
+  b.tor(0.32, 0.06, WRAP, 0, 1.36, 0.02, PI / 2, 0, 0, { seg: 14 }).sph(0.1, 0xffe27a, 0, 1.24, 0.36, 1, 1, 1, { seg: 8, glow: true, grad: 0.8 });
+  for (const sx of [-1, 1]) b.sph(0.13, WRAP, sx * 0.16, 1.4, 0.3, 1.3, 0.8, 0.4, { seg: 7 });
+});
+def('foilEgg', 'tall', 1.6, 2.7, 1.6, (b) => {
+  // a giant chocolate egg in bright foil, sitting in an egg cup with a bow on top
+  b.cyl(0.5, 0.6, 0.1, 0xffffff, 0, 0.05, 0, 0, 0, 0, { seg: 14 }).cyl(0.2, 0.3, 0.3, 0xffffff, 0, 0.25, 0, 0, 0, 0, { seg: 10 }).cyl(0.62, 0.3, 0.55, 0xffffff, 0, 0.66, 0, 0, 0, 0, { seg: 16 }).tor(0.62, 0.035, 0x5ac8ff, 0, 0.93, 0, PI / 2, 0, 0, { seg: 16 });
+  const band = (x, y) => { const v = (y - 0.62) / 1.9; return v < 0.24 ? 0x8a4fd0 : v < 0.3 ? FOIL : v < 0.5 ? (Math.floor((Math.atan2(x, 0.3) + 4) * 3) % 2 ? 0xff7ab8 : 0x8a4fd0) : v < 0.56 ? FOIL : v < 0.8 ? 0x5ac8ff : 0x8a4fd0; };
+  b.add(new THREE.SphereGeometry(0.7, 20, 16), band, 0, 1.58, 0, 0, 0, 0, 1, 1.34, 1, { grad: 0.9 });
+  for (let i = 0; i < 8; i++) b.sph(0.07, FOIL, Math.cos(i * 0.785) * 0.62, 2.0, Math.sin(i * 0.785) * 0.62, 1, 1, 1, { seg: 6 });
+  for (const sx of [-1, 1]) b.sph(0.2, WRAP, sx * 0.24, 2.58, 0, 1.3, 0.75, 0.5, { seg: 8 }).box(0.1, 0.4, 0.03, WRAP, sx * 0.14, 2.32, 0.1, 0.3, 0, sx * 0.5);
+  b.sph(0.09, WRAP, 0, 2.56, 0, 1, 1, 1, { seg: 7 });
+});
+def('biscuitTower', 'tall', 1.5, 2.8, 1.5, (b) => {
+  // a tottering tower of sandwich biscuits with a dipped strawberry on top
+  for (let i = 0; i < 6; i++) sandwichInto(b, 0.62 - i * 0.02, Math.sin(i * 2.3) * 0.07, i * 0.38, Math.cos(i * 1.9) * 0.06);
+  dippedInto(b, 0, 2.56, 0, 0.9);
+});
+def('cakeSlice', 'tall', 1.5, 2.6, 1.6, (b) => {
+  // a slice of chocolate cake on a tall cake stand
+  b.cyl(0.5, 0.62, 0.1, 0xffffff, 0, 0.05, 0, 0, 0, 0, { seg: 14 }).cyl(0.11, 0.16, 0.8, 0xffffff, 0, 0.5, 0, 0, 0, 0, { seg: 8 }).cyl(0.82, 0.7, 0.1, 0xffffff, 0, 0.95, 0, 0, 0, 0, { seg: 18 }).tor(0.82, 0.03, 0xff9fd0, 0, 1.0, 0, PI / 2, 0, 0, { seg: 18 });
+  const wedge = (h, c, y, r = 1.42) => b.add(new THREE.CylinderGeometry(r, r, h, 6, 1, false, -0.42, 0.84), c, 0, y + h / 2, -0.72);
+  wedge(0.36, DARKC, 1.0); wedge(0.1, WHITEC, 1.36, 1.38); wedge(0.36, DARKC, 1.46); wedge(0.1, WHITEC, 1.82, 1.38); wedge(0.34, DARKC, 1.92); wedge(0.09, MILK, 2.26, 1.44);
+  b.sph(0.18, WHITEC, 0, 2.42, 0.4, 1, 0.8, 1, { seg: 8 }).sph(0.12, 0xe5283b, 0, 2.56, 0.4, 1, 1, 1, { seg: 7 }).cyl(0.01, 0.01, 0.16, 0x4f8a3a, 0.03, 2.7, 0.4, 0, 0, -0.3, { seg: 4 });
+  for (let i = 0; i < 3; i++) b.sph(0.08, MILK, -0.3 + i * 0.3, 2.2 - (i % 2) * 0.1, 0.66 - Math.abs(i - 1) * 0.06, 1, 1.8, 0.6, { seg: 6 });      // icing running down the front
+});
+def('truffle', 'low', 1.1, 1.0, 1.0, (b) => {
+  // a rolling chocolate truffle, drizzled with white chocolate
+  b.sph(0.48, DARKC, 0, 0, 0, 1, 1, 1, { seg: 16, grad: 0.85 });
+  for (let i = 0; i < 4; i++) b.tor(0.485, 0.022, WHITEC, 0, 0, 0, 0.5 + i * 0.5, i * 0.9, 0, { seg: 18, tseg: 4 });
+  for (let i = 0; i < 12; i++) { const u = (i + 0.5) / 12, ph = Math.acos(1 - 2 * u), th = i * 2.4; b.sph(0.04, FOIL, Math.sin(ph) * Math.cos(th) * 0.49, Math.cos(ph) * 0.49, Math.sin(ph) * Math.sin(th) * 0.49, 1, 1, 1, { seg: 5 }); }
+}, { center: true });
+def('chocDrop', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the flying jug pours: a great big chocolate drop
+  b.sph(0.44, MILK, 0, -0.05, 0, 1, 0.9, 1, { seg: 14, grad: 0.85 }).cone(0.3, 0.42, MILK, 0, 0.42, 0, 0, 0, 0, { seg: 12 }).sph(0.07, MILK, 0.03, 0.62, 0, 1, 1, 1, { seg: 6 });
+  b.sph(0.12, MILK_L, -0.16, 0.12, 0.34, 1, 1.4, 0.4, { seg: 7 });
+}, { center: true });
+def('cakeTrolley', 'low', 1.5, 0.98, 1.15, (b) => {
+  // a runaway tea trolley with a chocolate cake on it
+  b.box(1.4, 0.06, 1.0, 0xfff6ee, 0, 0.32, 0).box(1.4, 0.05, 1.0, 0xfff6ee, 0, 0.12, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { b.cyl(0.11, 0.11, 0.06, C.rubber, sx * 0.58, 0.11, sz * 0.46, PI / 2, 0, 0, { seg: 10 }); b.box(0.05, 0.3, 0.05, FOIL, sx * 0.64, 0.2, sz * 0.44); }
+  for (const sz of [-1, 1]) b.cyl(0.022, 0.022, 0.5, FOIL, -0.68, 0.58, sz * 0.4);
+  b.cyl(0.028, 0.028, 0.84, FOIL, -0.68, 0.84, 0, PI / 2, 0, 0);
+  b.cyl(0.5, 0.5, 0.04, 0xffffff, 0.1, 0.37, 0, 0, 0, 0, { seg: 16 }).cyl(0.42, 0.42, 0.34, DARKC, 0.1, 0.56, 0, 0, 0, 0, { seg: 16 }).cyl(0.44, 0.44, 0.07, MILK, 0.1, 0.75, 0, 0, 0, 0, { seg: 16 });
+  for (let i = 0; i < 8; i++) { const a = i * 0.785; b.sph(0.07, WHITEC, 0.1 + Math.cos(a) * 0.34, 0.83, Math.sin(a) * 0.34, 1, 0.9, 1, { seg: 6 }); b.sph(0.06, MILK, 0.1 + Math.cos(a + 0.4) * 0.43, 0.6, Math.sin(a + 0.4) * 0.43, 1, 1.8, 1, { seg: 5 }); }
+  b.sph(0.08, 0xe5283b, 0.1, 0.87, 0, 1, 1, 1, { seg: 7 });
+});
+def('chocJug', 'deco', 2.2, 1.6, 1.4, (b) => {
+  // a cheeky flying jug of chocolate sauce
+  const CH = 0xfff6ee, BL = 0x4f8fe0;
+  b.cyl(0.36, 0.5, 0.84, CH, 0, 0, 0, 0, 0, 0, { seg: 16 }).sph(0.5, CH, 0, -0.42, 0, 1, 0.3, 1, { seg: 14 }).cyl(0.37, 0.37, 0.06, MILK, 0, 0.42, 0, 0, 0, 0, { seg: 14 });
+  b.tor(0.46, 0.035, BL, 0, -0.2, 0, PI / 2, 0, 0, { seg: 16 }).tor(0.385, 0.03, BL, 0, 0.3, 0, PI / 2, 0, 0, { seg: 16 });
+  b.cone(0.16, 0.34, CH, 0, 0.36, 0.42, 1.0, 0, 0, { seg: 8 }).sph(0.09, MILK, 0, 0.3, 0.56, 1, 1.5, 1, { seg: 7 }).sph(0.06, MILK, 0, 0.12, 0.6, 1, 1.6, 1, { seg: 6 });
+  b.tor(0.2, 0.05, CH, 0, 0, -0.48, 0, PI / 2, 0, { seg: 10 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.11, 0xffffff, sx * 0.16, 0.05, 0.4, 1, 1.15, 0.5, { seg: 8, grad: 1 }).sph(0.055, 0x1b1f24, sx * 0.15, 0.03, 0.45, 1, 1, 0.5, { seg: 6, grad: 1 });
+    b.box(0.2, 0.04, 0.03, 0x3a1d10, sx * 0.16, 0.22, 0.42, 0, 0, sx * -0.4).sph(0.08, 0xff9fb0, sx * 0.3, -0.1, 0.4, 1, 0.7, 0.4, { seg: 6, grad: 1 });
+  }
+  b.tor(0.1, 0.022, 0x3a1d10, 0, -0.14, 0.47, 0, 0, PI, { arc: PI, seg: 7 });
+}, {
+  wings: (b, sx) => { for (let i = 0; i < 3; i++) b.sph(0.3 - i * 0.05, 0xffffff, sx * (0.3 + i * 0.26), 0.02 + i * 0.03, -i * 0.06, 1.25, 0.14, 0.62 - i * 0.1, { seg: 8 }); }, wingAt: [0.36, 0.1, 0],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -1562,6 +1695,7 @@ export const TALL_TYPES = {
   13: ['pineOb', 'cairn', 'rock', 'fingerpost', 'woodShed', 'pineOb'],
   14: ['striker', 'balloonCart', 'ticketBooth', 'carStack', 'popcorn', 'striker'],
   15: ['tanks', 'divingSuit', 'miniSub', 'fishTank', 'tanks', 'divingSuit'],
+  16: ['chocFountain', 'chocBunny', 'foilEgg', 'biscuitTower', 'cakeSlice', 'chocBunny'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
-export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'] };
+export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'] };
