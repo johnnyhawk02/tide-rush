@@ -40,7 +40,7 @@ const FLYERS = {
   snowcloud: { y: 5.0, size: 1.3, shot: 'snowball' },
 };
 // Which attacker each level has, and how often a "roller" row is one of them rather than a plain rolling thing.
-const ATTACKER = { 0: ['gull', 0.6], 1: ['gull', 0.6], 2: ['gull', 0.6], 3: ['bat', 0.65], 4: ['stormcloud', 0.75], 5: ['gull', 0.6], 6: ['bat', 0.7], 7: ['snowcloud', 0.7], 8: ['bat', 0.5], 9: ['ufo', 1] };
+const ATTACKER = { 0: ['gull', 0.6], 1: ['gull', 0.6], 2: ['gull', 0.6], 3: ['bat', 0.65], 4: ['stormcloud', 0.75], 5: ['gull', 0.6], 6: ['bat', 0.7], 7: ['snowcloud', 0.7], 8: ['bat', 0.5], 9: ['ufo', 1], 10: ['snowcloud', 0.3] };
 
 export class Track {
   constructor(scene) {
@@ -95,7 +95,7 @@ export class Track {
   }
   // Carry on generating after the warp tunnel (which clears the track), starting a little way ahead in the player's lane.
   resumeGen(dist, lane) {
-    this.genEnabled = true;
+    this.genEnabled = true; this.gen.waveLevel = -1;      // the tunnel swept away any wave that was waiting, so the level may plan one afresh
     let maxEnd = 0;
     for (const [i] of this.chunks) maxEnd = Math.max(maxEnd, (i + 1) * CHUNK);
     this.noGapBefore = maxEnd + 1;
@@ -160,13 +160,16 @@ export class Track {
     const lvl0 = Math.floor(s / ZONE_LEN);
     if (g.waveLevel !== lvl0) {
       g.waveLevel = lvl0;
-      if (!ROOFED(zone) && run > 200 && (zone === 9 || this.waveAlways || rng() < 0.5)) {
-        const s0 = s + 14, len = Math.min(v * 7.5, 215);
-        if (s0 + len < (lvl0 + 1) * ZONE_LEN - 6) this.waves.push({ s0, s1: s0 + len, done: false });
+      // (on Christmas Pier it is Grumpy Santa in his sleigh instead, and he always turns up)
+      const santa = zone === 10;
+      if (!ROOFED(zone) && (run > 200 || santa) && (zone === 9 || santa || this.waveAlways || rng() < 0.5)) {
+        // (Santa waits for the level's name to clear, and makes do with a shorter visit if the level is nearly over)
+        const s0 = s + (santa ? 40 : 14), room = (lvl0 + 1) * ZONE_LEN - 6 - s0, want = Math.min(v * (santa ? 9 : 7.5), 215), len = santa ? Math.min(want, room - 1) : want;
+        if (len < room && len > v * 5) this.waves.push({ s0, s1: s0 + len, done: false, santa });
       }
     }
     // while a wave is overhead its bombs take the place of rollers and flying attackers
-    const inWave = this.waves.some((w) => s > w.s0 + 4 && s < w.s1 - 22);
+    const wave = this.waves.find((w) => s > w.s0 + 4 && s < w.s1 - 22), inWave = !!wave;
 
     let type = 'scatter';
     if (!g.plat) {
@@ -177,7 +180,7 @@ export class Track {
         barrier: early || g.last === 'barrier' || cl ? 0 : 7 + 6 * diff,
         gap: early || s < this.noGapBefore || g.last === 'gap' || cl ? 0 : (9 + 5 * diff) * (zone === 4 || zone === 6 ? 1.3 : 1),
         platform: run < 170 || g.last === 'platform' || cl ? 0 : 9,
-        roller: run < 150 || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 9 || inWave ? 5 : zone === 3 ? 1.6 : 2.6),
+        roller: (run < 150 && !inWave) || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 9 || inWave ? 5 : zone === 3 ? 1.6 : 2.6),
         trolley: run < 260 || g.last === 'trolley' || cl ? 0 : (5 + 4 * diff) * (zone === 8 ? 2 : 1.4),
         pad: run < 150 || g.last === 'pad' || g.last === 'gap' || cl ? 0 : zone === 3 || zone === 5 ? 9 : 4.5,
       };
@@ -186,7 +189,8 @@ export class Track {
       for (const k in w) { r -= w[k]; if (r <= 0) { type = k; break; } }
       // one chance per level of a warp portal, placed so that the tunnel comes out at the next level's gateway
       const level = Math.floor(s / ZONE_LEN), zoneEnd = (level + 1) * ZONE_LEN;
-      if (!cl && g.portalLevel !== level && run > 240 && s >= zoneEnd - v * WARP_SPEED * WARP_TIME - 24) {
+      // (never while Grumpy Santa is about: a warp tunnel would whisk Robyn straight past him)
+      if (!cl && g.portalLevel !== level && run > 240 && s >= zoneEnd - v * WARP_SPEED * WARP_TIME - 24 && !this.waves.some((q) => q.santa && s < q.s1 + 12)) {
         g.portalLevel = level;
         if (zoneEnd - s > 110 && rng() < 0.62) type = 'portal';
       }
@@ -217,10 +221,10 @@ export class Track {
     } else if (type === 'trolley') {
       // something that crosses all three lanes: a runaway luggage trolley, or a giant crab on the beach levels
       // (a waddling penguin on the Frosty Pier)
-      // (a scurrying giant rat in the sewers, a moon rover in space)
-      const rat = zone === 8, rover = zone === 9;
+      // (a scurrying giant rat in the sewers, a moon rover in space, a clockwork toy train on Christmas Pier)
+      const rat = zone === 8, rover = zone === 9, train = zone === 10;
       const crab = zone < 7 && rng() < (zone === 0 || zone === 4 || zone === 5 ? 0.75 : 0.2), penguin = zone === 7 && rng() < 0.8;
-      this.spawnObstacle(rat ? 'ratRun' : rover ? 'rover' : crab ? 'crab' : penguin ? 'penguin' : 'trolley', 0, s, { mover: { type: 'cross', amp: LANE_W, w: crab ? 2.2 : penguin || rover ? 1.9 : 2.5, phase: rng() * 6.28, crab, penguin, rat } });
+      this.spawnObstacle(rat ? 'ratRun' : rover ? 'rover' : train ? 'toyTrain' : crab ? 'crab' : penguin ? 'penguin' : 'trolley', 0, s, { mover: { type: 'cross', amp: LANE_W, w: crab ? 2.2 : penguin || rover || train ? 1.9 : 2.5, phase: rng() * 6.28, crab, penguin, rat } });
       needJump = true;
     } else if (type === 'pad') {
       // a bounce pad on the safe path, with a high arc of shells and a pearl at the top
@@ -271,7 +275,11 @@ export class Track {
         const lanes = free.length > 1 && count === 1 ? [pick(rng, free)] : free.slice(0, count);
         lanes.forEach((l, k) => {
           const [kind, chance] = ATTACKER[zone];
-          if (inWave) {
+          if (inWave && wave.santa) {
+            // a present lobbed out of Grumpy Santa's sleigh: it drops to the deck and tumbles along the lane
+            const o = this.spawnObstacle('giftBomb', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false, range: 27, shot: true, santa: true, wave, drop: 6.5, age: 0 } });
+            o.mesh.visible = false;
+          } else if (inWave) {
             // a bomb from the invaders overhead: it falls to the deck and skims along the lane
             const o = this.spawnObstacle('plasma', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6, on: false, range: 32, shot: true, plasma: true, bomb: true, drop: 7, age: 0 } });
             o.mesh.visible = false;
@@ -281,7 +289,7 @@ export class Track {
             const o = this.spawnObstacle(F.shot, l, s + 2 + k * 3, { mover: { type: 'roll', v: 6, on: false, range: 34, shot: true, plasma: F.crackle, drop: F.y - 1.2, age: 0 } });
             o.mesh.visible = false; this.addUfo(l, o.s, o, kind);
           } else if (zone === 8) this.spawnObstacle('ratCharge', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6.5, on: false, run: true } });     // a rat charging down the lane
-          else this.spawnObstacle(zone === 5 ? 'beachball' : zone === 7 ? 'snowball' : 'barrel', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false } });
+          else this.spawnObstacle(zone === 5 ? 'beachball' : zone === 7 ? 'snowball' : zone === 10 ? 'bauble' : 'barrel', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false } });
           skip.push(l);
         });
         extra = (count - 1) * 3;   // the second roller trails the row, so leave room to cut back in behind it

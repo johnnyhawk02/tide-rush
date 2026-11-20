@@ -376,6 +376,27 @@ export class GameAudio {
   organToot() { if (this.ok) { const t = this.ctx.currentTime; [[72, 0], [76, 0.11], [79, 0.22], [84, 0.33]].forEach(([n, d]) => { this.tone('square', midi(n), t + d, 0.1, 0.03, null, { lp: 2400 }); this.tone('sine', midi(n + 12), t + d, 0.1, 0.035); }); } }
   cheer() { if (this.ok) { const t = this.ctx.currentTime; this.noise(t, 1.5, 0.09, { type: 'bandpass', f: 1100, fTo: 1900, q: 0.9, att: 0.5 }); for (let i = 0; i < 3; i++) this.tone('sine', rnd(700, 1000), t + 0.2 + i * 0.12, 0.6, 0.012, null, { slide: rnd(1300, 1700), att: 0.2 }); } }
   // arriving in a new world: a short sting in that world's style, just after the level-up jingle
+  // ----- Christmas Pier and Grumpy Santa -----
+  jingle(n = 4, vol = 0.09) { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < n; i++) { const u = t + i * 0.12; this.noise(u, 0.07, vol, { f: 8500 }); this.tone('square', 5300, u, 0.07, vol * 0.16); this.tone('square', 6700, u, 0.06, vol * 0.12); this.tone('sine', 3520, u, 0.1, vol * 0.5); } } }
+  // "ho ho ho": three round, breathy hoots. Low and grumbly while he is grumpy, higher and bouncier once he is jolly again.
+  hoHo(jolly = false, vol = 0.16) {
+    if (!this.ok) return;
+    const t = this.ctx.currentTime + 0.02, f0 = jolly ? 150 : 98;
+    for (let i = 0; i < 3; i++) {
+      const u = t + i * (jolly ? 0.24 : 0.3), f = f0 * (jolly ? 1 + i * 0.12 : 1 - i * 0.07);
+      this.tone('sawtooth', f, u, 0.2, vol, null, { lp: 520, lpTo: 320, slide: f * 0.8, att: 0.02 });
+      this.tone('sine', f * 2, u, 0.18, vol * 0.5, null, { slide: f * 1.6, att: 0.02 });
+      this.noise(u, 0.12, vol * 0.25, { type: 'bandpass', f: 700, q: 1.2 });
+    }
+  }
+  santaArrive() { if (this.ok) { const t = this.ctx.currentTime; this.jingle(6, 0.08); [48, 51, 54, 55].forEach((n, i) => this.tone('sawtooth', midi(n), t + i * 0.13, 0.16, 0.07, null, { lp: 900 })); this.wobble('sine', 300, 140, t, 0.8, 0.07, 9, 30, { att: 0.2 }); setTimeout(() => this.hoHo(false), 620); } }
+  santaThrow() { if (this.ok) { const t = this.ctx.currentTime; this.noise(t, 0.3, 0.2, { type: 'bandpass', f: 500, fTo: 1800, q: 1.4, att: 0.08 }); this.tone('sine', 900, t, 0.3, 0.11, null, { slide: 300 }); this.jingle(2, 0.07); } }
+  santaHit(n = 1) { if (this.ok) { const t = this.ctx.currentTime, m = 60 + [0, 3, 5, 7, 10][(n - 1) % 5]; this.tone('triangle', midi(m), t, 0.14, 0.12, null, { slide: midi(m + 7) }); this.tone('sine', midi(m + 24), t + 0.03, 0.18, 0.05); this.noise(t, 0.06, 0.05, { f: 8000 }); } }
+  santaOof() { if (this.ok) { const t = this.ctx.currentTime; this.tone('sawtooth', 190, t, 0.32, 0.13, null, { lp: 700, lpTo: 300, slide: 80, att: 0.02 }); this.tone('sine', 380, t, 0.3, 0.06, null, { slide: 160 }); } }
+  santaJolly() { if (this.ok) { const t = this.ctx.currentTime + 0.05; [[72, 0], [76, 0.1], [79, 0.2], [84, 0.3], [88, 0.42], [91, 0.52], [96, 0.64]].forEach(([n, d], i) => { this.tone('sine', midi(n), t + d, i === 6 ? 0.8 : 0.3, 0.07); this.tone('triangle', midi(n + 12), t + d, i === 6 ? 0.6 : 0.16, 0.03); }); this.jingle(8, 0.06); setTimeout(() => this.hoHo(true), 500); } }
+  santaFlee() { if (this.ok) { const t = this.ctx.currentTime; this.noise(t, 0.7, 0.1, { type: 'bandpass', f: 500, fTo: 3600, q: 1.2, att: 0.3 }); this.jingle(5, 0.045); setTimeout(() => this.hoHo(false, 0.12), 150); } }
+  toot() { if (this.ok) { const t = this.ctx.currentTime; for (const f of [740, 932]) { this.tone('square', f, t, 0.12, 0.035, null, { lp: 2600 }); this.tone('square', f, t + 0.17, 0.3, 0.035, null, { lp: 2600 }); } } }
+
   sting(zone) {
     if (!this.ok) return;
     const t = this.ctx.currentTime + 0.45;
@@ -385,6 +406,7 @@ export class GameAudio {
     else if (zone === 3) run([72, 76, 79, 84, 79, 84], 'square', 0.08, 0.06);
     else if (zone === 4) { run([64, 67, 71, 76], 'sawtooth', 0.07, 0.05); this.thunder(0.5); }
     else if (zone === 7) run([87, 91, 94, 99, 103], 'sine', 0.06, 0.06);
+    else if (zone === 10) { run([84, 87, 91, 96, 91, 96], 'sine', 0.07, 0.07); this.jingle(5, 0.05); }
     else if (zone === 6) { this.tone('sine', 147, t, 0.9, 0.16); this.tone('sine', 147, t + 0.35, 0.9, 0.06); }
     else if (zone === 2) { for (const f of [98, 147]) this.tone('sawtooth', f, t, 0.9, 0.06, null, { lp: 460, att: 0.15 }); }
     else if (zone === 5) run([81, 85, 88, 93, 88, 93], 'sine', 0.055, 0.08);

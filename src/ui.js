@@ -4,7 +4,7 @@ const fmt = (n) => Math.floor(n).toLocaleString('en-GB');
 
 const SOUND_ON = '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 8.500a5 5 0 0 1 0 7M18.500 6a8.500 8.500 0 0 1 0 12" fill="none" stroke="#fffaf0" stroke-width="2" stroke-linecap="round"/></svg>';
 const SOUND_OFF = '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16.500 9.500l5 5M21.500 9.500l-5 5" fill="none" stroke="#fffaf0" stroke-width="2" stroke-linecap="round"/></svg>';
-const POWER = { magnet: ['M', '#ff7a7a', 'Shell magnet'], shield: ['S', '#6fe6ff', 'Bubble shield'], boots: ['B', '#7dff8a', 'Spring boots'], gem: ['2', '#d58bff', 'Double score'], rocket: ['R', '#ffa24a', 'Rocket ride'], board: ['H', '#3fe8dc', 'Hoverboard'], warp: ['W', '#c79bff', 'Warp tunnel'], laser: ['L', '#6ff6ff', 'Laser zapper'], mega: ['L', '#ff6ad8', 'Mega laser'], izzi: ['I', '#ffe9b8', 'Izzi rounds up shells'], pixel: ['P', '#b8f08a', 'Pixel: double shells'] };
+const POWER = { magnet: ['M', '#ff7a7a', 'Shell magnet'], shield: ['S', '#6fe6ff', 'Bubble shield'], boots: ['B', '#7dff8a', 'Spring boots'], gem: ['2', '#d58bff', 'Double score'], rocket: ['R', '#ffa24a', 'Rocket ride'], board: ['H', '#3fe8dc', 'Hoverboard'], warp: ['W', '#c79bff', 'Warp tunnel'], laser: ['L', '#6ff6ff', 'Laser zapper'], mega: ['L', '#ff6ad8', 'Mega laser'], izzi: ['I', '#ffe9b8', 'Izzi rounds up shells'], pixel: ['P', '#b8f08a', 'Pixel: double shells'], santa: ['S', '#ff5a5a', "Santa's grumpiness"] };
 const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 
 export class UI {

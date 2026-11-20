@@ -14,6 +14,7 @@ import { zoneName } from './scenery.js';
 import { SkyLife } from './skylife.js';
 import { Pets } from './pets.js';
 import { Invaders } from './invaders.js';
+import { Santa } from './santa.js';
 
 const POWER_TIME = { magnet: 9, shield: 22, boots: 10, gem: 10, rocket: 6.5, board: 12, laser: 13 };
 const POWER_KEYS = Object.keys(POWER_TIME);
@@ -29,7 +30,7 @@ const FLYER = {
 // picking up a laser while one is already running powers it up: it fires faster and reaches further
 const LASER_LV = [null, { name: 'Laser zapper!', gap: 0.16, reach: 0, col: 0x6ff6ff, size: 1.1 }, { name: 'Double laser!', gap: 0.1, reach: 4, col: 0x9dff6a, size: 1.25 }, { name: 'Triple laser!', gap: 0.065, reach: 8, col: 0xffb347, size: 1.4 }];
 // what her footsteps sound like in each world
-const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
+const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal', 10: 'snow' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
 const PET_POP = { izzi: ['Izzi is here! She rounds up shells', "Izzi's off for a sniff"], pixel: ['Pixel is here! Shells count double', 'Pixel wandered off'] };
 const FW_COLORS = [0xffe27a, 0xff8ab0, 0x8ff0ff, 0xa6ff9a, 0xffb36b, 0xd9a6ff];
 const rnd = (a = 1) => (Math.random() - 0.5) * 2 * a;
@@ -99,6 +100,16 @@ class Game {
         this.ui.popup('Wave cleared! +' + fmt(bonus), 'gold'); this.audio.invClear(); this.celebrate(4);
       } else if (what === 'fled' && this.mode === 'run') { this.ui.popup('The invaders zoomed off!'); this.audio.invFlee(); }
     };
+    // Grumpy Santa, the villain of Christmas Pier
+    this.santa = new Santa(this.scene);
+    this.santa.onEvent = (what) => {
+      if (what === 'beaten') {
+        const bonus = 2500 * this.x2; this.score += bonus; this.addCombo(0.5);
+        this.ui.popup("Santa's jolly again! +" + fmt(bonus), 'gold'); this.audio.santaJolly(); this.celebrate(5);
+        // every present he has already thrown pops in a puff of glitter
+        for (const o of this.track.obstacles) if (o.mover && o.mover.santa && o.mover.on && !o.zap && !o.flung) { o.zap = { t: 0 }; o.hit = true; this.glitter(o.x, 0.6, -(o.s - this.dist), 12); }
+      } else if (what === 'fled' && this.mode === 'run') { this.ui.popup('Grumpy Santa zoomed off!'); this.audio.santaFlee(); }
+    };
     this.pets.onEvent = (kind, what) => {
       if (what === 'join') { this.ui.popup(PET_POP[kind][0], 'gold'); if (kind === 'izzi') this.audio.bark(); else this.audio.meow(); }
       else { this.ui.power(kind, 0); if (this.mode === 'run' && !this.warp && this.pw.rocket <= 0) { this.ui.popup(PET_POP[kind][1]); if (kind === 'izzi') this.audio.whine(); else this.audio.mew(); } }
@@ -143,6 +154,7 @@ class Game {
     this.laserT = 0; this.laserLv = 0; this.zapPopT = 0; if (this.bolts) for (const b of this.bolts) { b.live = false; b.mesh.visible = false; }
     if (this.pets) this.pets.reset(); this.robyn.setBlaster(false);
     if (this.invaders) this.invaders.clear(); this.invT = 0; this.invN = 0;
+    if (this.santa) this.santa.clear(); this.santaT = 0; this.santaN = 0;
     this.robyn.setBoots(false); this.robyn.setShield(false); this.robyn.setRocket(false); this.robyn.setBoard(false);
     if (this.skylife) this.skylife.reset();
     this.robyn.root.visible = true; this.robyn.root.rotation.set(0, 0, 0); this.robyn.root.position.set(0, 0, 0);
@@ -530,7 +542,8 @@ class Game {
       this.pw.laser = Math.max(this.pw.laser, 1.2); this.ui.power('laser', 0); this.ui.power('mega', 1);
     } else this.ui.power('mega', 0);
     this.updateInvaders(dt, fly, mega);
-    this.robyn.setBlaster((this.pw.laser > 0 || this.invaders.active) && !fly && !this.warp, mega, LASER_LV[this.laserLv || 1].size);
+    this.updateSanta(dt, mega);
+    this.robyn.setBlaster((this.pw.laser > 0 || this.invaders.active || this.santa.fighting) && !fly && !this.warp, mega, LASER_LV[this.laserLv || 1].size);
     this.updateLaser(dt, mega);
     if (this.pw.shield > 0) this.robyn.shield.material.uniforms.uA.value = this.pw.shield < 3 ? 0.55 + 0.45 * Math.sin(this.time * 14) : 1;
     if (hover && !fly) for (let i = 0; i < 2; i++) this.fx.emit({ x: P.x + rnd(0.25), y: P.y + 0.08, z: 0.5 + Math.random() * 0.5, vx: rnd(1.2), vy: 0.3 + Math.random() * 0.8, vz: 3 + Math.random() * 3, life: 0.3 + Math.random() * 0.25, size: 0.2, grow: 1.2, color: i ? 0x7ff6ff : 0xffffff, g: 1, a: 0.5, world: false });
@@ -581,6 +594,7 @@ class Game {
       else if (o.name === 'crab') A.crabClack();
       else if (o.name === 'penguin') A.penguin();
       else if (o.name === 'trolley') A.trolley();
+      else if (o.name === 'toyTrain') A.toot();
       else if (o.name === 'rover') A.roverBeep();
       else if (m && m.type === 'roll' && !m.shot) A.rumble();
     }
@@ -600,6 +614,7 @@ class Game {
       else if (z === 6) { this.gullT = 2 + Math.random() * 4; if (r < 0.7) A.drip(); else A.squeak(3, 1.6); }
       else if (z === 9) A.blips();
       else if (z === 7) { if (r < 0.5) A.gust(); else A.chime(); }
+      else if (z === 10) { this.gullT = 3 + Math.random() * 4; if (r < 0.6) A.jingle(3 + ((Math.random() * 3) | 0), 0.05); else A.chime(); }
       else if (z === 4) A.gust();
       else if (z === 3) { if (r < 0.5) A.organToot(); else A.cheer(); }
       else if (z === 2) { if (r < 0.35) A.horn(); else if (r < 0.7) A.buoy(); else A.gull(); }
@@ -612,9 +627,10 @@ class Game {
   // shoots the invaders down by herself, whether or not she has a laser pickup.
   updateInvaders(dt, fly, mega) {
     const iv = this.invaders, tr = this.track, s = this.dist, P = this.p, busy = !!this.warp;      // she can shoot from the rocket too
-    if (!iv.active && !busy) {
+    if (!iv.active && !this.santa.active && !busy) {
       const w = tr.waves.find((q) => !q.done && s >= q.s0 - 6 && s < q.s0 + 25);
-      if (w) { w.done = true; iv.begin(w); this.invN = 0; this.invT = 0.5; this.ui.popup('Alien invaders!', 'warn'); this.audio.invArrive(); }
+      if (w && w.santa) { w.done = true; this.santa.begin(w); this.santaN = 0; this.santaT = 0.3; this.ui.popup('Grumpy Santa!', 'warn'); this.audio.santaArrive(); }
+      else if (w) { w.done = true; iv.begin(w); this.invN = 0; this.invT = 0.5; this.ui.popup('Alien invaders!', 'warn'); this.audio.invArrive(); }
     }
     // a bomb from the formation: mark where it came from with a flash
     for (const o of tr.obstacles) { const m = o.mover; if (m && m.bomb && m.on && !m.flashed) { m.flashed = true; this.audio.invBomb(); for (let i = 0; i < 6; i++) this.fx.emit({ x: o.x + rnd(0.3), y: 6.5, z: -(o.s - s), vx: rnd(1.5), vy: -2 - Math.random() * 2, vz: rnd(1.5), life: 0.35, size: 0.24, color: i % 2 ? 0xff5ae0 : 0xffffff, g: 0 }); } }
@@ -625,7 +641,7 @@ class Game {
     if (!b) return;
     a.aimed = true; this.invT = clamp(((iv.wave.s1 - iv.wave.s0) / Math.max(this.speed, 8)) * 0.036, 0.16, 0.3);      // paced to clear the wave a little past half way
     const L = LASER_LV[this.laserLv || 1];
-    Object.assign(b, { live: true, inv: true, target: a, ufo: false, x: P.x + 0.3, y: P.y + 1.05, z: -0.75, t: 0, mega });
+    Object.assign(b, { live: true, inv: true, host: iv, target: a, ufo: false, x: P.x + 0.3, y: P.y + 1.05, z: -0.75, t: 0, mega });
     b.mesh.material.color.set(mega ? 0xff5ae0 : L.col); b.mesh.scale.set(mega ? 2.6 : 1.7, mega ? 2.6 : 1.7, mega ? 2.2 : 1.8);
     this.robyn.fire(); this.audio.zap(mega);
   }
@@ -635,6 +651,47 @@ class Game {
     const cols = [[0xa56bff, 0xffe27a, 0xffffff], [0x2fc7b0, 0xffb347, 0xffffff], [0xff8a3c, 0x8dff5a, 0xffffff]][a.r];
     for (let i = 0; i < 14; i++) { const an = Math.random() * 6.28, u = Math.random() * 3.14, sp = 2 + Math.random() * 4; this.fx.emit({ x: a.wx, y: a.wy, z: a.wz, vx: Math.cos(an) * Math.sin(u) * sp, vy: Math.cos(u) * sp + 1, vz: Math.sin(an) * Math.sin(u) * sp, life: 0.4 + Math.random() * 0.3, size: i % 3 ? 0.22 : 0.4, color: cols[i % 3], g: 3, world: false }); }
     this.invaders.hit(a);
+  }
+
+  // ---------- Grumpy Santa ----------
+  // He turns up on Christmas Pier. Robyn zaps him by herself, laser pickup or not, until he cheers up.
+  updateSanta(dt, mega) {
+    const sa = this.santa, tr = this.track, s = this.dist, P = this.p, busy = !!this.warp;
+    // the presents he lobs: he lines up over the next one, and flings his arm as it goes.
+    // Any that are still waiting once he has cheered up or gone are quietly taken away.
+    let next = null;
+    for (const o of tr.obstacles) {
+      const m = o.mover; if (!m || !m.santa || o.zap) continue;
+      if (m.on) { if (!m.flashed) { m.flashed = true; if (sa.fighting) { sa.throwNow(); this.audio.santaThrow(); const h = sa.hand(); this.glitter(h.x, h.y, h.z, 8); } } }
+      else if (m.wave.done && !(sa.active && (sa.state === 'in' || sa.fighting))) { o.zap = { t: 0 }; o.hit = true; }
+      else if (!next || o.s < next.s) next = o;
+    }
+    if (!sa.active) { this.ui.power('santa', 0); return; }
+    sa.update(dt, this.time, s, busy, P.x, next ? { x: next.x, d: next.s - s - next.mover.range } : null);
+    this.ui.power('santa', sa.fighting ? Math.max(0.02, sa.hp / sa.max) : 0);
+    if (!sa.fighting || busy) return;
+    if ((this.santaT -= dt) > 0) return;
+    const a = sa.target(), b = a && this.bolts.find((q) => !q.live);
+    if (!b) return;
+    const w = sa.wave;
+    this.santaT = clamp((((w.s1 - w.s0) / Math.max(this.speed, 8)) * 0.6 - 1.6) / sa.max, 0.14, 0.45);      // paced so that he cheers up a little past half way
+    const L = LASER_LV[this.laserLv || 1];
+    Object.assign(b, { live: true, inv: true, host: sa, target: a, ufo: false, x: P.x + 0.3, y: P.y + 1.05, z: -0.75, t: 0, mega });
+    b.mesh.material.color.set(mega ? 0xff5ae0 : L.col); b.mesh.scale.set(2.0, 2.0, 2.0);
+    this.robyn.fire(); this.audio.zap(mega);
+  }
+  santaZapped(a) {
+    const pts = 40 * this.mult * this.x2; this.score += pts; this.santaN++;
+    this.audio.santaHit(this.santaN);
+    this.glitter(a.wx + rnd(1.2), a.wy + rnd(1), a.wz + 0.5, 10);
+    const left = this.santa.hp - 1;
+    if (left === 9 || left === 4) { this.audio.santaOof(); this.ui.popup(left === 9 ? 'He is wobbling!' : 'Nearly jolly!'); }
+    this.santa.hit();
+  }
+  // a burst of Christmas glitter in the world ahead of Robyn
+  glitter(x, y, z, n) {
+    const cols = [0xffe27a, 0xff6f6f, 0xa6ff9a, 0xffffff];
+    for (let i = 0; i < n; i++) { const an = Math.random() * 6.28, u = Math.random() * 3.14, sp = 2 + Math.random() * 5; this.fx.emit({ x, y, z, vx: Math.cos(an) * Math.sin(u) * sp, vy: Math.cos(u) * sp + 1.5, vz: Math.sin(an) * Math.sin(u) * sp, life: 0.45 + Math.random() * 0.35, size: i % 3 ? 0.26 : 0.5, color: cols[i % 4], g: 3, world: false }); }
   }
 
   // ---------- laser zapper ----------
@@ -670,8 +727,8 @@ class Game {
       if (b.inv) {
         // a shot at one of the invaders, which are placed in the world rather than on the track
         const dx = tg.wx - b.x, dy = tg.wy - b.y, dz = tg.wz - b.z, len = Math.hypot(dx, dy, dz), step = 70 * dt;
-        if (this.mode !== 'run' || b.t > 1.2 || !tg.alive || this.invaders.flee) { b.live = false; b.mesh.visible = false; tg.aimed = false; continue; }
-        if (len <= step + 0.6) { b.live = false; b.mesh.visible = false; this.invaderZapped(tg); continue; }
+        if (this.mode !== 'run' || b.t > 1.2 || !tg.alive || b.host.flee) { b.live = false; b.mesh.visible = false; tg.aimed = false; continue; }
+        if (len <= step + 0.6) { b.live = false; b.mesh.visible = false; if (tg.santa) this.santaZapped(tg); else this.invaderZapped(tg); continue; }
         b.x += (dx / len) * step; b.y += (dy / len) * step; b.z += (dz / len) * step;
         b.mesh.visible = true; b.mesh.position.set(b.x, b.y, b.z); b.mesh.lookAt(tg.wx, tg.wy, tg.wz);
         continue;

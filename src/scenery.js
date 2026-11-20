@@ -1,10 +1,10 @@
-// Scenery prefabs and the ten levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
-// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers and Space Pier (in zone-id order; config.js sets the order they are played in).
+// Scenery prefabs and the eleven levels: the Promenade, the Grand Pier, the Old Harbour, the Midnight Funfair, Storm Point,
+// Sandcastle Bay, Smugglers' Cove, Frosty Pier, the Sewers, Space Pier and Christmas Pier (in zone-id order; config.js sets the order they are played in).
 // Chunk-local coordinates: x across, z from 0 (near end) to -CHUNK (far end).
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, SAND, SAND_D } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, SAND, SAND_D } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -945,6 +945,119 @@ const iceberg = (v) => prefab('berg' + v, () => {
   return b.build({ receive: false });
 });
 
+// ---------- Christmas Pier ----------
+const XR = 0xd8342f, XG = 0x2f9d5c, XGOLD = 0xffd24a, GINGER = 0xb5713a, ICING = 0xfffaf0;
+const GIFTS = [[XR, XGOLD], [XG, 0xffffff], [0x2f6fd0, XGOLD], [0xff7ab8, 0xffffff], [0xf2c23a, XR], [0x8a4fd0, 0x9ff0e0]];
+// A candy-cane arch over the whole pier, hung with fairy lights and a big star.
+const candyArch = () => prefab('candyarch', () => {
+  const b = new Builder(0.88), RX = 4.5, Y0 = 4.6, N = 18;
+  for (const sx of [-1, 1]) {
+    b.box(0.7, 0.5, 0.7, ICING, sx * RX, 0.25, 0).sph(0.55, SNOW, sx * RX, 0.5, 0, 1, 0.4, 1, { seg: 8 });
+    for (let i = 0; i < 9; i++) b.cyl(0.2, 0.2, 0.47, i % 2 ? 0xffffff : 0xe5383b, sx * RX, 0.6 + 0.455 * (i + 0.5), 0, 0, 0, 0, { seg: 10 });
+    // a bow of holly where the arch springs
+    for (const s2 of [-1, 1]) b.sph(0.3, XG, sx * RX + s2 * 0.26, Y0 + 0.05, 0.22, 1, 0.5, 0.3, { seg: 7 });
+    for (const [x, y] of [[0, 0], [0.09, 0.09], [-0.09, 0.09]]) b.sph(0.08, XR, sx * RX + x, Y0 + y, 0.32, 1, 1, 1, { seg: 6 });
+  }
+  for (let k = 0; k < N; k++) b.tor(RX, 0.2, k % 2 ? 0xffffff : 0xe5383b, 0, Y0, 0, 0, 0, k * (PI / N), { arc: PI / N + 0.01, seg: 3, tseg: 10 });
+  for (let i = 1; i < 26; i++) { const a = (PI * i) / 26, sag = 0.5 + Math.abs(Math.sin(a * 6.5)) * 0.25; b.sph(0.11, FAIRY[i % 4], Math.cos(a) * (RX - sag), Y0 + Math.sin(a) * (RX - sag), 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 }); }
+  b.cyl(0.02, 0.02, 0.9, XGOLD, 0, Y0 + RX - 0.6, 0);
+  b.add(new THREE.OctahedronGeometry(0.42), 0xfff3b0, 0, Y0 + RX - 1.3, 0, 0, 0.6, 0, 1, 1.35, 0.45, { glow: true, grad: 0.85 });
+  b.add(new THREE.OctahedronGeometry(0.42), 0xfff3b0, 0, Y0 + RX - 1.3, 0, 0, 0.6, PI / 2, 1, 1.35, 0.45, { glow: true, grad: 0.85 });
+  return b.build({ cast: true });
+});
+// The giant Christmas tree of the pier, with baubles, lights, a star and presents underneath.
+const giantTree = () => prefab('gianttree', () => {
+  const b = new Builder(0.84), rng = makeRng(1225);
+  b.cyl(0.55, 0.7, 2.0, 0x5a4030, 0, 1.0, 0, 0, 0, 0, { seg: 8 }).sph(1, SNOW, 0, 0, 0, 5.2, 0.4, 5.2, { seg: 10 });
+  for (let i = 0; i < 6; i++) {
+    const r = 4.3 - i * 0.66, y = 1.5 + i * 1.75, h = 3.1;
+    b.cone(r, h, i % 2 ? 0x2f7d4f : 0x286c45, 0, y + h / 2, 0, 0, i * 0.5, 0, { seg: 12 }).cone(r * 0.6, h * 0.6, SNOW, 0, y + h * 0.71, 0, 0, i * 0.5, 0, { seg: 12 });
+    const n = 10 - i;
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * PI * 2 + i * 0.4, rr = r * 0.8;
+      if (k % 2) b.sph(0.24, [XR, XGOLD, 0x2f6fd0, 0xff7ab8][(k + i) % 4], Math.cos(a) * rr, y + 0.28, Math.sin(a) * rr, 1, 1, 1, { seg: 8 });
+      else b.sph(0.13, FAIRY[(k + i) % 4], Math.cos(a) * rr, y + 0.5, Math.sin(a) * rr, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
+    }
+  }
+  for (const rz of [0, PI / 2]) b.add(new THREE.OctahedronGeometry(0.7), 0xfff3b0, 0, 14.1, 0, 0, 0.5, rz, 1, 1.4, 0.4, { glow: true, grad: 0.85 });
+  for (let i = 0; i < 7; i++) { const a = i * 0.9 + 0.3, d = 2.4 + rng() * 1.6, sz = 0.7 + rng() * 0.8, g = GIFTS[i % 6]; giftInto(b, sz, sz * (0.6 + rng() * 0.5), sz, g[0], g[1], Math.cos(a) * d, 0.25, Math.sin(a) * d, rng() * 3); }
+  return b.build({ cast: true, receive: false });
+});
+// Santa's toy workshop; the front faces +z.
+const workshop = () => prefab('workshop', () => {
+  const b = new Builder(0.85);
+  b.box(7, 3.6, 5, 0xc23b2e, 0, 1.8, 0).box(7.15, 0.3, 5.15, ICING, 0, 0.15, 0).box(7.1, 0.2, 5.1, XG, 0, 3.5, 0);
+  for (const sx of [-1, 1]) b.box(0.3, 3.6, 0.3, ICING, sx * 3.45, 1.8, 2.45);
+  b.prism(5.8, 2.3, 7.8, 0x6b4a3a, 0, 3.6, 0, PI / 2).prism(6.0, 2.4, 8.0, SNOW, 0, 3.7, 0, PI / 2);
+  b.box(1.4, 2.3, 0.12, XG, 0, 1.15, 2.5).box(1.6, 0.14, 0.16, ICING, 0, 2.36, 2.52).sph(0.08, XGOLD, 0.45, 1.1, 2.6, 1, 1, 1, { seg: 6 });
+  b.tor(0.34, 0.1, 0x286c45, 0, 1.75, 2.6, 0, 0, 0, { seg: 12 }).sph(0.1, XR, 0, 1.42, 2.66, 1.6, 1, 0.6, { seg: 6 });
+  for (const sx of [-1, 1]) {
+    b.box(1.5, 1.3, 0.08, 0xffd98a, sx * 2.2, 2.0, 2.5, 0, 0, 0, { glow: true, grad: 0.8 });
+    b.box(1.7, 0.12, 0.14, ICING, sx * 2.2, 2.7, 2.52).box(1.7, 0.16, 0.26, ICING, sx * 2.2, 1.3, 2.56).box(0.08, 1.3, 0.12, ICING, sx * 2.2, 2.0, 2.53).box(1.5, 0.08, 0.12, ICING, sx * 2.2, 2.0, 2.53);
+    caneInto(b, sx * 1.0, 0, 2.75, 1.9, 0.09, -sx);
+  }
+  for (let i = 0; i < 18; i++) b.sph(0.085, FAIRY[i % 4], -3.4 + i * 0.4, 3.42 + Math.abs((i % 2) - 0.5) * 0.1, 2.62, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
+  for (let i = 0; i < 12; i++) b.cone(0.06, 0.25 + (i % 3) * 0.15, 0xdff2ff, -3.3 + i * 0.6, 3.52 - (i % 3) * 0.07, 2.95, PI, 0, 0, { seg: 5 });
+  b.box(1.0, 2.2, 1.0, 0x8a4a3a, 2.2, 5.3, -0.9).box(1.2, 0.2, 1.2, SNOW, 2.2, 6.45, -0.9);
+  for (let i = 0; i < 4; i++) b.sph(0.4 + i * 0.16, i % 2 ? 0xe6ecf5 : 0xffffff, 2.2 + i * 0.35, 7.1 + i * 0.75, -0.9, 1, 0.9, 1, { seg: 7 });
+  // a big cog over the door, because toys are made here
+  b.cyl(0.55, 0.55, 0.1, XGOLD, 0, 3.05, 2.56, PI / 2, 0, 0, { seg: 12 }).cyl(0.2, 0.2, 0.14, 0xc23b2e, 0, 3.05, 2.58, PI / 2, 0, 0, { seg: 8 });
+  for (let i = 0; i < 8; i++) b.box(0.2, 0.2, 0.1, XGOLD, Math.cos(i * 0.785) * 0.62, 3.05 + Math.sin(i * 0.785) * 0.62, 2.56, 0, 0, i * 0.785);
+  giftInto(b, 0.9, 0.7, 0.9, GIFTS[2][0], GIFTS[2][1], -2.9, 0, 3.4, 0.3); giftInto(b, 0.6, 0.5, 0.6, GIFTS[3][0], GIFTS[3][1], -2.1, 0, 3.6, -0.4); giftInto(b, 0.7, 0.9, 0.7, GIFTS[4][0], GIFTS[4][1], 3.0, 0, 3.3, 0.5);
+  const g = new THREE.Group(); g.add(b.build({ cast: true }));
+  const s = signMesh('TOY WORKSHOP', 3.4, 0.5, '#fff3d6', '#1f6b3e', '#e5383b'); s.position.set(0, 4.35, 2.2); s.rotation.x = -0.25; g.add(s);
+  return g;
+});
+// A gingerbread house iced with sweets; the front faces +z.
+const gingerHouse = () => prefab('gingerhouse', () => {
+  const b = new Builder(0.86), SW = [XR, 0x8ff0ff, XGOLD, 0xff7ab8, 0xa6ff9a];
+  b.box(4.4, 2.7, 3.6, GINGER, 0, 1.35, 0).box(4.6, 0.22, 3.8, ICING, 0, 0.11, 0);
+  b.prism(4.4, 2.2, 5.0, 0x9a5a2c, 0, 2.7, 0, PI / 2).prism(4.6, 2.25, 5.2, ICING, 0, 2.82, 0, PI / 2);
+  for (let i = 0; i < 11; i++) b.sph(0.26, ICING, -2.5 + i * 0.5, 2.78, 2.28, 1, 1.1 + (i % 2) * 0.5, 0.7, { seg: 7 });      // icing dripping off the eaves
+  for (let i = 0; i < 14; i++) { const u = (i % 7) / 6, row = i < 7 ? 0 : 1; b.sph(0.17, SW[i % 5], -2.1 + u * 4.2, 3.35 + row * 0.75, 1.55 - row * 0.85, 1, 0.8, 1, { seg: 7 }); }
+  b.cyl(0.6, 0.6, 0.12, 0x7a3f1d, 0, 1.25, 1.8, PI / 2, 0, 0, { seg: 12 }).box(1.2, 1.25, 0.12, 0x7a3f1d, 0, 0.62, 1.8).tor(0.64, 0.07, ICING, 0, 1.25, 1.84, 0, 0, 0, { arc: PI, seg: 10 }).sph(0.07, XGOLD, 0.35, 0.8, 1.9, 1, 1, 1, { seg: 6 });
+  for (const sx of [-1, 1]) {
+    b.box(0.85, 0.85, 0.08, 0xffd98a, sx * 1.45, 1.55, 1.8, 0, 0, 0, { glow: true, grad: 0.8 });
+    b.tor(0.5, 0.07, ICING, sx * 1.45, 1.55, 1.84, 0, 0, PI / 4, { seg: 4 });
+    b.cyl(0.36, 0.36, 0.1, ICING, sx * 1.45, 0.55, 1.84, PI / 2, 0, 0, { seg: 12 }).cyl(0.2, 0.2, 0.12, XR, sx * 1.45, 0.55, 1.86, PI / 2, 0, 0, { seg: 8 });     // peppermint swirls
+    caneInto(b, sx * 2.3, 0, 1.95, 2.3, 0.1, -sx);
+    // lollipop trees in the front garden
+    b.cyl(0.05, 0.05, 1.6, ICING, sx * 3.1, 0.8, 2.6).cyl(0.55, 0.55, 0.14, SW[sx > 0 ? 3 : 1], sx * 3.1, 1.9, 2.6, PI / 2, 0, 0, { seg: 14 }).cyl(0.3, 0.3, 0.16, ICING, sx * 3.1, 1.9, 2.6, PI / 2, 0, 0, { seg: 10 }).cyl(0.12, 0.12, 0.18, SW[sx > 0 ? 3 : 1], sx * 3.1, 1.9, 2.6, PI / 2, 0, 0, { seg: 8 });
+  }
+  b.box(0.6, 1.2, 0.6, GINGER, -1.3, 4.3, -0.5).box(0.75, 0.16, 0.75, ICING, -1.3, 4.95, -0.5);
+  b.sph(1, SNOW, 0, 0, 1.2, 3.6, 0.22, 2.6, { seg: 8 });
+  return b.build({ cast: true });
+});
+// One of the reindeer, waiting by the workshop; v 1 has the shiny nose. Faces +z.
+const reindeer = (v) => prefab('reindeer' + v, () => {
+  const b = new Builder(0.85), BR = 0x8a5a36, BR_D = 0x5f3d24, CR = 0xe9d9bf;
+  b.cap(0.33, 0.85, BR, 0, 1.2, 0, PI / 2, 0, 0, { seg: 10 }).sph(0.3, CR, 0, 1.08, 0.42, 0.8, 0.8, 0.7, { seg: 8 }).sph(0.12, CR, 0, 1.38, -0.78, 1, 1, 1, { seg: 6 });
+  for (const sx of [-1, 1]) for (const z of [-0.42, 0.42]) b.cyl(0.07, 0.055, 0.95, BR, sx * 0.2, 0.52, z, 0, 0, 0, { seg: 6 }).cyl(0.075, 0.085, 0.14, 0x2a1d14, sx * 0.2, 0.07, z, 0, 0, 0, { seg: 6 });
+  b.cyl(0.15, 0.2, 0.75, BR, 0, 1.66, 0.62, 0.55, 0, 0, { seg: 8 }).sph(0.22, BR, 0, 2.02, 0.86, 1, 1, 1.25, { seg: 9 }).sph(0.14, CR, 0, 1.96, 1.1, 1, 0.9, 1.1, { seg: 7 });
+  if (v) b.sph(0.085, 0xff4a3a, 0, 1.99, 1.25, 1, 1, 1, { glow: true, seg: 7, grad: 0.9 }); else b.sph(0.07, 0x2a1d14, 0, 1.99, 1.24, 1, 1, 1, { seg: 6 });
+  b.tor(0.2, 0.05, XR, 0, 1.6, 0.6, 1.0, 0, 0, { seg: 10 }).sph(0.07, XGOLD, 0, 1.44, 0.76, 1, 1, 1, { seg: 6 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.045, 0x1f2933, sx * 0.15, 2.08, 1.0, 1, 1, 0.6, { seg: 5 }).sph(0.1, BR_D, sx * 0.24, 2.18, 0.78, 0.5, 1, 0.4, { seg: 6 });
+    b.cyl(0.03, 0.04, 0.6, CR, sx * 0.2, 2.45, 0.78, 0, 0, sx * -0.45, { seg: 5 }).cyl(0.025, 0.03, 0.3, CR, sx * 0.38, 2.6, 0.78, 0, 0, sx * -1.1, { seg: 5 }).cyl(0.025, 0.03, 0.26, CR, sx * 0.22, 2.72, 0.78, 0, 0, sx * 0.2, { seg: 5 });
+  }
+  return b.build({ cast: true });
+});
+// A heap of giant presents.
+const presentPile = (v) => prefab('presents' + v, () => {
+  const b = new Builder(0.86), rng = makeRng(770 + v);
+  b.sph(1, SNOW, 0, 0, 0, 3.0, 0.25, 2.6, { seg: 8 });
+  for (let i = 0; i < 6; i++) { const g = GIFTS[(i + v * 2) % 6], sz = 1.5 - i * 0.14, a = i * 1.3 + v; giftInto(b, sz, sz * (0.6 + rng() * 0.5), sz * (0.8 + rng() * 0.4), g[0], g[1], i ? Math.cos(a) * (1.1 + rng() * 0.8) : 0, 0.15, i ? Math.sin(a) * (1.0 + rng() * 0.7) : 0, rng() * 3); }
+  { const g = GIFTS[(v + 4) % 6]; giftInto(b, 0.8, 0.7, 0.8, g[0], g[1], 0.1, 1.1, 0, 0.5); }
+  return b.build({ cast: true });
+});
+// A giant bauble bobbing on the sea.
+const floatBauble = (col) => prefab('fbauble' + col, () => {
+  const b = new Builder(0.8);
+  b.add(new THREE.SphereGeometry(1.3, 16, 12), (x, y, z) => (Math.abs(y - 0.35) < 0.14 ? XGOLD : Math.abs(y - 0.35) < 0.3 ? 0xffffff : col), 0, 0.35, 0);
+  b.cyl(0.26, 0.3, 0.3, XGOLD, 0, 1.7, 0, 0, 0, 0, { seg: 10 }).tor(0.14, 0.035, XGOLD, 0, 1.92, 0, 0, 0, 0, { seg: 8 });
+  return b.build({ receive: false });
+});
+
 // ---------- the sewers ----------
 // A brick tunnel: walls SEW_W either side of the centre line, then a tall vault that springs at SEW_SPR and rises SEW_RISE.
 const SEW_W = 8.2, SEW_SPR = 3, SEW_RISE = 9, SEW_BOT = -3.6, SLIME = 0x8dff5a;
@@ -1123,17 +1236,17 @@ const asteroidFloat = (v) => prefab('astf' + v, () => {
 });
 
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
   }
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
-  for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
+  for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -1146,13 +1259,13 @@ export function populate(group, rawIndex, zone, anim) {
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   place(group, under40(), 0, 0, 0);
   place(group, rail40(), L, 0, 0);
-  const open = zone === 0 || zone === 5 || zone === 7 || zone === 9;   // the right-hand side opens onto ground at deck level
+  const open = zone === 0 || zone === 5 || zone === 7 || zone === 9 || zone === 10;   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2) place(group, rail40(), R, 0, 0);
   if (zone !== 8) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
     place(group, lamp(), -4.05, 0, z, 0, 1.24); if (flags) place(group, bunting20(), -4.05, 4.86, z);
     if (zone !== 2) { place(group, lamp(), open ? 4.75 : 4.05, 0, z, 0, 1.24); if (flags) place(group, bunting20(), open ? 4.75 : 4.05, 4.86, z); }
-    if (zone === 3) for (const x of [-4.05, 4.05]) place(group, lightPool(), x * 0.82, 0.03, z);
+    if (zone === 3 || zone === 10) for (const x of [-4.05, 4.05]) place(group, lightPool(), x * 0.82, 0.03, z);
   }
   // furniture along the shoulders
   const fz = [-4, -16, -24, -36];
@@ -1254,6 +1367,28 @@ export function populate(group, rawIndex, zone, anim) {
     for (let i = 0; i < 2; i++) anim.push({ o: place(group, iceFloe((index + i) % 2), -8 - rng() * 12, WATER_Y, -5 - i * 19 - rng() * 10, rng() * 6), kind: 'bob', p: rng() * 6, amp: 0.6 });
     if (index % 2) place(group, iceberg(index % 4 === 1 ? 0 : 1), -32 - rng() * 12, 0, -rng() * CHUNK, rng() * 6);
     if (rng() < 0.5) anim.push({ o: place(group, buoy(pick(rng, [C.red, C.green])), -16 - rng() * 10, WATER_Y, -rng() * CHUNK), kind: 'bob', p: rng() * 6 });
+  } else if (zone === 10) {
+    place(group, snowGround(), 0, 0, 0);
+    place(group, snowHills(index % 2), 0, 0, 0);
+    place(group, candyArch(), 0, 0, -20);
+    const k = index % 3;
+    if (k === 0) {
+      place(group, workshop(), DECK_HALF + 6.2, 0, -13, -PI / 2);
+      place(group, reindeer(1), 7.4, 0, -27, -PI / 2 - 0.5); place(group, reindeer(0), 9.2, 0, -30.5, -PI / 2 + 0.2, 0.92); place(group, reindeer(0), 7.0, 0, -34, -PI / 2 - 0.2, 1.05);
+      place(group, presentPile(0), 13, 0, -33, rng() * 6);
+    } else if (k === 1) {
+      place(group, giantTree(), 12.5, 0, -20, rng() * 6);
+      place(group, cabinStall(XG, 'GINGERBREAD'), DECK_HALF + 3.5, 0, -6, -PI / 2);
+      place(group, presentPile(1), 7.4, 0, -34, rng() * 6, 0.8);
+    } else {
+      place(group, gingerHouse(), DECK_HALF + 5.4, 0, -27, -PI / 2);
+      place(group, cabinStall(XR, 'ROAST CHESTNUTS'), DECK_HALF + 3.5, 0, -9, -PI / 2);
+      place(group, reindeer(0), 12.5, 0, -14, -PI / 2 + 0.6);
+    }
+    for (const z of [-3, -17, -37]) if (rng() < 0.75) place(group, fir(1), 16 + rng() * 6, 0, z + rng() * 2, rng() * 6, 0.8 + rng() * 0.5);
+    for (let i = 0; i < 2; i++) anim.push({ o: place(group, iceFloe((index + i) % 2), -8 - rng() * 12, WATER_Y, -5 - i * 19 - rng() * 10, rng() * 6), kind: 'bob', p: rng() * 6, amp: 0.6 });
+    if (rng() < 0.75) anim.push({ o: place(group, floatBauble(pick(rng, [XR, XG, 0x2f6fd0, 0x8a4fd0])), -14 - rng() * 14, WATER_Y, -rng() * CHUNK, rng() * 6), kind: 'bob', p: rng() * 6, amp: 1.2 });
+    if (index % 2) place(group, iceberg(index % 4 === 1 ? 0 : 1), -34 - rng() * 12, 0, -rng() * CHUNK, rng() * 6);
   } else if (zone === 8) {
     place(group, sewerShell(), 0, 0, 0);
     place(group, sewerSide(index % 2), 0, 0, 0);

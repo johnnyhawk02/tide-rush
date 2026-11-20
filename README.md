@@ -1,12 +1,14 @@
 # Tide Rush
 
-A 3D endless lane runner for the browser. Robyn sprints along the coast while the tide chases her, through ten levels that repeat and get faster: the Promenade at sunrise, the Sewers, the Grand Pier, Space Pier, Sandcastle Bay, the Old Harbour at sunset, the Midnight Funfair, Smugglers' Cove, Storm Point and Frosty Pier. Her pets join in: Izzi the border collie and Pixel the black and white cat. Robyn has brown hair with a full straight fringe and a high ponytail, modelled on the real Robyn. Her face is drawn rather than modelled: flat cartoon features painted on a canvas in `src/robyn.js` (`drawFace`) and wrapped round the front of a smooth head, with a smile, a blink and a shocked look. She can only change lane and jump. Nothing in the game ever needs a slide or a duck.
+A 3D endless lane runner for the browser. Robyn sprints along the coast while the tide chases her, through eleven levels that repeat and get faster: the Promenade at sunrise, the Sewers, Christmas Pier, the Grand Pier, Space Pier, Sandcastle Bay, the Old Harbour at sunset, the Midnight Funfair, Smugglers' Cove, Storm Point and Frosty Pier. Her pets join in: Izzi the border collie and Pixel the black and white cat. Robyn has brown hair with a full straight fringe and a high ponytail, modelled on the real Robyn. Her face is drawn rather than modelled: flat cartoon features painted on a canvas in `src/robyn.js` (`drawFace`) and wrapped round the front of a smooth head, with a smile, a blink and a shocked look. She can only change lane and jump. Nothing in the game ever needs a slide or a duck.
 
 Everything is original and generated in code: the models, the textures, the music and the sound effects. There are no downloaded assets.
 
 ## Play
 
 Play it in the browser at https://johnnyhawk02.github.io/tide-rush/. Every push to `main` rebuilds the game and republishes that page (`.github/workflows/pages.yml` pushes the build to the `gh-pages` branch).
+
+On an iPad or phone it installs like an app: open the page in Safari, tap Share, then "Add to Home Screen". It gets its own icon, opens full screen, and still starts without a connection once it has been opened once (`public/manifest.webmanifest`, `public/sw.js` and the icons in `public/icons/`, which `node scripts/make-icons.cjs` redraws from Robyn's model while `npm run preview` is running).
 
 To run it yourself:
 
@@ -49,6 +51,7 @@ Jumps are buffered and you can change lane in mid-air.
 - Attackers everywhere: every level has its own flying attacker that hovers over a lane and lobs something down it. Bomber gulls in flying goggles drop giant eggs (Promenade, Grand Pier, Old Harbour, Sandcastle Bay), slime bats spit slime (Funfair, Smugglers' Cove, Sewers), cross storm clouds throw ball lightning (Storm Point) and snow clouds drop snowballs (Frosty Pier). In the sewers some rats also charge straight down a lane. Their shots are generated like rolling barrels, never on the safe path (`FLYERS` and `ATTACKER` in `src/track.js`).
 - Laser zappers everywhere: most levels hand one out early on and they also turn up among the other power-ups. The laser lasts 13 seconds and zaps flying attackers, rats, crabs and moon rovers in a harmless puff. Picking up another while one is running powers it up to a double and then a triple laser, which fires faster and reaches further (`LASER_LV` in `src/main.js`).
 - Alien invaders: a formation of fifteen little aliens (one-eyed Peepers, box-headed Boxbots and three-eyed Blobbies, all Tide Rush's own) marches from side to side in the sky ahead of Robyn, stepping lower as it goes and quicker as its numbers thin. Robyn shoots them down by herself, lowest row first and nearest her lane first, with or without a laser pickup. Each is worth 60 points and clearing the wave earns a 1,500 point bonus. Space Pier always has a wave, and other open-air levels get one now and then. The formation itself cannot hurt her. Its bombs can, and those are laid by the track generator like rolling barrels, so the safe path is never blocked (`src/invaders.js`, and `waves` in `src/track.js`).
+- Christmas Pier and Grumpy Santa: a snowy night-time pier with candy-cane arches, a giant Christmas tree, Santa's toy workshop, a gingerbread house and reindeer. The obstacles are giant presents, Christmas puddings, sledges, nutcracker soldiers, candy canes and rolling baubles, and a clockwork toy train trundles across the lanes. A giant Santa with glowing red eyes hovers ahead in a rocket sleigh, lines himself up over a lane (his eyes flare just before he throws) and lobs presents down it. Robyn zaps him by herself, with or without a laser pickup, and the "Santa's grumpiness" bar runs down with every hit. When it is empty his eyes stop glowing, he smiles, goes "ho ho ho" and flies off, for a 2,500 point bonus. He cannot hurt Robyn himself, and his presents are laid by the track generator like rolling barrels, so the safe path is never blocked. No warp portal appears while he is about (`src/santa.js`, and `waves` in `src/track.js`).
 - Izzi and Pixel: every so often one of them runs in from behind and follows Robyn's exact path for a while. Izzi (about 16 seconds) rounds up shells like a magnet. While Pixel is there (about 13 seconds) every shell and pearl counts double. They leave when the rocket or a warp tunnel starts, and trot beside Robyn on the title screen.
 - Letters: collect R, O, B, Y and N for a big bonus, a magnet and double score.
 - Each level is 280 m long, so a new one arrives about every 20 seconds at first and sooner as she speeds up, and each pays a level bonus. The Midnight Funfair has fireworks, Storm Point has rain, lightning and waves breaking over the rail, Smugglers' Cove glows with crystals, and Frosty Pier has snow and the northern lights.
@@ -62,9 +65,10 @@ Jumps are buffered and you can change lane in mid-air.
 | `src/main.js` | Game loop, player physics, collisions, scoring, rocket mode, warp tunnels, weather, camera, quality scaling |
 | `src/track.js` | Endless track: scenery chunks, deck with real gaps, the fair pattern generator (obstacles, pads, portals, letters) |
 | `src/obstacles.js` | Obstacle, platform, pad, portal, shell, pearl, letter and power-up models, with pooling |
-| `src/scenery.js` | Scenery for the ten levels |
+| `src/scenery.js` | Scenery for the eleven levels |
 | `src/pets.js` | Izzi and Pixel: their models, animation, and when they join and leave |
 | `src/invaders.js` | The alien invader waves: the marching formation and which one Robyn shoots next |
+| `src/santa.js` | Grumpy Santa: his model, his face (grumpy and jolly), how he moves, throws and is beaten |
 | `src/config.js` | Sizes, speeds, level length (`ZONE_CHUNKS`) and the order the levels are played in (`ZONE_ORDER`) |
 | `src/robyn.js` | Robyn's model, outfits, rocket and procedural animation |
 | `src/sky.js` | Sky, stars, northern lights, clouds, rain, snow, lightning, sea shader, and one lighting palette per level |
@@ -83,6 +87,7 @@ Every level has its own original tune, and the warp tunnel and the rocket each h
 | --- | --- | --- |
 | The Promenade (and the title screen) | Tide Rush | The main theme |
 | The Sewers | Sneaky Pipes | Tip-toe swung blues with an echo |
+| Christmas Pier | Grumpy Santa Stomp | Sneaky minor-key sleigh-bell march |
 | The Grand Pier | Pier Parade | Brass-band march |
 | Space Pier | Moon Hop | Floaty space disco |
 | Sandcastle Bay | Bucket and Spade | Steel-pan calypso |
@@ -112,6 +117,6 @@ __game.restart(); __game.bot = true;
 __game.simulate(420);   // seven minutes of play without drawing
 ```
 
-If the auto-player ever stumbles, a pattern is unfair. Set `__game.botWarp = true` as well to make it take every warp portal. `__game.startAt(distance, ['pad', 'portal'])` begins a run part-way along the coast, optionally forcing the first row types, which is handy for looking at a level (each level is 280 m long, so level N of the first lap starts at (N - 1) x 280 m: the Sewers at 280 m and Space Pier at 840 m).
+If the auto-player ever stumbles, a pattern is unfair. Set `__game.botWarp = true` as well to make it take every warp portal. `__game.startAt(distance, ['pad', 'portal'])` begins a run part-way along the coast, optionally forcing the first row types, which is handy for looking at a level (each level is 280 m long, so level N of the first lap starts at (N - 1) x 280 m: the Sewers at 280 m, Christmas Pier at 560 m and Space Pier at 1,120 m).
 
 Saved in the browser (localStorage): best score, sound on or off, shells banked, chosen outfit.

@@ -306,6 +306,107 @@ def('firPot', 'tall', 1.8, 3.25, 1.8, (b) => {
   for (const [x, z, c] of [[0.62, 0.5, C.blue], [-0.6, 0.55, C.rose]]) b.box(0.34, 0.26, 0.34, c, x, 0.13, z, 0, 0.4, 0).box(0.36, 0.05, 0.08, C.gold, x, 0.2, z, 0, 0.4, 0).box(0.08, 0.05, 0.36, C.gold, x, 0.2, z, 0, 0.4, 0);
 });
 
+// ---------- Christmas Pier ----------
+// A wrapped present with a ribbon both ways and a bow on top; (x, y, z) is the middle of its base.
+export function giftInto(b, w, h, d, col, rib, x = 0, y = 0, z = 0, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    b.box(w, h, d, col, 0, h / 2, 0).box(w + 0.03, h * 0.16, d + 0.03, shade(col, 0.82), 0, h * 0.9, 0);
+    b.box(w * 0.16, h + 0.03, d + 0.05, rib, 0, h / 2, 0).box(w + 0.05, h + 0.03, d * 0.16, rib, 0, h / 2, 0);
+    for (const sx of [-1, 1]) b.sph(0.5, rib, sx * w * 0.16, h + w * 0.07, 0, w * 0.34, w * 0.2, w * 0.2, { seg: 8 });
+    b.sph(0.5, shade(rib, 0.85), 0, h + w * 0.06, 0, w * 0.16, w * 0.16, w * 0.16, { seg: 6 });
+  });
+}
+// A giant candy cane standing at (x, y, z): h is the height of the straight part, dir the side the crook bends to.
+export function caneInto(b, x, y, z, h, r, dir = 1, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    const n = Math.max(4, Math.round(h / (r * 2.6))), seg = h / n, R = r * 3.2;
+    for (let i = 0; i < n; i++) b.cyl(r, r, seg + 0.01, i % 2 ? 0xffffff : 0xe5383b, 0, seg * (i + 0.5), 0, 0, 0, 0, { seg: 9 });
+    // the crook: five short arcs over the top, from the shaft across to the far side
+    for (let k = 0; k < 5; k++) b.tor(R, r, (k + (dir > 0 ? n : n + 1)) % 2 ? 0xffffff : 0xe5383b, dir * R, h, 0, 0, 0, k * (PI / 5), { arc: PI / 5 + 0.03, seg: 5, tseg: 9 });
+    b.sph(r, 0xe5383b, dir * R * 2, h, 0, 1, 1, 1, { seg: 8 });
+  });
+}
+const shade = (hex, k) => new THREE.Color(hex).multiplyScalar(k).getHex();
+const GIFT = [[0xe5383b, 0xffd24a], [0x2f9d5c, 0xffffff], [0x2f6fd0, 0xffd24a], [0xff7ab8, 0xffffff], [0xf2c23a, 0xe5383b], [0x8a4fd0, 0x9ff0e0]];
+def('gift', 'low', 1.35, 0.92, 1.1, (b) => {
+  giftInto(b, 1.25, 0.84, 1.0, GIFT[0][0], GIFT[0][1]);
+  for (let i = 0; i < 6; i++) b.sph(0.045, 0xffffff, -0.5 + i * 0.2, 0.3 + (i % 2) * 0.28, 0.51, 1, 1, 0.4, { seg: 5 });      // a spotty wrapping paper
+});
+def('pudding', 'low', 1.3, 0.92, 1.3, (b) => {
+  // a Christmas pudding the size of a barrel, with icing running down it and a sprig of holly
+  b.cyl(0.66, 0.6, 0.07, 0xf4f8ff, 0, 0.035, 0, 0, 0, 0, { seg: 16 }).cyl(0.7, 0.66, 0.03, 0xd9e6f5, 0, 0.08, 0, 0, 0, 0, { seg: 16 });
+  b.sph(0.56, 0x6b3a22, 0, 0.44, 0, 1, 0.78, 1, { seg: 16 });
+  for (let i = 0; i < 14; i++) { const a = i * 2.4, u = 0.35 + (i % 4) * 0.25; b.sph(0.045, i % 2 ? 0x3a1d10 : 0xb5562a, Math.cos(a) * Math.sin(u) * 0.56, 0.44 + Math.cos(u) * 0.43, Math.sin(a) * Math.sin(u) * 0.56, 1, 1, 1, { seg: 5 }); }
+  b.sph(0.4, 0xfffaf0, 0, 0.7, 0, 1, 0.42, 1, { seg: 14 });
+  for (let i = 0; i < 7; i++) { const a = i * 0.9; b.sph(0.14, 0xfffaf0, Math.cos(a) * 0.36, 0.62 - (i % 3) * 0.07, Math.sin(a) * 0.36, 1, 1.5 + (i % 3) * 0.5, 1, { seg: 7 }); }
+  for (const sx of [-1, 1]) b.sph(0.16, 0x2f9d5c, sx * 0.12, 0.89, 0, 1, 0.22, 0.5, { seg: 7 });
+  for (const [x, z] of [[0, 0.06], [0.07, -0.04], [-0.07, -0.04]]) b.sph(0.055, 0xe5383b, x, 0.92, z, 1, 1, 1, { seg: 6 });
+});
+def('sledge', 'low', 1.4, 0.9, 1.3, (b) => {
+  for (const sx of [-1, 1]) {
+    b.box(0.07, 0.07, 1.25, 0xc23b2e, sx * 0.48, 0.05, 0).tor(0.16, 0.035, 0xc23b2e, sx * 0.48, 0.2, 0.62, 0, PI / 2, 0, { arc: PI, seg: 8 });
+    for (const z of [-0.4, 0.3]) b.box(0.06, 0.26, 0.06, 0x8a5f3e, sx * 0.48, 0.2, z);
+  }
+  for (let i = 0; i < 4; i++) b.box(0.26, 0.05, 1.2, i % 2 ? 0xc9a26a : 0xb88d55, -0.39 + i * 0.26, 0.35, 0);
+  b.sph(0.38, 0x8a5f3e, -0.1, 0.62, -0.25, 1, 0.75, 1, { seg: 10 }).cyl(0.1, 0.16, 0.14, 0x8a5f3e, -0.1, 0.9, -0.25, 0, 0, 0, { seg: 8 }).tor(0.12, 0.025, 0xffd24a, -0.1, 0.86, -0.25, PI / 2, 0, 0, { seg: 8 });
+  giftInto(b, 0.42, 0.34, 0.42, GIFT[2][0], GIFT[2][1], 0.3, 0.38, 0.3, 0.3);
+  giftInto(b, 0.3, 0.26, 0.3, GIFT[3][0], GIFT[3][1], -0.28, 0.38, 0.36, -0.4);
+});
+def('giftStack', 'tall', 1.65, 2.95, 1.65, (b) => {
+  giftInto(b, 1.5, 1.1, 1.5, GIFT[1][0], GIFT[1][1], 0, 0, 0, 0);
+  giftInto(b, 1.15, 0.9, 1.15, GIFT[4][0], GIFT[4][1], 0.05, 1.1, 0, 0.3);
+  giftInto(b, 0.8, 0.7, 0.8, GIFT[5][0], GIFT[5][1], -0.05, 2.0, 0.02, -0.25);
+  for (let i = 0; i < 5; i++) b.sph(0.07, 0xffffff, -0.6 + i * 0.3, 0.3 + (i % 2) * 0.45, 0.76, 1, 1, 0.4, { seg: 5 });
+});
+def('nutcracker', 'tall', 1.5, 3.15, 1.3, (b) => {
+  // a toy soldier as tall as a beach hut, standing to attention on a little drum
+  const RED = 0xd8342f, BLUE = 0x2a4fa8, GOLD = 0xffd24a, SKIN = 0xf2c9a4;
+  b.cyl(0.62, 0.62, 0.42, 0xfffaf0, 0, 0.21, 0, 0, 0, 0, { seg: 14 }).cyl(0.65, 0.65, 0.07, GOLD, 0, 0.42, 0, 0, 0, 0, { seg: 14 }).cyl(0.65, 0.65, 0.07, GOLD, 0, 0.04, 0, 0, 0, 0, { seg: 14 });
+  for (let i = 0; i < 8; i++) b.box(0.03, 0.34, 0.03, RED, Math.cos(i * 0.785) * 0.63, 0.22, Math.sin(i * 0.785) * 0.63, 0, 0, (i % 2 ? 0.35 : -0.35));
+  for (const sx of [-1, 1]) {
+    b.box(0.3, 0.26, 0.42, 0x1f2933, sx * 0.2, 0.58, 0.04).box(0.26, 0.72, 0.28, BLUE, sx * 0.2, 1.06, 0).box(0.05, 0.72, 0.29, GOLD, sx * 0.34, 1.06, 0);
+    b.box(0.2, 0.82, 0.24, RED, sx * 0.5, 1.8, 0).box(0.21, 0.1, 0.25, GOLD, sx * 0.5, 1.44, 0).sph(0.12, 0xfffaf0, sx * 0.5, 1.32, 0, 1, 1, 1, { seg: 7 });
+    b.box(0.3, 0.09, 0.34, GOLD, sx * 0.5, 2.24, 0);
+  }
+  b.box(0.74, 0.86, 0.42, RED, 0, 1.84, 0).box(0.76, 0.1, 0.44, 0x1f2933, 0, 1.47, 0).box(0.16, 0.14, 0.05, GOLD, 0, 1.47, 0.22);
+  for (let i = 0; i < 3; i++) for (const sx of [-1, 1]) b.sph(0.045, GOLD, sx * 0.13, 1.7 + i * 0.2, 0.22, 1, 1, 0.5, { seg: 6 });
+  b.box(0.52, 0.5, 0.44, SKIN, 0, 2.52, 0).box(0.54, 0.16, 0.2, 0xfffaf0, 0, 2.36, 0.16).box(0.36, 0.09, 0.05, 0xfffaf0, 0, 2.4, 0.23);
+  for (let i = 0; i < 4; i++) b.box(0.012, 0.09, 0.055, 0x8a5f3e, -0.135 + i * 0.09, 2.4, 0.235);
+  b.box(0.1, 0.12, 0.1, 0xe89a7a, 0, 2.56, 0.24).box(0.42, 0.07, 0.06, 0x3a2a20, 0, 2.47, 0.23, 0, 0, 0);
+  for (const sx of [-1, 1]) b.sph(0.05, 0x1f2933, sx * 0.13, 2.64, 0.22, 1, 1, 0.5, { seg: 6 }).box(0.16, 0.04, 0.04, 0x3a2a20, sx * 0.13, 2.72, 0.23, 0, 0, sx * -0.25).sph(0.07, 0xff9a8a, sx * 0.2, 2.53, 0.2, 1, 0.7, 0.4, { seg: 6 });
+  b.box(0.56, 0.3, 0.3, 0xfffaf0, 0, 2.5, -0.2);
+  b.cyl(0.3, 0.27, 0.42, 0x1f2933, 0, 2.94, 0, 0, 0, 0, { seg: 12 }).cyl(0.31, 0.31, 0.06, GOLD, 0, 2.77, 0, 0, 0, 0, { seg: 12 }).box(0.14, 0.14, 0.04, GOLD, 0, 2.94, 0.29).sph(0.09, RED, 0, 3.15, 0, 1, 1.2, 1, { seg: 7 });
+});
+def('candyCanes', 'tall', 1.7, 3.0, 1.2, (b) => {
+  b.sph(1, 0xf4f8ff, 0, 0, 0, 0.85, 0.3, 0.6, { seg: 9 });
+  caneInto(b, 0.52, 0, 0, 2.5, 0.13, -1); caneInto(b, -0.52, 0, 0.05, 2.2, 0.13, 1); caneInto(b, 0.05, 0, -0.2, 1.6, 0.1, 1, 0.5);
+  b.tor(0.16, 0.05, 0x2f9d5c, 0, 1.3, 0.16, 0, 0, 0, { seg: 10 }).sph(0.07, 0xffd24a, 0, 1.3, 0.2, 1, 1, 1, { seg: 6 });
+  for (const sx of [-1, 1]) b.sph(0.2, 0x2f9d5c, sx * 0.24, 1.3, 0.16, 1, 0.55, 0.3, { seg: 7 }).box(0.09, 0.4, 0.03, 0x2f9d5c, sx * 0.1, 1.02, 0.18, 0, 0, sx * 0.3);
+});
+def('toyTrain', 'low', 1.5, 0.98, 1.15, (b) => {
+  // a clockwork engine that trundles from side to side across the pier; it faces +x
+  const RED = 0xd8342f, GREEN = 0x2f9d5c, GOLD = 0xffd24a;
+  b.box(1.4, 0.12, 0.7, 0x1f2933, 0, 0.28, 0).cyl(0.27, 0.27, 0.78, RED, 0.22, 0.6, 0, 0, 0, PI / 2, { seg: 12 }).cyl(0.29, 0.29, 0.06, GOLD, 0.62, 0.6, 0, 0, 0, PI / 2, { seg: 12 }).cyl(0.29, 0.29, 0.05, GOLD, 0.1, 0.6, 0, 0, 0, PI / 2, { seg: 12 });
+  b.sph(0.1, 0xfff1c2, 0.66, 0.6, 0, 0.5, 1, 1, { seg: 7, glow: true, grad: 0.9 });
+  b.box(0.5, 0.62, 0.72, GREEN, -0.42, 0.65, 0).box(0.6, 0.07, 0.82, GOLD, -0.42, 0.97, 0).box(0.3, 0.26, 0.74, 0xbfe6f5, -0.42, 0.74, 0);
+  b.cyl(0.07, 0.07, 0.22, 0x1f2933, 0.42, 0.9, 0, 0, 0, 0, { seg: 8 }).cyl(0.12, 0.07, 0.1, GOLD, 0.42, 0.98, 0, 0, 0, 0, { seg: 8 }).sph(0.1, GOLD, 0.1, 0.87, 0, 1, 0.8, 1, { seg: 8 });
+  b.prism(0.5, 0.26, 0.36, GOLD, 0.84, 0.2, 0, PI / 2);
+  for (const sz of [-1, 1]) for (const [x, r] of [[-0.42, 0.24], [0.12, 0.17], [0.5, 0.17]]) b.cyl(r, r, 0.08, GOLD, x, r, sz * 0.39, PI / 2, 0, 0, { seg: 10 }).cyl(r * 0.4, r * 0.4, 0.1, RED, x, r, sz * 0.39, PI / 2, 0, 0, { seg: 6 });
+  b.cyl(0.05, 0.05, 0.16, GOLD, -0.42, 1.08, 0, 0, 0, 0, { seg: 6 });      // the key in the top
+  for (const sx of [-1, 1]) b.cyl(0.07, 0.07, 0.03, GOLD, -0.42 + sx * 0.08, 1.2, 0, PI / 2, 0, 0, { seg: 8 });
+});
+def('bauble', 'low', 1.1, 1.0, 1.0, (b) => {
+  // a giant tree bauble that rolls down the lane
+  b.add(new THREE.SphereGeometry(0.5, 18, 12), (x, y, z) => (Math.abs(x) < 0.1 ? 0xffd24a : Math.abs(x) < 0.17 ? 0xffffff : 0xd8342f), 0, 0, 0, 0, 0, 0, 1, 1, 1, { grad: 0.85 });
+  for (const sx of [-1, 1]) b.cyl(0.11, 0.11, 0.1, 0xffd24a, sx * 0.5, 0, 0, 0, 0, PI / 2, { seg: 8 });
+  for (let i = 0; i < 8; i++) b.sph(0.05, 0xffffff, 0.3 * (i % 2 ? 1 : -1), Math.cos(i * 0.785) * 0.39, Math.sin(i * 0.785) * 0.39, 1, 1, 1, { seg: 5 });
+}, { center: true });
+def('giftBomb', 'low', 1.05, 1.0, 1.0, (b) => {
+  // what Grumpy Santa lobs from his sleigh: a present that tumbles along the lane
+  giftInto(b, 0.82, 0.82, 0.82, 0x2f9d5c, 0xe5383b, 0, -0.41, 0);
+  for (const [x, y] of [[-0.22, 0.14], [0.2, -0.16], [0.22, 0.2], [-0.2, -0.2]]) for (const sz of [-1, 1]) b.sph(0.05, 0xffe27a, x, y, sz * 0.42, 1, 1, 0.4, { seg: 5 });
+}, { center: true });
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -888,6 +989,7 @@ export const TALL_TYPES = {
   3: ['popcorn', 'hutC', 'cart', 'popcorn', 'hutC', 'stack'], 4: ['rock', 'buoyBig', 'rock', 'stack', 'boat', 'buoyBig'],
   5: ['castleOb', 'surfRack', 'cart', 'hutA', 'castleOb', 'hutB'], 6: ['crystal', 'treasure', 'rock', 'crystal', 'stack', 'treasure'], 7: ['snowman', 'firPot', 'hutA', 'snowman', 'stack', 'firPot'],
   8: ['ratBig', 'pipeStack', 'ratBig', 'valve', 'slimeTank', 'ratBig'], 9: ['asteroid', 'rocketOb', 'satDish', 'alienPod', 'asteroid', 'rocketOb'],
+  10: ['giftStack', 'nutcracker', 'candyCanes', 'firPot', 'nutcracker', 'giftStack', 'snowman'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
-export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'] };
+export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'] };

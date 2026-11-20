@@ -17,6 +17,7 @@ const PAL = [
   { top: 0x16245a, hor: 0x9fb4e0, sun: 0xdfe8ff, sunI: 1.9, hemiS: 0xcfe0ff, hemiG: 0xaab8d8, hemiI: 1.45, deep: 0x1d4a7a, shal: 0x8fd0e8, cloud: 0x6f80b0, el: 0.55, az: -0.5, stars: 0.6, storm: 0, aurora: 1, snow: 1 },   // frosty pier: winter dusk
   { top: 0x07100b, hor: 0x1c3524, sun: 0xd9f0b0, sunI: 1.25, hemiS: 0xb4e6a8, hemiG: 0x55664a, hemiI: 1.6, deep: 0x0d2414, shal: 0x7fe04a, cloud: 0x12281a, el: 0.9, az: 0.1, stars: 0, storm: 0, under: 1 },   // the sewers: underground, lit green
   { top: 0x03031a, hor: 0x2b1660, sun: 0xdfe6ff, sunI: 2.1, hemiS: 0xbcaaff, hemiG: 0x6a5aa0, hemiI: 1.45, deep: 0x0a0630, shal: 0x7a4ae0, cloud: 0x3a2a80, el: 0.6, az: -0.4, stars: 1, storm: 0, space: 1 },   // space pier: deep space
+  { top: 0x0a1036, hor: 0x6a3a5e, sun: 0xffe6c4, sunI: 2.0, hemiS: 0xffe1cf, hemiG: 0x9a7f96, hemiI: 1.5, deep: 0x10244f, shal: 0x6fa6d8, cloud: 0x4a3a6a, el: 0.6, az: 0.45, stars: 0.9, storm: 0, snow: 1 },   // Christmas pier: a snowy night lit by fairy lights
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 

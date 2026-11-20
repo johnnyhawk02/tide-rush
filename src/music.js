@@ -268,4 +268,24 @@ export const THEMES = {
 };
 
 // handy for the README and for tests
+// ---- 10. Christmas Pier: "Grumpy Santa Stomp", a sneaky sleigh-bell march that cannot help being jolly (C minor) ----
+THEMES[10] = theme('Grumpy Santa Stomp', {
+  key: 0, scale: 'min', base: 72, gain: 1.05, tempo: 1.04, voice: 'bell', bassVoice: 'tuba', stab: 'brass',
+  chords: 'i i iv V i bVI iv V',
+  tune: [
+    "5,:2 1:2 3:2 1:2 5:4 3:2 1:2",
+    "2:2 3:2 2:2 7,:2 1:6 -:2",
+    "4:2 6:2 1':2 6:2 4:4 6:2 4:2",
+    "5:2 #7:2 2':2 #7:2 5:6 -:2",
+    "5,:2 1:2 3:2 5:2 1':4 5:2 3:2",
+    "6:2 1':2 3':2 1':2 6:4 1':4",
+    "4':2 3':2 2':2 1':2 6:2 4:2 2:2 4:2",
+    "5:2 5:2 #7:2 2':2 5':4 -:4",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 0, _, _, _, 7, _, 5, _],
+  stabs: '....x.......x...',
+  arp: { pat: [0, 1, 2, 1], wave: 'sine', oct: 24, vol: 0.022, every: 2 },
+  drums: { thump: 'x.......x.......', sleigh: 'x.x.x.x.x.x.x.x.', snare: '....x.......x..x', tick: '..x...x...x...x.' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));
