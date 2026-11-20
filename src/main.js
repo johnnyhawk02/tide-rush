@@ -926,10 +926,17 @@ class Game {
   }
 }
 
+// When the game is on a real web host (not inside another page), register the service worker so that it can be
+// installed to the home screen and still opens without a connection.
+if ('serviceWorker' in navigator && location.protocol === 'https:' && window.top === window) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* fine without it */ }); });
+}
+
 async function boot() {
   try { if (document.fonts && document.fonts.load) await Promise.race([document.fonts.load('40px "Lilita One"'), new Promise((r) => setTimeout(r, 1500))]); } catch (e) { /* use fallback font */ }
   try {
     window.__game = new Game();
+    window.__game.THREE = THREE;      // for the scripts that render the app icon and test models
   } catch (err) {
     console.error(err);
     const el = document.getElementById('loading');
