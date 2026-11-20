@@ -6,6 +6,10 @@ Everything is original and generated in code: the models, the textures, the musi
 
 ## Play
 
+Play it in the browser at https://johnnyhawk02.github.io/tide-rush/. Every push to `main` rebuilds the game and republishes that page (`.github/workflows/pages.yml` pushes the build to the `gh-pages` branch).
+
+To run it yourself:
+
 ```
 npm install
 npm run dev        # local server with hot reload
