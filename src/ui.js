@@ -47,7 +47,7 @@ export class UI {
   }
   resetHud() {
     this.last = {}; this.chips = {}; $('powers').innerHTML = ''; $('popups').innerHTML = '';
-    this.score(0, 0, 1); this.shells(0); this.mult(1, 0, false); this.tide(0); this.letters([0, 0, 0, 0, 0]);
+    this.score(0, 0, 1); this.shells(0); this.mult(1, 0, false); this.tide(0, 5); this.letters([0, 0, 0, 0, 0]);
   }
   score(score, dist, level) {
     const s = Math.floor(score), d = Math.floor(dist);
@@ -82,8 +82,16 @@ export class UI {
     }
     c.querySelector('u').style.transform = `scaleX(${Math.max(0, Math.min(1, frac)).toFixed(3)})`;
   }
-  tide(v) {
-    const st = v > 0.5 ? 2 : v > 0.04 ? 1 : 0;
+  // v: how close the tide is (0..1); left: how many more stumbles Robyn can take, shown as hearts
+  tide(v, left) {
+    if (left !== this.last.lives) {
+      const box = $('lives');
+      [...box.children].forEach((el, i) => el.classList.toggle('lost', i >= left));
+      box.classList.toggle('low', left <= 1);
+      if (this.last.lives !== undefined && left < this.last.lives) { box.classList.remove('hit'); void box.offsetWidth; box.classList.add('hit'); }
+      this.last.lives = left;
+    }
+    const st = left === 0 ? 2 : v > 0.04 ? 1 : 0;
     if (st !== this.last.t) {
       const e = $('tide'); e.classList.toggle('on', st === 2); e.classList.toggle('near', st === 1);
       if (st) e.querySelector('span').textContent = st === 2 ? 'The tide is right behind you!' : 'The tide is closing in';

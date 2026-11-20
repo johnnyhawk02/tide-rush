@@ -19,7 +19,10 @@ import { Santa } from './santa.js';
 const POWER_TIME = { magnet: 9, shield: 22, boots: 10, gem: 10, rocket: 6.5, board: 12, laser: 13 };
 const POWER_KEYS = Object.keys(POWER_TIME);
 const POWER_POP = { magnet: 'Shell magnet!', shield: 'Bubble shield!', boots: 'Spring boots! Double jump', gem: 'Double score!', rocket: 'Rocket ride!', board: 'Hoverboard!', laser: 'Laser zapper!' };
-const TIDE_STEP = 0.45, TIDE_LIMIT = 0.5, TIDE_FADE = 14;   // how far the tide gains per stumble, how close is one stumble from the end, seconds to fall back fully
+// Robyn can take five stumbles: each lets the tide gain a fifth of the way (TIDE_STEP), and a stumble while it is
+// closer than TIDE_LIMIT ends the run. The tide falls back all the way in TIDE_FADE seconds, so a stumble is
+// forgiven after about eight seconds of clean running.
+const TIDE_STEP = 0.2, TIDE_LIMIT = 0.81, TIDE_FADE = 40;
 const ROCKET_SPEED = 1.5, FLY_Y = 6.0;
 const SPACE = 9;
 // the flying attackers: what to call each one when it is zapped, and the colours of its puff
@@ -255,16 +258,19 @@ class Game {
   }
   get x2() { return this.pw.gem > 0 ? 2 : 1; }
 
+  // how many more stumbles she can take before the tide catches her
+  stumblesLeft() { return this.tide > TIDE_LIMIT ? 0 : Math.floor((TIDE_LIMIT - this.tide) / TIDE_STEP) + 1; }
   // cause: how the run ends if this is one stumble too many ('tide', or 'crash' for a head-on hit)
   stumble(cause = 'tide') {
     const P = this.p;
     if (P.invuln > 0) return;
     if (this.pw.board > 0) { this.popBoard(); return; }   // the hoverboard takes the knock instead
-    // each stumble lets the tide gain on her; she can take two, and a third while it is this close ends the run
+    // each stumble lets the tide gain on her; she can take five, and a sixth while it is this close ends the run
     if (this.tide > TIDE_LIMIT) { this.die(cause); return; }
     if (this.mult >= 3) this.audio.comboLost();
     P.stumbleT = 0.7; P.invuln = 0.7; this.tide = Math.min(1, this.tide + TIDE_STEP); this.mult = 1; this.combo = 0; this.shake = 0.5;
-    this.audio.stumble(); if (this.tide > TIDE_LIMIT) this.audio.tideWarn(); this.ui.popup(this.tide > TIDE_LIMIT ? 'Last chance!' : 'Careful!', 'warn');
+    const left = this.stumblesLeft();
+    this.audio.stumble(); if (!left) this.audio.tideWarn(); this.ui.popup(!left ? 'Last chance!' : left === 1 ? 'Careful! 1 stumble left' : `Careful! ${left} stumbles left`, 'warn');
     this.dust(P.x, P.y + 0.3, 10, 0xfff3d6);
   }
   // The hoverboard and the bubble shield each soak up one hit; the board goes first.
@@ -570,7 +576,7 @@ class Game {
       }
       this.level = lv; this.zone = z;
     }
-    this.ui.score(this.score, run, this.level); this.ui.shells(this.shells); this.ui.mult(this.mult, this.combo, this.x2 > 1); this.ui.tide(this.tide);
+    this.ui.score(this.score, run, this.level); this.ui.shells(this.shells); this.ui.mult(this.mult, this.combo, this.x2 > 1); this.ui.tide(this.tide, this.mode === 'dying' || this.mode === 'over' ? 0 : this.stumblesLeft());
     this.audio.setTempo(126 + diff * 26 + (this.warp || fly ? 10 : 0));
     this.audio.setTheme(this.warp ? 'warp' : fly ? 'rocket' : z);
     this.updateSounds(dt, z, fly, hover);
