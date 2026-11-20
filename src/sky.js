@@ -24,6 +24,7 @@ const PAL = [
   { top: 0x1a9be8, hor: 0xfff0c8, sun: 0xfff4d8, sunI: 2.9, hemiS: 0xe6f4ff, hemiG: 0xd8c8a0, hemiI: 1.4, deep: 0x0f7fa8, shal: 0x4fd8d0, cloud: 0xffffff, el: 0.7, az: -0.5, stars: 0, storm: 0 },   // Rollercoaster World: a bright afternoon at the theme park
   { top: 0x1689e0, hor: 0xc8f0ff, sun: 0xfff6dc, sunI: 2.9, hemiS: 0xdff4ff, hemiG: 0xd8d0a8, hemiI: 1.4, deep: 0x0d6fa8, shal: 0x3fd0d8, cloud: 0xffffff, el: 0.9, az: 0.25, stars: 0, storm: 0 },   // the Glass Tunnel: a clear tropical day up top (under the water the dive takes over; see update)
   { top: 0xe9a85c, hor: 0xfff1d2, sun: 0xfff3dc, sunI: 2.7, hemiS: 0xfff0dc, hemiG: 0xc08a5a, hemiI: 1.45, deep: 0x3a1a0c, shal: 0x7d4420, foam: 0xb98552, cloud: 0xfff8ea, el: 0.72, az: 0.4, stars: 0, storm: 0 },   // Chocolate Coast: a caramel sky with whipped-cream clouds over a sea of melted chocolate
+  { top: 0x3f9be8, hor: 0xdff5ff, sun: 0xfffbe8, sunI: 3.0, hemiS: 0xeaf6ff, hemiG: 0x9fc878, hemiI: 1.4, deep: 0x1a78b0, shal: 0x58c8d8, cloud: 0xffffff, el: 0.8, az: -0.4, stars: 0, storm: 0 },   // Moo Town: a bright spring morning over green meadows
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 

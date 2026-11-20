@@ -405,4 +405,23 @@ THEMES[16] = theme('Cocoa Stroll', {
   drums: { kick: 'x.......x.......', brush: 'x.x.x.x.x.x.x.x.', rim: '....x.......x...', snap: '..............x.' },
 });
 
+// ---- 17. Moo Town: "Moo Town Hoedown", a bouncy barn dance on a banjo with an oom-pah bass (D major) ----
+THEMES[17] = theme('Moo Town Hoedown', {
+  key: 2, scale: 'maj', base: 62, gain: 1.0, tempo: 1.06, swing: 0.15, voice: 'pluck', bassVoice: 'tuba', stab: 'reed',
+  chords: 'I IV I V I IV V I',
+  tune: [
+    "1:2 3:2 5:2 3:2 1':2 5:2 3:2 5:2",
+    "6:2 4:2 6:2 1':2 6:4 4:2 6:2",
+    "5:2 3:2 5:2 1':2 3':2 1':2 5:2 3:2",
+    "2:2 5:2 7:2 2':2 7:4 5:4",
+    "1':2 1':2 5:2 3:2 5:2 1':2 3':4",
+    "4':2 1':2 6:2 1':2 4':2 1':2 6:4",
+    "5:2 7:2 2':2 4':2 2':2 7:2 5:2 7:2",
+    "1':4 5:2 3:2 1:4 -:4",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 0, _, _, _, 7, _, 12, _],
+  stabs: '..x...x...x...x.',
+  drums: { thump: 'x.......x.......', clap: '....x.......x...', tick: 'x.x.x.x.x.x.x.x.', bell: '..............x.' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

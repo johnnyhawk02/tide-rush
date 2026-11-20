@@ -1102,6 +1102,172 @@ def('chocJug', 'deco', 2.2, 1.6, 1.4, (b) => {
   wings: (b, sx) => { for (let i = 0; i < 3; i++) b.sph(0.3 - i * 0.05, 0xffffff, sx * (0.3 + i * 0.26), 0.02 + i * 0.03, -i * 0.06, 1.25, 0.14, 0.62 - i * 0.1, { seg: 8 }); }, wingAt: [0.36, 0.1, 0],
 });
 
+// ---------- Moo Town ----------
+export const COW_W = 0xfffaf2, COW_B = 0x2a2420, COW_BR = 0x9a5a2e, COW_P = 0xf7b6b8, HOOF = 0x3a2a22, HORN = 0xf0e2c0, STRAW = 0xe6c462, STRAW_D = 0xc9a13e;
+// A friendly cow person, standing on two legs and facing +z. (x, y, z) is the ground under the hooves and s the size
+// (1 is a grown-up, about 2.3 tall). o.top: the colour of the clothes; o.kind: 'dungarees', 'dress', 'jumper' or 'apron';
+// o.hat: 'straw', 'cap', 'bow', 'flower' or 'chef'; o.brown: a brown-and-white cow; o.arm false leaves off the right arm
+// (scenery adds it as a separate part, so that it can wave); o.specs: glasses.
+export function cowInto(b, x, y, z, ry = 0, s = 1, o = {}) {
+  const W = COW_W, B = o.brown ? COW_BR : COW_B, top = o.top ?? 0x3f7fd0, kind = o.kind || 'dungarees';
+  b.at(x, y, z, ry, () => {
+    for (const sx of [-1, 1]) b.cyl(0.13, 0.12, 0.62, kind === 'dungarees' ? top : W, sx * 0.19, 0.43, 0, 0, 0, 0, { seg: 8 }).cyl(0.15, 0.17, 0.16, HOOF, sx * 0.19, 0.08, 0.02, 0, 0, 0, { seg: 8 });
+    b.sph(0.44, W, 0, 1.12, 0, 1, 1.2, 0.88, { seg: 14 });
+    b.sph(0.22, B, -0.37, 1.3, 0.02, 0.4, 1.0, 0.9, { seg: 8 }).sph(0.24, B, 0.16, 1.0, -0.33, 1, 0.9, 0.4, { seg: 8 });
+    if (kind === 'dungarees') {
+      b.sph(0.455, top, 0, 0.9, 0, 1, 0.72, 0.9, { seg: 12 }).box(0.5, 0.42, 0.08, top, 0, 1.24, 0.37, -0.08, 0, 0);
+      for (const sx of [-1, 1]) b.box(0.07, 0.52, 0.05, top, sx * 0.2, 1.52, 0.27, -0.42, 0, 0).sph(0.035, 0xffc928, sx * 0.2, 1.4, 0.4, 1, 1, 0.5, { seg: 6 });
+    } else if (kind === 'dress') {
+      b.cyl(0.3, 0.64, 0.82, top, 0, 0.88, 0, 0, 0, 0, { seg: 12 }).sph(0.455, top, 0, 1.24, 0, 1, 0.86, 0.9, { seg: 12 }).tor(0.26, 0.05, 0xffffff, 0, 1.58, 0.03, PI / 2, 0, 0, { seg: 12 });
+      for (let i = 0; i < 6; i++) b.sph(0.05, 0xffffff, Math.cos(i * 1.05) * 0.5, 0.62 + (i % 2) * 0.1, Math.sin(i * 1.05) * 0.5, 1, 1, 1, { seg: 5 });
+    } else if (kind === 'jumper') {
+      b.sph(0.46, top, 0, 1.16, 0, 1, 1.02, 0.9, { seg: 12 });
+      for (let i = 0; i < 2; i++) b.tor(0.445 - i * 0.03, 0.035, 0xffffff, 0, 1.05 + i * 0.26, 0, PI / 2, 0, 0, { seg: 14 });
+    } else {
+      b.sph(0.455, top, 0, 1.16, 0, 1, 1.02, 0.9, { seg: 12 }).box(0.56, 0.9, 0.06, 0xffffff, 0, 1.0, 0.39, -0.05, 0, 0).box(0.3, 0.2, 0.07, 0xffffff, 0, 1.5, 0.33, -0.3, 0, 0).box(0.2, 0.16, 0.07, 0xffd9e2, 0, 0.9, 0.42, -0.05, 0, 0);
+    }
+    b.cap(0.09, 0.42, kind === 'dungarees' ? W : top, -0.52, 1.26, 0.02, 0, 0, -0.34, { seg: 7 }).sph(0.1, HOOF, -0.63, 0.96, 0.02, 1, 1, 1, { seg: 7 });
+    if (o.arm !== false) b.cap(0.09, 0.42, kind === 'dungarees' ? W : top, 0.62, 1.66, 0.02, 0, 0, -0.72, { seg: 7 }).sph(0.1, HOOF, 0.84, 1.92, 0.02, 1, 1, 1, { seg: 7 });
+    // head
+    b.sph(0.34, W, 0, 1.95, 0.04, 1, 0.95, 0.95, { seg: 14 }).sph(0.16, B, 0.17, 2.05, 0.2, 1, 1.1, 0.7, { seg: 8 }).sph(0.25, COW_P, 0, 1.82, 0.28, 1.12, 0.72, 0.75, { seg: 12 });
+    b.tor(0.1, 0.02, 0x8a4a50, 0, 1.79, 0.45, 0.25, 0, PI, { arc: PI, seg: 8 }).sph(0.1, B, 0, 2.27, 0.1, 1.3, 0.7, 1, { seg: 7 });
+    for (const sx of [-1, 1]) {
+      b.sph(0.032, 0x8a4a50, sx * 0.09, 1.87, 0.46, 1, 1.3, 0.5, { seg: 6 });
+      b.sph(0.078, 0xffffff, sx * 0.14, 2.04, 0.3, 1, 1.15, 0.5, { seg: 8 }).sph(0.04, 0x1b1f24, sx * 0.14, 2.03, 0.335, 1, 1, 0.5, { seg: 6 });
+      b.sph(0.13, sx > 0 ? B : W, sx * 0.41, 2.02, 0, 1.5, 0.6, 0.5, { seg: 8 }).sph(0.07, COW_P, sx * 0.42, 2.02, 0.04, 1.4, 0.55, 0.4, { seg: 6 });
+      b.cone(0.055, 0.22, HORN, sx * 0.2, 2.3, 0, 0, 0, sx * -0.5, { seg: 6 });
+      if (o.specs) b.tor(0.1, 0.015, 0x3a2a22, sx * 0.14, 2.04, 0.36, 0, 0, 0, { seg: 10 });
+    }
+    b.tor(0.25, 0.035, 0xd2302c, 0, 1.64, 0.04, PI / 2 - 0.15, 0, 0, { seg: 12 }).cyl(0.06, 0.1, 0.13, 0xffc928, 0, 1.52, 0.3, 0, 0, 0, { seg: 8 });      // a collar and a bell
+    b.cap(0.03, 0.4, W, 0, 0.78, -0.47, -0.6, 0, 0, { seg: 5 }).sph(0.075, B, 0, 0.55, -0.62, 1, 1.3, 1, { seg: 6 });
+    if (o.hat === 'straw') b.cyl(0.52, 0.52, 0.04, STRAW, 0, 2.25, 0.02, 0, 0, 0, { seg: 14 }).cyl(0.25, 0.3, 0.2, STRAW, 0, 2.36, 0.02, 0, 0, 0, { seg: 12 }).cyl(0.305, 0.305, 0.06, 0xd2302c, 0, 2.3, 0.02, 0, 0, 0, { seg: 12 });
+    else if (o.hat === 'cap') b.sph(0.3, 0x6f7a5a, 0, 2.24, 0, 1, 0.42, 1, { seg: 10 }).box(0.34, 0.04, 0.22, 0x6f7a5a, 0, 2.2, 0.3, 0.15, 0, 0);
+    else if (o.hat === 'bow') { for (const sx of [-1, 1]) b.sph(0.11, 0xff5a8a, sx * 0.1, 2.32, 0.06, 1.2, 0.8, 0.5, { seg: 7 }); b.sph(0.05, 0xd2306a, 0, 2.32, 0.08, 1, 1, 1, { seg: 6 }); }
+    else if (o.hat === 'flower') { b.sph(0.06, 0xffd23f, 0.27, 2.24, 0.14, 1, 1, 1, { seg: 6 }); for (let i = 0; i < 5; i++) b.sph(0.06, 0xffffff, 0.27 + Math.cos(i * 1.26) * 0.09, 2.24 + Math.sin(i * 1.26) * 0.09, 0.12, 1, 1, 0.4, { seg: 5 }); }
+    else if (o.hat === 'chef') b.cyl(0.24, 0.22, 0.3, 0xffffff, 0, 2.4, 0, 0, 0, 0, { seg: 10 }).sph(0.3, 0xffffff, 0, 2.62, 0, 1, 0.6, 1, { seg: 9 });
+  }, s);
+}
+// A milk churn; (x, y, z) is the middle of its base.
+export function churnInto(b, x, y, z, s = 1) {
+  const M = 0xc9d2d8, MD = 0x9aa6ae;
+  b.cyl(0.3 * s, 0.32 * s, 0.6 * s, M, x, y + 0.3 * s, z, 0, 0, 0, { seg: 12 }).cyl(0.18 * s, 0.3 * s, 0.16 * s, M, x, y + 0.68 * s, z, 0, 0, 0, { seg: 12 }).cyl(0.2 * s, 0.18 * s, 0.1 * s, M, x, y + 0.81 * s, z, 0, 0, 0, { seg: 12 }).cyl(0.23 * s, 0.23 * s, 0.05 * s, MD, x, y + 0.88 * s, z, 0, 0, 0, { seg: 12 });
+  b.tor(0.325 * s, 0.02 * s, MD, x, y + 0.12 * s, z, PI / 2, 0, 0, { seg: 12 }).tor(0.315 * s, 0.02 * s, MD, x, y + 0.5 * s, z, PI / 2, 0, 0, { seg: 12 });
+  for (const sx of [-1, 1]) b.tor(0.07 * s, 0.018 * s, MD, x + sx * 0.3 * s, y + 0.66 * s, z, 0, 0, 0, { seg: 8 });
+}
+// A milk bottle with a foil top; (x, y, z) is the middle of its base, s its size (1 is 1 m tall).
+export function bottleInto(b, x, y, z, s = 1, cap = 0xd2302c) {
+  b.cyl(0.2 * s, 0.2 * s, 0.6 * s, 0xfffdf6, x, y + 0.3 * s, z, 0, 0, 0, { seg: 12 }).cyl(0.1 * s, 0.2 * s, 0.2 * s, 0xfffdf6, x, y + 0.7 * s, z, 0, 0, 0, { seg: 12 }).cyl(0.1 * s, 0.1 * s, 0.14 * s, 0xfffdf6, x, y + 0.87 * s, z, 0, 0, 0, { seg: 10 }).cyl(0.115 * s, 0.115 * s, 0.06 * s, cap, x, y + 0.97 * s, z, 0, 0, 0, { seg: 10 });
+}
+// A rectangular bale of hay tied with twine; (x, y, z) is the middle of its base.
+export function baleInto(b, w, h, d, x, y, z, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    b.box(w, h, d, STRAW, 0, h / 2, 0);
+    for (const sx of [-1, 1]) b.box(0.05, h + 0.03, d + 0.03, 0xb98a3a, sx * w * 0.28, h / 2, 0);
+    for (let i = 0; i < 6; i++) b.box(0.05, 0.03, 0.26, STRAW_D, -w * 0.4 + i * w * 0.16, h + 0.012, ((i % 3) - 1) * d * 0.25, 0, i, 0);
+  });
+}
+def('churns', 'low', 1.4, 0.95, 1.0, (b) => {
+  churnInto(b, -0.36, 0, 0.05); churnInto(b, 0.34, 0, -0.08, 0.92);
+  b.sph(0.3, 0xfffdf6, 0.3, 0.012, 0.42, 1, 0.04, 0.7, { seg: 8 });      // a little spilt milk
+});
+def('milkCrate', 'low', 1.4, 0.95, 1.0, (b) => {
+  // a crate of milk bottles
+  b.box(1.26, 0.1, 0.86, 0x4f8fe0, 0, 0.05, 0);
+  for (const sx of [-1, 1]) b.box(0.07, 0.5, 0.86, 0x4f8fe0, sx * 0.6, 0.3, 0).box(1.26, 0.12, 0.07, 0x4f8fe0, 0, 0.46, sx * 0.4).box(1.26, 0.1, 0.07, 0x4f8fe0, 0, 0.2, sx * 0.4);
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) bottleInto(b, -0.38 + i * 0.38, 0.1, -0.2 + j * 0.4, 0.82, (i + j) % 2 ? 0xd2302c : 0xf2c230);
+});
+def('trough', 'low', 1.7, 0.9, 1.0, (b) => {
+  // a water trough with a rubber duck in it
+  const WD = 0x8a5a3c, WDD = 0x6a4326;
+  b.box(1.56, 0.5, 0.74, WD, 0, 0.45, 0).box(1.4, 0.04, 0.6, 0x5ac8e6, 0, 0.71, 0, 0, 0, 0, { grad: 1 });
+  for (const sx of [-1, 1]) b.box(0.12, 0.72, 0.8, WDD, sx * 0.68, 0.36, 0).box(1.6, 0.08, 0.07, WDD, 0, 0.7, sx * 0.37);
+  b.sph(0.13, 0xffd23f, 0.3, 0.8, 0.02, 1.2, 0.9, 1, { seg: 8 }).sph(0.085, 0xffd23f, 0.4, 0.93, 0.02, 1, 1, 1, { seg: 7 }).cone(0.035, 0.08, 0xff8a3c, 0.5, 0.92, 0.02, 0, 0, -PI / 2, { seg: 5 });
+});
+def('bigBottle', 'tall', 1.5, 2.8, 1.5, (b) => {
+  // an enormous bottle of milk with a cow-patch label
+  b.cyl(0.62, 0.62, 1.7, 0xfffdf6, 0, 0.85, 0, 0, 0, 0, { seg: 18 }).cyl(0.3, 0.62, 0.55, 0xfffdf6, 0, 1.97, 0, 0, 0, 0, { seg: 18 }).cyl(0.3, 0.3, 0.36, 0xfffdf6, 0, 2.42, 0, 0, 0, 0, { seg: 14 }).cyl(0.34, 0.34, 0.14, 0xd2302c, 0, 2.66, 0, 0, 0, 0, { seg: 14 }).cyl(0.33, 0.28, 0.06, 0xb5202c, 0, 2.76, 0, 0, 0, 0, { seg: 14 });
+  b.cyl(0.635, 0.635, 0.8, 0x5ab0f0, 0, 0.95, 0, 0, 0, 0, { seg: 18 });
+  for (const [a, y, r] of [[0.2, 1.05, 0.2], [1.3, 0.8, 0.16], [-0.9, 1.1, 0.18], [2.6, 1.0, 0.2], [-2.2, 0.85, 0.15], [3.6, 1.15, 0.13]]) b.sph(r, COW_B, Math.sin(a) * 0.62, y, Math.cos(a) * 0.62, 1, 1.1, 1, { seg: 7 });
+  b.sph(0.14, 0xffffff, -0.25, 1.9, 0.42, 0.6, 1.8, 0.3, { seg: 6 });
+});
+def('hayStack', 'tall', 1.7, 2.7, 1.3, (b) => {
+  // bales of hay piled up, with a pitchfork stuck in the top
+  baleInto(b, 1.6, 0.85, 1.1, 0, 0, 0, 0.05); baleInto(b, 1.5, 0.85, 1.05, 0.04, 0.85, 0, -0.08); baleInto(b, 1.3, 0.8, 1.0, -0.05, 1.7, 0, 0.1);
+  b.cyl(0.03, 0.03, 1.1, 0x8a5a3c, 0.3, 2.9, 0, 0, 0, 0.25, { seg: 6 });
+});
+def('scareCow', 'tall', 1.9, 2.9, 1.0, (b) => {
+  // a scarecrow, made to look like a cow, with a crow's nest in its hat (it scares nobody)
+  b.cyl(0.07, 0.07, 2.2, 0x8a5a3c, 0, 1.1, 0, 0, 0, 0, { seg: 6 }).cyl(0.05, 0.05, 1.8, 0x8a5a3c, 0, 1.75, 0, 0, 0, PI / 2, { seg: 6 });
+  b.box(0.8, 1.0, 0.36, 0xd2302c, 0, 1.5, 0).box(0.82, 0.14, 0.38, 0xf2c230, 0, 1.2, 0);
+  for (const sx of [-1, 1]) { b.box(0.62, 0.24, 0.26, 0xd2302c, sx * 0.62, 1.75, 0); for (let i = 0; i < 4; i++) b.box(0.03, 0.3, 0.03, STRAW, sx * (0.92 + (i % 2) * 0.06), 1.62 + (i % 2) * 0.1, (i - 1.5) * 0.06, 0, 0, sx * (0.6 + i * 0.3)); }
+  for (let i = 0; i < 6; i++) b.box(0.04, 0.34, 0.03, STRAW, -0.3 + i * 0.12, 0.92, 0.1, 0, 0, (i - 2.5) * 0.12);
+  b.sph(0.36, 0xfff6e0, 0, 2.36, 0.02, 1, 0.95, 0.9, { seg: 12 }).sph(0.24, COW_P, 0, 2.24, 0.26, 1.1, 0.7, 0.7, { seg: 10 }).sph(0.15, COW_B, 0.18, 2.46, 0.2, 1, 1.1, 0.6, { seg: 7 });
+  for (const sx of [-1, 1]) { b.box(0.1, 0.03, 0.02, 0x1b1f24, sx * 0.14, 2.46, 0.33, 0, 0, 0.78).box(0.1, 0.03, 0.02, 0x1b1f24, sx * 0.14, 2.46, 0.33, 0, 0, -0.78); b.cone(0.05, 0.2, HORN, sx * 0.2, 2.7, 0, 0, 0, sx * -0.5, { seg: 6 }); }
+  b.tor(0.1, 0.018, 0x8a4a50, 0, 2.21, 0.41, 0.25, 0, PI, { arc: PI, seg: 8 });
+  b.cyl(0.56, 0.56, 0.04, STRAW, 0, 2.68, 0, 0, 0, 0.08, { seg: 12 }).cyl(0.26, 0.32, 0.22, STRAW, 0, 2.8, 0, 0, 0, 0.08, { seg: 10 });
+});
+def('milkFloat', 'tall', 1.9, 2.4, 2.6, (b) => {
+  // the milk cart, loaded with crates and churns
+  const BL = 0x5ab0f0;
+  b.box(1.7, 0.5, 2.4, 0xfffdf6, 0, 0.62, 0).box(1.72, 0.14, 2.42, BL, 0, 0.9, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.3, 0.3, 0.16, 0x2a2f36, sx * 0.86, 0.3, sz * 0.75, 0, 0, PI / 2, { seg: 12 }).cyl(0.13, 0.13, 0.18, 0xd2302c, sx * 0.86, 0.3, sz * 0.75, 0, 0, PI / 2, { seg: 8 });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.04, 0.04, 1.3, 0xdfe6ee, sx * 0.78, 1.6, sz * 1.1, 0, 0, 0, { seg: 6 });
+  b.box(1.9, 0.12, 2.6, BL, 0, 2.3, 0);
+  for (let i = 0; i < 5; i++) b.box(0.38, 0.14, 2.62, i % 2 ? 0xfffdf6 : BL, -0.76 + i * 0.38, 2.31, 0);
+  churnInto(b, -0.42, 0.97, 0.7); churnInto(b, 0.38, 0.97, 0.75, 0.9);
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) bottleInto(b, -0.4 + i * 0.4, 0.97, -0.75 + j * 0.42, 0.8, i % 2 ? 0xd2302c : 0xf2c230);
+  for (const [x, y, r] of [[-0.5, 0.6, 0.16], [0.3, 0.68, 0.2], [0.62, 0.5, 0.12]]) b.sph(r, COW_B, x, y, 1.2, 1, 1, 0.12, { seg: 7 });
+});
+def('butterChurn', 'tall', 1.4, 2.6, 1.4, (b) => {
+  // an old wooden butter churn with a pat of butter on the stool beside it
+  const WD = 0xb07a4a, WDD = 0x7a4f2c;
+  b.cyl(0.42, 0.6, 1.7, WD, 0, 0.85, -0.1, 0, 0, 0, { seg: 14 });
+  for (const y of [0.3, 0.9, 1.5]) b.tor(0.6 - y * 0.106 + 0.01, 0.03, 0x5a6068, 0, y, -0.1, PI / 2, 0, 0, { seg: 14 });
+  b.cyl(0.46, 0.44, 0.1, WDD, 0, 1.74, -0.1, 0, 0, 0, { seg: 14 }).cyl(0.04, 0.04, 0.9, WDD, 0, 2.2, -0.1, 0, 0, 0, { seg: 6 }).cyl(0.04, 0.04, 0.5, WDD, 0, 2.6, -0.1, 0, 0, PI / 2, { seg: 6 });
+  b.cyl(0.24, 0.24, 0.06, WDD, 0.42, 0.5, 0.46, 0, 0, 0, { seg: 10 });
+  for (let i = 0; i < 3; i++) b.cyl(0.03, 0.03, 0.5, WDD, 0.42 + Math.cos(i * 2.09) * 0.17, 0.25, 0.46 + Math.sin(i * 2.09) * 0.17, 0, 0, 0, { seg: 5 });
+  b.box(0.3, 0.14, 0.2, 0xffe27a, 0.42, 0.6, 0.46, 0, 0.4, 0);
+});
+def('roundBale', 'low', 1.2, 1.0, 1.0, (b) => {
+  // a big round bale of hay, rolling down the lane
+  b.cyl(0.5, 0.5, 1.0, STRAW, 0, 0, 0, 0, 0, PI / 2, { seg: 18 });
+  for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) b.tor(0.14 + i * 0.14, 0.02, STRAW_D, sx * 0.505, 0, 0, 0, PI / 2, 0, { seg: 14, tseg: 4 });
+  for (const x of [-0.25, 0.25]) b.tor(0.505, 0.018, 0xb98a3a, x, 0, 0, 0, PI / 2, 0, { seg: 18, tseg: 4 });
+}, { center: true });
+def('cornCob', 'low', 1.1, 1.0, 1.0, (b) => {
+  // what the crows drop: a great big cob of corn
+  b.cap(0.3, 0.44, 0xffd23f, 0, 0, 0, 0, 0, PI / 2, { seg: 12 });
+  for (let i = 0; i < 6; i++) b.tor(0.3, 0.035, 0xf2b90f, -0.25 + i * 0.1, 0, 0, 0, PI / 2, 0, { seg: 12, tseg: 4 });
+  for (let i = 0; i < 4; i++) b.cone(0.14, 0.5, 0x4fae56, -0.5, Math.sin(i * 1.57) * 0.16, Math.cos(i * 1.57) * 0.16, 0, 0, PI / 2 + 0.3, { seg: 5 });
+}, { center: true });
+def('calfScoot', 'low', 1.2, 0.98, 1.0, (b) => {
+  // a calf whizzing along on a scooter; it faces +x
+  b.box(0.9, 0.05, 0.22, 0xd2302c, 0, 0.14, 0);
+  for (const sx of [-1, 1]) b.cyl(0.1, 0.1, 0.06, 0x2a2f36, sx * 0.42, 0.1, 0, PI / 2, 0, 0, { seg: 10 });
+  b.cyl(0.02, 0.02, 0.72, 0xdfe6ee, 0.4, 0.5, 0, 0, 0, -0.12, { seg: 6 }).cyl(0.02, 0.02, 0.4, 0x2a2f36, 0.44, 0.86, 0, PI / 2, 0, 0, { seg: 6 });
+  cowInto(b, -0.02, 0.16, 0, PI / 2, 0.36, { top: 0xf2c230, kind: 'jumper', hat: 'cap', arm: false });
+  b.cap(0.035, 0.2, 0xf2c230, 0.24, 0.72, 0.14, 0, 0, -1.2, { seg: 5 }).cap(0.035, 0.2, 0xf2c230, 0.24, 0.72, -0.14, 0, 0, -1.2, { seg: 5 });
+});
+def('crow', 'deco', 2.4, 1.0, 1.5, (b) => {
+  // a bossy crow in a straw hat, with a cob of corn to drop
+  const K = 0x2a2a36, KD = 0x1b1b24;
+  b.sph(0.36, K, 0, 0, 0, 0.95, 0.9, 1.4, { seg: 12 }).sph(0.26, K, 0, 0.2, 0.42, 1, 1, 1, { seg: 12 });
+  b.cone(0.1, 0.34, 0xffb300, 0, 0.16, 0.74, PI / 2 + 0.15, 0, 0, { seg: 7 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.08, 0xffffff, sx * 0.12, 0.28, 0.6, 1, 1, 0.5, { seg: 8, grad: 1 }).sph(0.04, 0x1b1f24, sx * 0.12, 0.27, 0.64, 1, 1, 0.5, { seg: 6, grad: 1 });
+    b.box(0.18, 0.04, 0.03, KD, sx * 0.12, 0.39, 0.6, 0, 0, sx * -0.45);
+    b.cap(0.03, 0.1, 0xffb300, sx * 0.1, -0.34, 0.05, 0.3, 0, 0, { seg: 5 });
+  }
+  for (const k of [-1, 0, 1]) b.sph(0.2, KD, k * 0.12, 0.02, -0.62, 0.5, 0.12, 1.1, { seg: 7 });
+  b.cyl(0.3, 0.3, 0.03, STRAW, 0, 0.42, 0.4, 0.1, 0, 0, { seg: 10 }).cyl(0.14, 0.17, 0.14, STRAW, 0, 0.5, 0.39, 0.1, 0, 0, { seg: 8 });
+  b.cap(0.1, 0.2, 0xffd23f, 0, -0.44, 0.08, 0, 0, PI / 2, { seg: 8 });
+}, {
+  wings: (b, sx) => {
+    b.sph(0.5, 0x2a2a36, sx * 0.56, 0, 0, 1.25, 0.09, 0.7, { seg: 10 });
+    for (let i = 0; i < 4; i++) b.sph(0.18, 0x1b1b24, sx * (0.92 + i * 0.1), 0.005, 0.28 - i * 0.2, 1.3, 0.1, 0.5, { seg: 6 });
+  }, wingAt: [0.2, 0.1, 0],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -1696,6 +1862,7 @@ export const TALL_TYPES = {
   14: ['striker', 'balloonCart', 'ticketBooth', 'carStack', 'popcorn', 'striker'],
   15: ['tanks', 'divingSuit', 'miniSub', 'fishTank', 'tanks', 'divingSuit'],
   16: ['chocFountain', 'chocBunny', 'foilEgg', 'biscuitTower', 'cakeSlice', 'chocBunny'],
+  17: ['bigBottle', 'hayStack', 'scareCow', 'milkFloat', 'butterChurn', 'bigBottle'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
-export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'] };
+export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'] };

@@ -298,6 +298,7 @@ export class GameAudio {
     else if (kind === 'gull') for (let i = 0; i < 3; i++) this.tone('sawtooth', 1350, t + i * 0.17, 0.14, 0.07, null, { slide: 820, lp: 2800, att: 0.02 });
     else if (kind === 'bat') { this.squeak(4, 1.5); this.noise(t, 0.5, 0.05, { type: 'bandpass', f: 900, q: 1, att: 0.2 }); }
     else if (kind === 'eagle') this.eagle();
+    else if (kind === 'crow') this.caw();
     else if (kind === 'chocJug') { this.glug(); this.tone('sine', 620, t, 0.5, 0.05, null, { slide: 880, vib: 0.02, vibHz: 7, att: 0.1 }); }
     else if (kind === 'inkOcto') { this.blub(); this.wobble('sine', 300, 520, t, 0.6, 0.06, 9, 40, { att: 0.15 }); }
     else { this.noise(t, 1.1, 0.16, { type: 'lowpass', f: 160, fTo: 320, att: 0.5 }); this.tone('sine', 70, t, 1.0, 0.1, null, { slide: 95, att: 0.4 }); }
@@ -405,6 +406,9 @@ export class GameAudio {
   // ----- Chocolate Coast -----
   glug() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 3; i++) { const u = t + i * 0.19 + Math.random() * 0.05, f = rnd(110, 170); this.tone('sine', f, u, 0.16, 0.14, null, { slide: f * 1.7, att: 0.02 }); } } }
   crunch() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 3; i++) this.noise(t + i * 0.07, 0.05, 0.09, { type: 'bandpass', f: rnd(1400, 2600), q: 1.2 }); } }
+  // ----- Moo Town -----
+  moo() { if (this.ok) { const t = this.ctx.currentTime, f = rnd(118, 150); this.tone('sawtooth', f * 0.82, t, 1.1, 0.085, null, { slide: f, lp: 620, att: 0.16, vib: 0.012, vibHz: 5 }); this.tone('sawtooth', f, t + 0.95, 0.55, 0.06, null, { slide: f * 0.7, lp: 520, att: 0.05 }); this.tone('sine', f * 2, t, 1.3, 0.03, null, { slide: f * 2.3, att: 0.2 }); } }
+  caw() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 2; i++) { const u = t + i * 0.3; this.tone('sawtooth', 640, u, 0.2, 0.045, null, { slide: 470, lp: 2100, vib: 0.07, vibHz: 34, att: 0.02 }); this.noise(u, 0.18, 0.035, { type: 'bandpass', f: 1500, q: 1.5, att: 0.02 }); } } }
   // ----- the Glass Tunnel -----
   blub(n = 2 + ((Math.random() * 3) | 0)) { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < n; i++) { const u = t + i * 0.11 + Math.random() * 0.04, f = rnd(260, 520); this.tone('sine', f, u, 0.09, 0.1, null, { slide: f * 2.2, att: 0.01 }); } } }
   whaleSong() { if (this.ok) { const t = this.ctx.currentTime; this.wobble('sine', 190, 330, t, 1.5, 0.07, 3, 14, { att: 0.5 }); this.wobble('sine', 330, 230, t + 1.4, 1.3, 0.06, 3, 12, { att: 0.3 }); this.tone('sine', 95, t, 2.6, 0.04, null, { att: 0.8 }); } }
@@ -433,6 +437,7 @@ export class GameAudio {
     else if (zone === 3) run([72, 76, 79, 84, 79, 84], 'square', 0.08, 0.06);
     else if (zone === 4) { run([64, 67, 71, 76], 'sawtooth', 0.07, 0.05); this.thunder(0.5); }
     else if (zone === 7) run([87, 91, 94, 99, 103], 'sine', 0.06, 0.06);
+    else if (zone === 17) { run([62, 66, 69, 74, 69, 74, 78], 'triangle', 0.075, 0.08); this.moo(); this.cowbell(); }
     else if (zone === 16) { run([65, 69, 72, 75, 77, 81, 84], 'triangle', 0.075, 0.08); this.glug(); }
     else if (zone === 15) { run([88, 83, 80, 76, 71, 68, 64], 'sine', 0.08, 0.08); this.blub(5); }
     else if (zone === 14) { run([69, 73, 76, 81, 85, 88, 93, 88, 93], 'square', 0.055, 0.055); this.clack(5); }

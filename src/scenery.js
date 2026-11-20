@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -1933,10 +1933,177 @@ const floatChoc = (v) => prefab('floatchoc' + v, () => {
   return b.build({ receive: false });
 });
 
+// ---------- Moo Town ----------
+const GRASS = 0x6fc24a, GRASS_L = 0x8fd45e, GRASS_D = 0x55a83c, BARN = 0xc23b2e, BARN_D = 0x9a2a22, TIMBER = 0x8a5a3c;
+const FOLK = [
+  { top: 0x3f7fd0, kind: 'dungarees', hat: 'straw' },                    // the farmer, with a pitchfork
+  { top: 0xb58be0, kind: 'dress', hat: 'bow', specs: true },             // granny, with her handbag
+  { top: 0xe5483b, kind: 'jumper', hat: 'cap', s: 0.62 },                // a calf with a balloon
+  { top: 0x5ac8a0, kind: 'apron', hat: 'chef' },                         // the cook from the milk bar, with a bottle of milk
+  { top: 0x4fae56, kind: 'jumper', hat: 'flower', brown: true },         // a brown cow with a bunch of flowers
+  { top: 0xe5483b, kind: 'dungarees', hat: 'cap', brown: true },         // the farmhand, with a bucket
+];
+// One of the townsfolk. The right arm is a separate part (named 'arm') so that it can wave.
+const cowFolk = (v) => prefab('cowfolk' + v, () => {
+  const b = new Builder(0.86), g = new THREE.Group(), P = FOLK[v], s = P.s || 1, hx = -0.63 * s, hy = 0.96 * s;
+  cowInto(b, 0, 0, 0, 0, s, { ...P, arm: false });
+  if (v === 0) { b.cyl(0.03, 0.03, 2.2, TIMBER, hx - 0.05, 1.1, 0.05, 0, 0, 0, { seg: 6 }).box(0.26, 0.03, 0.03, 0x9aa6ae, hx - 0.05, 2.2, 0.05); for (const dx of [-0.11, 0, 0.11]) b.cyl(0.015, 0.015, 0.34, 0x9aa6ae, hx - 0.05 + dx, 2.37, 0.05, 0, 0, 0, { seg: 4 }); }
+  else if (v === 1) b.box(0.3, 0.24, 0.12, 0xd2302c, hx, hy - 0.26, 0.05).tor(0.1, 0.018, 0xd2302c, hx, hy - 0.12, 0.05, 0, 0, 0, { arc: PI, seg: 8 });
+  else if (v === 2) b.cyl(0.008, 0.008, 1.3, 0xffffff, hx, hy + 0.65, 0.02, 0, 0, 0, { seg: 4 }).sph(0.3, 0xffd23f, hx, hy + 1.56, 0.02, 1, 1.15, 1, { seg: 10 });
+  else if (v === 3) bottleInto(b, hx, hy - 0.1, 0.1, 0.5);
+  else if (v === 4) for (let i = 0; i < 5; i++) b.cyl(0.012, 0.012, 0.4, 0x3f9a4a, hx + (i - 2) * 0.04, hy + 0.16, 0.08, 0, 0, (i - 2) * -0.12, { seg: 4 }).sph(0.065, [0xff5a8a, 0xffd23f, 0xffffff, 0xb07bff, 0xff8a3c][i], hx + (i - 2) * 0.075, hy + 0.38, 0.08, 1, 1, 1, { seg: 6 });
+  else b.cyl(0.2, 0.15, 0.3, 0x9aa6ae, hx, hy - 0.3, 0.05, 0, 0, 0, { seg: 10 }).tor(0.19, 0.015, 0x6a747c, hx, hy - 0.15, 0.05, 0, 0, 0, { arc: PI, seg: 8 });
+  g.add(b.build({ cast: true }));
+  const ab = new Builder(0.86);
+  ab.cap(0.09, 0.42, P.kind === 'dungarees' ? COW_W : P.top, 0, 0.3, 0, 0, 0, 0, { seg: 7 }).sph(0.1, HOOF, 0, 0.6, 0, 1, 1, 1, { seg: 7 });
+  const arm = ab.build({ cast: true }); arm.name = 'arm'; arm.position.set(0.42 * s, 1.42 * s, 0.02 * s); arm.scale.setScalar(s); arm.rotation.z = -0.7; g.add(arm);
+  return g;
+});
+// Meadow beside the pier: grass, buttercups and daisies, with a cobbled kerb.
+const mooGround = () => prefab('mooGround', () => {
+  const b = new Builder(0.86), rng = makeRng(1711);
+  b.box(46, 3.6, CHUNK, GRASS, DECK_HALF + 23, -1.82, -CHUNK / 2);
+  for (let i = 0; i < 20; i++) b.box(0.34, 0.18, 1.9, i % 2 ? 0xd9d2c4 : 0xc4bcae, DECK_HALF + 0.17, 0.03, -1 - i * 2);
+  for (let i = 0; i < 12; i++) b.sph(1, i % 2 ? GRASS_L : GRASS_D, DECK_HALF + 2.5 + rng() * 20, -0.04, -rng() * CHUNK, 1.5 + rng() * 2.6, 0.07, 1 + rng() * 2, { seg: 7 });
+  for (let i = 0; i < 44; i++) { const x = DECK_HALF + 0.9 + rng() * 15, z = -rng() * CHUNK; b.sph(0.08, i % 2 ? 0xffd23f : 0xffffff, x, 0.1, z, 1, 0.5, 1, { seg: 5 }); if (i % 2 === 0) b.sph(0.035, 0xffb300, x, 0.13, z, 1, 1, 1, { seg: 4 }); }
+  for (let i = 0; i < 14; i++) { const x = DECK_HALF + 1 + rng() * 16, z = -rng() * CHUNK; for (let k = 0; k < 3; k++) b.cone(0.05, 0.32, GRASS_D, x + (k - 1) * 0.08, 0.14, z + (k % 2) * 0.06, 0, 0, (k - 1) * 0.3, { seg: 4 }); }
+  return b.build();
+});
+// Rolling green hills with round trees on top, haystacks, and now and then a hill with a coat like a cow's.
+const mooHills = (v) => prefab('moohills' + v, () => {
+  const b = new Builder(0.84), rng = makeRng(1720 + v);
+  for (let i = 0; i < 6; i++) {
+    const cx = 28 + rng() * 15, cz = -rng() * CHUNK, sx = 8 + rng() * 6, sy = 3 + rng() * 3.5 + (cx - 28) * 0.28, sz = 8 + rng() * 5, cow = i === 2 + v;
+    b.sph(1, cow ? COW_W : [GRASS, GRASS_L, GRASS_D][i % 3], cx, 0, cz, sx, sy, sz, { seg: 10 });
+    if (cow) for (let k = 0; k < 6; k++) { const a = k * 1.05 + 0.4, u = 0.45 + (k % 3) * 0.14; b.sph(1, COW_B, cx - Math.abs(Math.cos(a)) * sx * u * 0.87, sy * Math.sqrt(1 - u * u) * 0.87, cz + Math.sin(a) * sz * u * 0.87, sx * 0.2, sy * 0.2, sz * 0.2, { seg: 8 }); }
+    else for (let k = 0; k < 2; k++) { const tx = cx + (k ? 2.5 : -2) - 1.5, tz = cz + (k ? -2 : 2.4), ty = sy * 0.93; b.cyl(0.22, 0.3, 1.8, 0x7a5232, tx, ty + 0.6, tz, 0, 0, 0, { seg: 6 }).sph(1.5, k ? 0x3f9a4a : 0x4fae56, tx, ty + 2.4, tz, 1, 0.9, 1, { seg: 8 }).sph(1.0, k ? 0x4fae56 : 0x3f9a4a, tx + 0.9, ty + 2.0, tz + 0.4, 1, 0.9, 1, { seg: 7 }); }
+  }
+  for (let i = 0; i < 3; i++) { const x = 20 + rng() * 6, z = -5 - i * 13 - rng() * 4; b.cyl(1.3, 1.6, 1.6, STRAW, x, 0.8, z, 0, 0, 0, { seg: 10 }).sph(1.3, STRAW, x, 1.6, z, 1, 0.75, 1, { seg: 9 }).cyl(0.04, 0.04, 0.7, TIMBER, x, 2.8, z, 0, 0, 0, { seg: 4 }); }
+  return b.build({ receive: false });
+});
+// The red barn, with one of the townsfolk waving from the hayloft, and a silo beside it; the front faces +z.
+const mooBarn = () => prefab('moobarn', () => {
+  const b = new Builder(0.86);
+  b.box(8, 4.4, 6.4, BARN, 0, 2.2, 0);
+  for (const sx of [-1, 1]) b.box(5.1, 0.24, 7.0, 0x5a4a42, sx * 2.05, 5.8, 0, 0, 0, sx * -0.6).box(5.0, 0.2, 0.14, 0xffffff, sx * 2.0, 5.72, 3.27, 0, 0, sx * -0.6).box(0.2, 4.4, 0.2, 0xffffff, sx * 4.0, 2.2, 3.2);
+  b.flat([[[-4, 4.4, 3.2], [4, 4.4, 3.2], [0, 7.14, 3.2]], [[4, 4.4, -3.2], [-4, 4.4, -3.2], [0, 7.14, -3.2]]], BARN);
+  b.box(1.0, 0.8, 1.0, 0xffffff, 0, 7.4, 0).cone(0.95, 0.8, 0x5a4a42, 0, 8.2, 0, 0, PI / 4, 0, { seg: 4 });
+  b.box(3.0, 3.0, 0.12, BARN_D, 0, 1.5, 3.22).box(3.3, 0.16, 0.18, 0xffffff, 0, 3.06, 3.24).box(0.1, 3.0, 0.16, 0xffffff, 0, 1.5, 3.26);
+  for (const sx of [-1, 1]) { b.box(0.16, 3.0, 0.18, 0xffffff, sx * 1.58, 1.5, 3.24); for (const d of [-1, 1]) b.box(0.12, 3.3, 0.14, 0xffffff, sx * 0.76, 1.5, 3.3, 0, 0, d * 0.44); }
+  b.box(1.6, 1.3, 0.1, 0x3a1d14, 0, 4.95, 3.22).box(1.9, 0.14, 0.16, 0xffffff, 0, 5.65, 3.26);
+  b.box(2.3, 0.12, 1.1, TIMBER, 0, 3.2, 3.6).box(2.0, 1.25, 0.9, STRAW, 0, 3.88, 3.55);
+  for (let i = 0; i < 7; i++) b.box(0.05, 0.03, 0.3, STRAW_D, -0.8 + i * 0.27, 4.52, 3.6 + (i % 3) * 0.1, 0, i, 0);
+  cowInto(b, 0, 3.3, 3.3, 0, 0.8, { top: 0xf2c230, kind: 'jumper', hat: 'straw' });
+  b.cyl(1.5, 1.5, 7.4, 0xdfe6ee, -6, 3.7, -0.4, 0, 0, 0, { seg: 14 }).sph(1.5, BARN, -6, 7.4, -0.4, 1, 0.62, 1, { seg: 12 });
+  for (const y of [1.5, 3.5, 5.5]) b.tor(1.51, 0.05, 0x9aa6ae, -6, y, -0.4, PI / 2, 0, 0, { seg: 14 });
+  for (const [x, z] of [[4.9, 2.6], [5.0, 1.3]]) baleInto(b, 1.6, 0.85, 1.1, x, 0, z, 0.2);
+  baleInto(b, 1.5, 0.85, 1.05, 4.95, 0.85, 1.95, -0.1);
+  const g = new THREE.Group(); g.add(b.build({ cast: true, material: MAT.double }));
+  const s = signMesh('DAIRY', 2.0, 0.6, '#fffdf6', '#9a2a22', '#f2c230'); s.position.set(-2.7, 3.7, 3.22); g.add(s);
+  return g;
+});
+// The milk bar: a building like a giant carton of milk, with the cook serving milkshakes at the hatch; the front faces +z.
+const milkBar = () => prefab('milkbar', () => {
+  const b = new Builder(0.86), BL = 0x5ab0f0;
+  b.box(4.4, 4.6, 4.0, 0xfffdf6, 0, 2.3, 0).box(4.44, 1.0, 4.04, BL, 0, 0.5, 0);
+  for (const sz of [-1, 1]) b.box(4.4, 0.16, 2.7, 0xfffdf6, 0, 5.47, sz * 1.0, sz * 0.72, 0, 0);
+  b.box(4.4, 0.6, 0.14, BL, 0, 6.6, 0);
+  b.flat([[[2.2, 4.6, 2], [2.2, 4.6, -2], [2.2, 6.35, 0]], [[-2.2, 4.6, -2], [-2.2, 4.6, 2], [-2.2, 6.35, 0]]], 0xfffdf6);
+  for (const [x, y, r] of [[-1.6, 3.9, 0.36], [1.5, 4.1, 0.3], [1.8, 1.6, 0.26], [-1.75, 1.9, 0.22]]) b.sph(r, COW_B, x, y, 2.0, 1, 1.1, 0.08, { seg: 8 });
+  for (const [z, y, r] of [[0.8, 3.4, 0.4], [-1.0, 2.2, 0.34], [-0.2, 3.9, 0.22]]) for (const sx of [-1, 1]) b.sph(r, COW_B, sx * 2.2, y, z * sx, 0.08, 1.1, 1, { seg: 8 });
+  b.box(2.6, 1.5, 0.1, 0x3a2a22, 0, 2.5, 2.0);
+  for (let i = 0; i < 6; i++) b.box(0.5, 0.06, 1.0, i % 2 ? 0xfffdf6 : 0xd2302c, -1.25 + i * 0.5, 3.45, 2.42, 0.36, 0, 0);
+  b.box(2.9, 1.25, 0.7, 0xb07a4a, 0, 0.62, 2.55).box(3.1, 0.1, 0.9, 0xfffdf6, 0, 1.3, 2.55);
+  cowInto(b, 0, 0.2, 2.06, 0, 0.95, { top: 0x5ac8a0, kind: 'apron', hat: 'chef' });
+  for (const [x, c] of [[-1.1, 0xff9fd0], [-0.75, 0xfff0d8], [1.0, 0xb98552]]) b.cyl(0.11, 0.08, 0.32, c, x, 1.51, 2.7, 0, 0, 0, { seg: 8 }).sph(0.11, 0xffffff, x, 1.7, 2.7, 1, 0.8, 1, { seg: 7 }).cyl(0.012, 0.012, 0.3, 0xd2302c, x + 0.04, 1.8, 2.7, 0, 0, -0.3, { seg: 4 });
+  for (const x of [-1.0, 1.0]) b.cyl(0.26, 0.26, 0.1, 0xd2302c, x, 0.85, 3.5, 0, 0, 0, { seg: 10 }).cyl(0.04, 0.04, 0.8, 0xdfe6ee, x, 0.4, 3.5, 0, 0, 0, { seg: 6 }).cyl(0.22, 0.22, 0.04, 0xdfe6ee, x, 0.02, 3.5, 0, 0, 0, { seg: 10 });
+  const g = new THREE.Group(); g.add(b.build({ cast: true, material: MAT.double }));
+  const s = signMesh('MILKSHAKES', 3.4, 0.6, '#5ab0f0', '#fffdf6', '#fffdf6'); s.position.set(0, 4.15, 2.02); g.add(s);
+  return g;
+});
+// A windmill; the sails are a separate part (named 'whirl') that turns.
+const mooMill = () => prefab('moomill', () => {
+  const b = new Builder(0.86), g = new THREE.Group();
+  b.cyl(1.0, 1.7, 6.6, 0xfffdf6, 0, 3.3, 0, 0, 0, 0, { seg: 10 }).sph(1.08, BARN, 0, 6.6, 0, 1, 0.85, 1, { seg: 10 }).cyl(0.16, 0.16, 1.3, TIMBER, 0, 6.4, 0.9, PI / 2, 0, 0, { seg: 6 });
+  b.box(0.9, 1.7, 0.2, BARN_D, 0, 0.85, 1.62, -0.1, 0, 0).box(0.7, 0.8, 0.2, 0x7fc8f0, 0, 3.6, 1.3, -0.1, 0, 0).box(0.84, 0.1, 0.24, BARN, 0, 3.15, 1.36, -0.1, 0, 0);
+  b.cyl(1.9, 2.0, 0.3, 0xc4bcae, 0, 0.15, 0, 0, 0, 0, { seg: 12 });
+  g.add(b.build({ cast: true }));
+  const sb = new Builder(0.9);
+  for (let i = 0; i < 4; i++) {
+    const a = i * PI / 2, c = Math.cos(a), s = Math.sin(a);
+    sb.box(0.14, 4.0, 0.08, TIMBER, -s * 2.0, c * 2.0, 0, 0, 0, a).box(0.9, 2.9, 0.04, 0xfff6e0, 0.52 * c - 2.4 * s, 0.52 * s + 2.4 * c, 0, 0, 0, a);
+    for (let k = 0; k < 4; k++) sb.box(0.9, 0.05, 0.06, TIMBER, 0.52 * c - (1.2 + k * 0.8) * s, 0.52 * s + (1.2 + k * 0.8) * c, 0, 0, 0, a);
+  }
+  sb.sph(0.26, BARN, 0, 0, 0.05, 1, 1, 0.6, { seg: 8 });
+  const sails = sb.build({ cast: true, material: MAT.double }); sails.name = 'whirl'; sails.position.set(0, 6.4, 1.6); g.add(sails);
+  return g;
+});
+// The Moo Town band on their little stage: banjo, squeeze box and drum.
+const cowBand = () => prefab('cowband', () => {
+  const b = new Builder(0.86);
+  b.cyl(3.4, 3.6, 0.5, 0xfffdf6, 0, 0.25, 0, 0, 0, 0, { seg: 14 }).cyl(3.45, 3.45, 0.1, BARN, 0, 0.5, 0, 0, 0, 0, { seg: 14 });
+  for (let i = 0; i < 5; i++) { const a = PI + i * (PI / 4); b.cyl(0.08, 0.08, 3.0, 0xfffdf6, Math.cos(a) * 3.2, 2.05, Math.sin(a) * 3.2, 0, 0, 0, { seg: 6 }); }
+  b.cone(3.9, 1.4, BARN, 0, 4.25, 0, 0, 0, 0, { seg: 14 }).sph(0.2, 0xffc928, 0, 5.05, 0, 1, 1, 1, { seg: 7 });
+  cowInto(b, -1.5, 0.55, 0.6, 0.3, 1, { top: 0xf2c230, kind: 'dungarees', hat: 'straw', arm: false });
+  b.cyl(0.3, 0.3, 0.08, 0xfff6e0, -1.2, 1.55, 1.05, PI / 2, 0.3, 0, { seg: 12 }).box(0.08, 0.05, 0.8, TIMBER, -1.55, 1.75, 1.0, 0, 1.87, 0.5).cap(0.08, 0.36, COW_W, -1.2, 1.75, 0.9, 0, 0, 1.0, { seg: 6 });
+  cowInto(b, 0.2, 0.55, -0.4, 0, 1, { top: 0xe5483b, kind: 'jumper', hat: 'cap', brown: true, arm: false });
+  b.box(0.5, 0.5, 0.3, 0xd2302c, 0.2, 1.72, 0.05).box(0.14, 0.56, 0.34, 0x2a2420, -0.1, 1.72, 0.05).box(0.14, 0.56, 0.34, 0x2a2420, 0.5, 1.72, 0.05).cap(0.08, 0.3, 0xe5483b, 0.66, 1.9, 0.0, 0, 0, 0.9, { seg: 6 });
+  cowInto(b, 1.8, 0.55, 0.7, -0.4, 0.95, { top: 0x5ab0f0, kind: 'dress', hat: 'flower', arm: false });
+  b.cyl(0.5, 0.5, 0.4, BARN, 1.5, 1.2, 1.5, PI / 2 - 0.3, -0.4, 0, { seg: 14 }).cyl(0.46, 0.46, 0.42, 0xfff6e0, 1.5, 1.2, 1.5, PI / 2 - 0.3, -0.4, 0, { seg: 14 }).cap(0.08, 0.3, 0x5ab0f0, 2.16, 1.75, 1.0, 0.9, 0, 0, { seg: 6 });
+  return b.build({ cast: true });
+});
+// Trees and things on the green: an oak, an apple tree, bales of hay, milk churns and sunflowers.
+const mooTree = (v) => prefab('mootree' + v, () => {
+  const b = new Builder(0.86);
+  if (v < 2) {
+    b.cyl(0.26, 0.36, 2.2, 0x7a5232, 0, 1.1, 0, 0, 0, 0, { seg: 7 });
+    for (const [x, y, z, r] of [[0, 3.6, 0, 1.6], [-1.1, 3.1, 0.3, 1.1], [1.1, 3.2, -0.2, 1.15], [0.2, 4.5, 0.2, 1.05], [0.3, 3.0, 0.9, 0.95]]) b.sph(r, v ? 0x4fae56 : 0x3f9a4a, x, y, z, 1, 0.9, 1, { seg: 9 });
+    if (v) for (let i = 0; i < 9; i++) { const a = i * 2.4, yy = 2.8 + (i % 4) * 0.5; b.sph(0.14, 0xe5283b, Math.cos(a) * 1.5, yy, Math.sin(a) * 1.4, 1, 1, 1, { seg: 6 }); }
+  } else if (v === 2) { baleInto(b, 1.6, 0.85, 1.1, 0, 0, 0, 0.2); baleInto(b, 1.6, 0.85, 1.1, 1.75, 0, 0.2, -0.1); baleInto(b, 1.5, 0.85, 1.05, 0.9, 0.85, 0.1, 0.4); }
+  else if (v === 3) { churnInto(b, 0, 0, 0, 1.2); churnInto(b, 0.85, 0, 0.3, 1.05); churnInto(b, 0.35, 0, 0.8, 0.9); }
+  else for (let i = 0; i < 3; i++) {
+    const x = (i - 1) * 0.6, z = (i % 2) * 0.3, h = 2.0 + i * 0.35;
+    b.cyl(0.04, 0.05, h, 0x3f9a4a, x, h / 2, z, 0, 0, 0, { seg: 5 }).cyl(0.2, 0.2, 0.08, 0x6a4326, x, h, z + 0.05, PI / 2, 0, 0, { seg: 9 });
+    for (let k = 0; k < 9; k++) b.sph(0.13, 0xffd23f, x + Math.cos(k * 0.7) * 0.3, h + Math.sin(k * 0.7) * 0.3, z + 0.03, 1, 1, 0.3, { seg: 5 });
+    b.sph(0.2, 0x4fae56, x + 0.2, h * 0.5, z, 1.4, 0.3, 0.8, { seg: 6 });
+  }
+  return b.build({ cast: true, receive: false });
+});
+// A length of white picket fence, running along z.
+const picket = () => prefab('picket', () => {
+  const b = new Builder(0.86);
+  for (let i = 0; i < 16; i++) b.box(0.05, 0.86, 0.16, 0xffffff, 0, 0.45, -0.25 - i * 0.5).cone(0.09, 0.14, 0xffffff, 0, 0.94, -0.25 - i * 0.5, 0, PI / 4, 0, { seg: 4 });
+  for (const y of [0.3, 0.68]) b.box(0.04, 0.08, 8, 0xf2f2ea, 0.03, y, -4);
+  return b.build({ cast: true });
+});
+// The gate into town: a timber arch over the pier, with a pair of horns on top and cowbells hanging from it.
+const ranchArch = () => prefab('rancharch', () => {
+  const b = new Builder(0.9);
+  for (const sx of [-1, 1]) {
+    b.cyl(0.22, 0.26, 5.9, TIMBER, sx * 4.95, 2.95, 0, 0, 0, 0, { seg: 8 }).box(0.7, 0.3, 0.7, 0xc4bcae, sx * 4.95, 0.15, 0).box(0.2, 0.2, 1.7, TIMBER, sx * 4.3, 5.2, 0, 0, PI / 2, sx * 0.8);
+    b.cyl(0.012, 0.012, 0.5, 0x6a747c, sx * 3.6, 5.4, 0, 0, 0, 0, { seg: 4 }).cyl(0.16, 0.26, 0.4, 0xffc928, sx * 3.6, 5.0, 0, 0, 0, 0, { seg: 8 }).sph(0.07, 0x6a747c, sx * 3.6, 4.78, 0, 1, 1, 1, { seg: 5 });
+    b.cone(0.24, 1.3, HORN, sx * 0.85, 7.0, 0, 0, 0, sx * -0.75, { seg: 8 });
+  }
+  b.box(10.6, 0.34, 0.34, TIMBER, 0, 5.75, 0).sph(0.5, COW_W, 0, 6.5, 0, 1.3, 0.8, 0.6, { seg: 9 });
+  const g = new THREE.Group(); g.add(b.build({ cast: true }));
+  const s = signMesh('MOO TOWN', 3.2, 0.62, '#fffdf6', '#2a2420', '#d2302c'); s.position.set(0, 5.76, 0.19); g.add(s);
+  return g;
+});
+// One of the townsfolk out fishing in a rowing boat.
+const cowBoat = () => prefab('cowboat', () => {
+  const b = new Builder(0.86), g = new THREE.Group();
+  g.add(rowBoat(C.red));
+  cowInto(b, 0, 0.1, -0.2, PI / 2, 0.8, { top: 0xf2c230, kind: 'jumper', hat: 'straw', arm: false });
+  b.cyl(0.02, 0.012, 2.6, TIMBER, 1.3, 1.9, -0.2, 0, 0, -1.0, { seg: 5 }).cyl(0.005, 0.005, 2.2, 0xffffff, 2.4, 1.5, -0.2, 0, 0, 0, { seg: 3 }).sph(0.09, 0xd2302c, 2.4, 0.4, -0.2, 1, 1, 1, { seg: 6 });
+  b.cap(0.07, 0.3, 0xf2c230, 0.36, 1.2, -0.2, 0, 0, -1.2, { seg: 6 });
+  g.add(b.build({ cast: true }));
+  return g;
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -1944,7 +2111,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -2109,6 +2276,20 @@ export function populate(group, rawIndex, zone, anim) {
     else { place(group, chocHouse(), DECK_HALF + 7.5, 0, -12, -PI / 2); stall(-31); }
     for (const z of [-3, -16, -27, -38]) if (rng() < 0.7) place(group, cocoaTree(Math.floor(rng() * 4)), 6.4 + rng() * 1.0 + (k !== 1 && rng() < 0.3 ? 13 : 0), 0, z + rng() * 2, rng() * 6, 0.85 + rng() * 0.3);
     for (let i = 0; i < 2; i++) anim.push({ o: place(group, floatChoc((index + i) % 3), -9 - rng() * 14, WATER_Y + 0.2, -5 - i * 19 - rng() * 10, rng() * 6), kind: 'bob', p: rng() * 6, amp: 1.2 });
+  } else if (zone === 17) {
+    // Moo Town: a green meadow where the cow people live, and they wave as Robyn runs by
+    place(group, mooGround(), 0, 0, 0);
+    place(group, mooHills(index % 2), 0, 0, 0);
+    if (index % 2 === 0) place(group, ranchArch(), 0, 0, -20);
+    const k = index % 4, folk = (v, x, z, ry) => anim.push({ o: place(group, cowFolk(v), x, 0, z, ry), kind: 'wave', p: rng() * 6 });
+    if (k === 0) { place(group, mooBarn(), DECK_HALF + 9, 0, -16, -PI / 2); folk(0, 6.6, -6, -PI / 2 + 0.5); folk(5, 7.2, -27, -PI / 2 - 0.3); }
+    else if (k === 1) { place(group, milkBar(), DECK_HALF + 5.4, 0, -13, -PI / 2); folk(2, 6.3, -22, -PI / 2 + 0.4); folk(1, 7.3, -24.5, -PI / 2 + 0.2); }
+    else if (k === 2) { anim.push({ o: place(group, mooMill(), DECK_HALF + 8, 0, -14, -PI / 2), kind: 'whirl', v: 0.8 }); folk(4, 6.4, -5, -PI / 2 + 0.4); folk(3, 6.8, -30, -PI / 2 - 0.2); }
+    else { place(group, cowBand(), DECK_HALF + 6.5, 0, -15, -PI / 2); folk(1, 6.4, -27, -PI / 2 - 0.5); folk(2, 7.4, -29, -PI / 2 - 0.3); }
+    place(group, picket(), DECK_HALF + 1.1, 0, k % 2 ? -30 : -1);
+    for (const z of [-2, -24, -37]) if (rng() < 0.75) place(group, mooTree(Math.floor(rng() * 5)), 14.5 + rng() * 4, 0, z + rng() * 2, rng() * 6, 0.9 + rng() * 0.3);
+    if (index % 2) anim.push({ o: place(group, cowBoat(), -9 - rng() * 6, WATER_Y, -8 - rng() * 22, rng() * 6), kind: 'bob', p: rng() * 6 });
+    else anim.push({ o: place(group, buoy(pick(rng, [C.red, C.green])), -14 - rng() * 10, WATER_Y, -rng() * CHUNK), kind: 'bob', p: rng() * 6 });
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }
@@ -2249,6 +2430,10 @@ export function animate(anim, t, dt) {
       const amp = a.amp || 1;
       a.o.position.y = (a.baseY ?? (a.baseY = a.o.position.y)) + Math.sin(t * 1.3 + a.p) * 0.18 * amp;
       a.o.rotation.z = Math.sin(t * 1.1 + a.p * 1.7) * 0.07 * amp; a.o.rotation.x = Math.sin(t * 0.9 + a.p) * 0.04 * amp;
+    } else if (a.kind === 'wave') {
+      // a friendly wave: the arm swings up and waggles for a couple of seconds, then rests
+      const arm = a.arm || (a.arm = a.o.getObjectByName('arm')), u = (t * 0.45 + a.p) % 1.6, up = u < 1 ? Math.sin(u * PI) ** 0.5 : 0;
+      if (arm) arm.rotation.z = -2.5 + up * (2.0 + Math.sin(t * 11 + a.p) * 0.3);
     } else if (a.kind === 'spin') {
       const s = a.s || (a.s = a.o.getObjectByName('spin')); if (s) s.rotation.y += dt * (a.v || 0.7);
     } else if (a.kind === 'whirl') {
