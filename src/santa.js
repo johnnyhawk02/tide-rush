@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { Builder, signMesh, puffTexture } from './kit.js';
 import { giftInto } from './obstacles.js';
 
-const PI = Math.PI, AHEAD = 27, SIZE = 2.4, BASE_Y = 3.2, HP = 14;
+const PI = Math.PI, AHEAD = 27, SIZE = 2.2, BASE_Y = 3.0, HP = 14;
 const RED = 0xd8342f, RED_D = 0xa8241f, FUR = 0xfffaf0, GOLD = 0xffd24a, SKIN = 0xf2c0a0, MITT = 0x2f9d5c, DARK = 0x1f2933;
 const FAIRY = [0xffe27a, 0x8ff0ff, 0xa6ff9a, 0xff9ee0];
 const ring = (b, col, x, y, z, rx, rz, tube) => b.add(new THREE.TorusGeometry(1, tube, 8, 20), col, x, y, z, PI / 2, 0, 0, rx, rz, 1);
