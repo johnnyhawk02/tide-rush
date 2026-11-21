@@ -2136,6 +2136,152 @@ def('flipGull', 'deco', 2.2, 1.1, 1.3, (b) => {
   wings: (b, sx) => { b.sph(0.5, 0xffffff, sx * 0.45, 0, 0, 1.2, 0.12, 0.6, { seg: 8 }).sph(0.3, 0xb8c4d0, sx * 0.95, 0.0, -0.05, 1.3, 0.1, 0.5, { seg: 7 }); }, wingAt: [0.25, -0.05, 0],
 });
 
+// ---------- Giraffe World ----------
+export const GIR = { coat: 0xf2c14e, pale: 0xfbe3a0, spot: 0xa85a24, hoof: 0x4a3424, horn: 0x6a4428, grass: 0xe0c060, grassD: 0xc8a848, leaf: 0x6fa83c, leafD: 0x4f8a34, bark: 0x7a5a3c };
+// A giraffe's head, about 0.6 long, facing +z, with the top of the neck at the origin.
+export function giraffeHeadInto(b, o = {}) {
+  const C = o.coat ?? GIR.coat;
+  b.sph(0.25, C, 0, 0.12, 0.1, 0.9, 0.9, 1.2, { seg: 10 }).sph(0.18, GIR.pale, 0, 0.02, 0.42, 0.9, 0.75, 1.3, { seg: 9 });
+  b.tor(0.09, 0.014, GIR.hoof, 0, -0.03, 0.52, PI / 2 - 0.5, 0, PI, { arc: PI, seg: 7, tseg: 3 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.018, GIR.hoof, sx * 0.06, 0.06, 0.65, 1, 1, 1, { seg: 4 });
+    if (o.asleep) b.tor(0.045, 0.012, GIR.hoof, sx * 0.19, 0.2, 0.2, 0, sx * 1.1, PI, { arc: PI, seg: 6, tseg: 3 });
+    else b.sph(0.055, 0x1b1f24, sx * 0.19, 0.22, 0.2, 0.6, 1.15, 1, { seg: 7 }).sph(0.018, 0xffffff, sx * 0.215, 0.25, 0.22, 1, 1, 1, { seg: 4 });
+    b.sph(0.13, C, sx * 0.3, 0.3, -0.04, 1.2, 0.5, 0.7, { seg: 7 }).sph(0.08, 0xf4a8a0, sx * 0.31, 0.3, -0.01, 1.1, 0.35, 0.6, { seg: 6 });
+    b.cyl(0.03, 0.04, 0.22, C, sx * 0.1, 0.44, 0.02, 0, 0, sx * -0.12, { seg: 6 }).sph(0.06, GIR.horn, sx * 0.115, 0.57, 0.02, 1, 1, 1, { seg: 6 });
+  }
+  b.sph(0.07, GIR.spot, 0, 0.33, 0.14, 1.2, 0.5, 1.3, { seg: 6 });
+}
+// A neck L long with the head on top, leaning forward (towards +z) by `tilt`; the bottom of the neck is at the origin.
+export function giraffeNeckInto(b, L = 2.2, tilt = 0.35, o = {}) {
+  const C = o.coat ?? GIR.coat, ca = Math.cos(tilt), sa = Math.sin(tilt);
+  b.cyl(0.15, 0.3, L, C, 0, L / 2 * ca, L / 2 * sa, tilt, 0, 0, { seg: 9 });
+  b.box(0.05, L * 0.9, 0.1, GIR.spot, 0, L * 0.52 * ca + 0.2 * sa, L * 0.52 * sa - 0.2 * ca, tilt, 0, 0);
+  const n = Math.max(3, Math.round(L / 0.36));
+  for (let i = 0; i < n; i++) for (let k = 0; k < 3; k++) {
+    const u = (i + 0.5) / n, r = 0.3 - 0.15 * u, a = k * 2.094 + i * 1.05 + 0.5, lx = Math.sin(a) * r * 0.96, lz = Math.cos(a) * r * 0.96, ly = u * L;
+    b.sph(0.11 - 0.03 * u, GIR.spot, lx, ly * ca - lz * sa, ly * sa + lz * ca, 1, 1.25, 1, { seg: 5 });
+  }
+  b.at(0, L * ca, L * sa, 0, () => giraffeHeadInto(b, o));
+}
+// The rest of a giraffe: body, legs and tail, facing +z, about 2.5 high at the shoulder. The neck starts at (0, 2.35, 0.62).
+export function giraffeBodyInto(b, o = {}) {
+  const C = o.coat ?? GIR.coat;
+  b.sph(0.56, C, 0, 2.08, 0.34, 0.85, 0.85, 1.05, { seg: 11 }).sph(0.5, C, 0, 1.94, -0.42, 0.85, 0.82, 1.05, { seg: 10 }).sph(0.4, GIR.pale, 0, 1.76, 0, 0.8, 0.5, 1.6, { seg: 8 });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    b.cyl(0.12, 0.075, 1.75, C, sx * 0.27, 0.95, sz * 0.52 - 0.05, 0, 0, 0, { seg: 7 }).sph(0.1, C, sx * 0.27, 0.95, sz * 0.52 - 0.05, 1, 1, 1, { seg: 6 }).cyl(0.085, 0.1, 0.16, GIR.hoof, sx * 0.27, 0.08, sz * 0.52 - 0.05, 0, 0, 0, { seg: 7 });
+    b.sph(0.09, GIR.spot, sx * 0.36, 1.55, sz * 0.52 - 0.05, 0.5, 1.3, 1, { seg: 5 });
+  }
+  for (let i = 0; i < 16; i++) {
+    const u = (i + 0.5) / 16, ph = Math.acos(1 - 1.5 * u), th = i * 2.4, sx = Math.sin(ph) * Math.cos(th), sy = Math.cos(ph), sz = Math.sin(ph) * Math.sin(th), front = i % 2 === 0;
+    if (front) b.sph(0.14 + (i % 3) * 0.02, GIR.spot, sx * 0.56 * 0.83, 2.08 + sy * 0.56 * 0.83, 0.34 + sz * 0.56 * 1.02, 1, 1, 1, { seg: 5 });
+    else b.sph(0.13 + (i % 3) * 0.02, GIR.spot, sx * 0.5 * 0.83, 1.94 + sy * 0.5 * 0.8, -0.42 + sz * 0.5 * 1.02, 1, 1, 1, { seg: 5 });
+  }
+  b.cyl(0.025, 0.035, 0.85, C, 0, 1.6, -0.98, -0.18, 0, 0, { seg: 5 }).sph(0.08, GIR.hoof, 0, 1.15, -1.06, 1, 1.5, 1, { seg: 6 });
+}
+// A whole giraffe, about 5 s tall, standing on (x, y, z) and facing +z (turned by o.ry).
+export function giraffeInto(b, x, y, z, s = 1, o = {}) {
+  b.at(x, y, z, o.ry || 0, () => { giraffeBodyInto(b, o); b.at(0, 2.35, 0.62, 0, () => giraffeNeckInto(b, o.neck ?? 2.2, o.tilt ?? 0.35, o)); }, s);
+}
+// A flat-topped thorn tree, about 4 s high.
+export function acaciaInto(b, x, y, z, s = 1, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    b.cyl(0.14, 0.24, 2.2, GIR.bark, 0, 1.1, 0, 0, 0, 0.08, { seg: 7 });
+    for (const [a, l] of [[0.8, 1.5], [-0.9, 1.4], [0.2, 1.1]]) b.cyl(0.06, 0.1, l, GIR.bark, Math.sin(a) * l * 0.42 + 0.15, 2.2 + Math.cos(a) * l * 0.42, a * 0.2, 0, 0, -a, { seg: 5 });
+    b.sph(1.7, GIR.leaf, 0.1, 3.3, 0, 1, 0.22, 0.85, { seg: 10 }).sph(1.1, GIR.leafD, -0.9, 3.05, 0.3, 1, 0.22, 0.9, { seg: 8 }).sph(1.0, GIR.leaf, 1.1, 3.0, -0.3, 1, 0.22, 0.9, { seg: 8 }).sph(0.8, GIR.leafD, 0.2, 3.62, 0.1, 1, 0.22, 0.9, { seg: 8 });
+  }, s);
+}
+def('calfNap', 'low', 1.5, 0.9, 1.1, (b) => {
+  // a giraffe calf having a nap, its long neck curled round to its tail
+  b.sph(0.42, GIR.coat, 0, 0.3, 0, 1.3, 0.72, 0.9, { seg: 10 }).sph(0.3, GIR.pale, 0, 0.16, 0.1, 1.3, 0.5, 0.9, { seg: 8 });
+  for (let i = 0; i < 7; i++) b.sph(0.1, GIR.spot, -0.36 + i * 0.12, 0.5 + Math.sin(i * 0.5) * 0.06, (i % 2 ? 0.2 : -0.15), 1, 0.6, 1, { seg: 5 });
+  for (let i = 0; i < 6; i++) { const a = -0.4 + i * 0.42; b.sph(0.15 - i * 0.008, GIR.coat, 0.5 + Math.sin(a) * 0.1 - i * 0.02, 0.26 - i * 0.012, 0.1 + Math.cos(a) * 0.1 + i * 0.07, 1, 1, 1, { seg: 7 }); }
+  b.at(0.34, 0.2, 0.5, -1.7, () => giraffeHeadInto(b, { asleep: true }), 0.9);
+  for (const sx of [-1, 1]) b.cap(0.06, 0.4, GIR.coat, sx * 0.3, 0.07, -0.42, PI / 2, sx * 0.5, 0, { seg: 6 }).sph(0.065, GIR.hoof, sx * 0.4, 0.07, -0.66, 1, 1, 1, { seg: 5 });
+  zedInto(b, -0.3, 0.84, 0, 0.5);
+});
+def('leafBasket', 'low', 1.3, 0.92, 1.1, (b) => {
+  // lunch: a basket piled with leaves
+  b.cyl(0.56, 0.42, 0.5, 0xc8964a, 0, 0.25, 0, 0, 0, 0, { seg: 12 }).tor(0.56, 0.04, 0xa87a3a, 0, 0.5, 0, PI / 2, 0, 0, { seg: 12, tseg: 4 }).tor(0.5, 0.03, 0xa87a3a, 0, 0.26, 0, PI / 2, 0, 0, { seg: 12, tseg: 4 });
+  for (let i = 0; i < 9; i++) { const a = i * 2.4, r = 0.1 + (i % 3) * 0.14; b.sph(0.2, i % 2 ? GIR.leaf : GIR.leafD, Math.cos(a) * r, 0.58 + (i % 4) * 0.07, Math.sin(a) * r, 1.3, 0.35, 0.7, { seg: 6 }); }
+});
+def('hoofBoots', 'low', 1.5, 0.8, 0.9, (b) => {
+  // four wellies in a row: one for each foot
+  for (let i = 0; i < 4; i++) { const x = -0.54 + i * 0.36, c = [0xe5383b, 0xffd23f, 0x4f8fe0, 0x7fc46a][i]; b.cyl(0.13, 0.12, 0.56, c, x, 0.36, -0.06, 0, 0, 0, { seg: 8 }).sph(0.14, c, x, 0.12, 0.1, 0.95, 0.8, 1.5, { seg: 8 }).cyl(0.14, 0.14, 0.05, 0xffffff, x, 0.64, -0.06, 0, 0, 0, { seg: 8 }).box(0.3, 0.05, 0.5, 0x4a3424, x, 0.025, 0.06); }
+});
+def('scarfPile', 'low', 1.4, 0.75, 1.2, (b) => {
+  // a very, very long scarf, coiled up ready for a very long neck
+  for (let i = 0; i < 4; i++) for (let k = 0; k < 10; k++) { const a = k * 0.628 + i * 0.3, r = 0.52 - i * 0.1; b.sph(0.12, (k + i) % 2 ? 0xe5383b : 0xfff3d6, Math.cos(a) * r, 0.1 + i * 0.16, Math.sin(a) * r, 1.4, 0.7, 1.4, { seg: 5 }); }
+  b.cap(0.09, 0.36, 0xe5383b, 0.62, 0.1, 0.3, PI / 2, 0.5, 0, { seg: 6 });
+  for (let i = -1; i <= 1; i++) b.box(0.03, 0.03, 0.14, 0xfff3d6, 0.74 + i * 0.05, 0.08, 0.56 + Math.abs(i) * -0.02, 0, 0.5, 0);
+});
+def('antHill', 'low', 1.2, 0.95, 1.1, (b) => {
+  // a termite mound with somebody at home
+  b.cone(0.55, 0.9, 0xb5814f, 0, 0.45, 0, 0, 0, 0, { seg: 9 }).cone(0.3, 0.55, 0xa87444, 0.3, 0.27, 0.2, 0, 0, -0.15, { seg: 7 }).cone(0.26, 0.45, 0xc08a58, -0.32, 0.22, 0.14, 0, 0, 0.2, { seg: 7 });
+  for (const [x, y, z] of [[0.05, 0.4, 0.36], [-0.14, 0.62, 0.2], [0.3, 0.24, 0.42]]) b.sph(0.055, 0x3a2a1c, x, y, z, 1, 1, 0.5, { seg: 6 });
+  b.sph(0.045, 0x3a2a1c, 0.05, 0.42, 0.42, 1, 1, 1, { seg: 5 }).sph(0.012, 0xffffff, 0.035, 0.435, 0.46, 1, 1, 1, { seg: 4 }).sph(0.012, 0xffffff, 0.065, 0.435, 0.46, 1, 1, 1, { seg: 4 });
+});
+def('youngGiraffe', 'tall', 1.3, 2.8, 1.4, (b) => {
+  // two young giraffes, who are only as tall as lamp-posts so far; one has a bow on
+  giraffeInto(b, -0.3, 0, -0.1, 0.56, { neck: 2.0, tilt: 0.25, ry: 0.2 }); giraffeInto(b, 0.34, 0, 0.05, 0.5, { neck: 2.0, tilt: 0.3, ry: -0.25 });
+  b.at(-0.3, 0, -0.1, 0.2, () => b.tor(0.12, 0.05, 0xe5383b, 0, 2.3, 0.44, PI / 2 - 0.25, 0, 0, { seg: 9, tseg: 5 }).cap(0.045, 0.3, 0xe5383b, 0.1, 2.1, 0.52, 0.2, 0, 0.2, { seg: 5 }));
+});
+def('acaciaTree', 'tall', 1.7, 2.8, 1.5, (b) => {
+  // a little thorn tree with a flat top
+  acaciaInto(b, 0, 0, 0, 0.72);
+});
+def('tallDoor', 'tall', 1.3, 2.8, 0.7, (b) => {
+  // a front door for somebody tall, with the letter box at giraffe height
+  b.box(1.2, 2.8, 0.16, 0xfff3d6, 0, 1.4, -0.06).box(0.9, 2.6, 0.1, 0x3f8fd8, 0, 1.34, 0.04).box(0.7, 0.9, 0.04, 0x5aa8f0, 0, 0.6, 0.1).box(0.7, 0.9, 0.04, 0x5aa8f0, 0, 1.65, 0.1);
+  b.box(0.4, 0.08, 0.05, 0xffd23f, 0, 2.3, 0.1).sph(0.06, 0xffd23f, 0.32, 2.0, 0.12, 1, 1, 1, { seg: 6 }).box(0.3, 0.3, 0.02, 0xffe9a0, 0, 2.52, 0.1, 0, 0, 0, { glow: true, grad: 1 });
+  b.box(1.1, 0.08, 0.5, 0xc8964a, 0, 0.04, 0.2);
+  for (let i = 0; i < 5; i++) b.sph(0.07, GIR.spot, -0.36 + ((i * 7) % 5) * 0.18, 0.3 + i * 0.5, 0.11, 1.2, 1, 0.3, { seg: 5 });
+});
+def('topiary', 'tall', 1.3, 2.8, 1.4, (b) => {
+  // a bush clipped into the shape of a giraffe, in a pot
+  b.cyl(0.42, 0.32, 0.5, 0xc8704a, 0, 0.25, 0, 0, 0, 0, { seg: 10 }).cyl(0.45, 0.45, 0.08, 0xb5603c, 0, 0.5, 0, 0, 0, 0, { seg: 10 });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.09, 0.09, 0.7, GIR.leafD, sx * 0.17, 0.85, sz * 0.26, 0, 0, 0, { seg: 6 });
+  b.sph(0.4, GIR.leaf, 0, 1.4, 0, 0.8, 0.75, 1.3, { seg: 9 }).cyl(0.13, 0.2, 1.0, GIR.leaf, 0, 2.05, 0.42, 0.3, 0, 0, { seg: 7 }).sph(0.2, GIR.leaf, 0, 2.58, 0.62, 0.9, 0.85, 1.4, { seg: 8 });
+  for (const sx of [-1, 1]) b.cyl(0.03, 0.03, 0.18, GIR.leafD, sx * 0.08, 2.8, 0.56, 0, 0, 0, { seg: 5 }).sph(0.07, GIR.leafD, sx * 0.2, 2.68, 0.52, 1.2, 0.5, 0.8, { seg: 5 });
+  for (const [x, y, z] of [[0.3, 1.5, 0.2], [-0.3, 1.36, -0.2], [0.1, 2.1, 0.56]]) b.sph(0.05, 0xff8fb0, x, y, z, 1, 1, 1, { seg: 5 });
+});
+def('heightChart', 'tall', 1.2, 2.8, 0.8, (b) => {
+  // "how tall are you today?": a measuring post, with a little bird on top who is the tallest of all
+  b.box(0.9, 0.16, 0.7, 0xc8964a, 0, 0.08, 0).box(0.5, 2.5, 0.12, 0xfff3d6, 0, 1.4, 0);
+  for (let i = 0; i < 12; i++) b.box(i % 3 ? 0.14 : 0.26, 0.03, 0.02, i % 3 ? 0x3a4252 : 0xe5383b, -0.25 + (i % 3 ? 0.07 : 0.13), 0.36 + i * 0.2, 0.07);
+  for (let i = 0; i < 4; i++) b.sph(0.06, GIR.spot, 0.12 + (i % 2) * 0.06, 0.6 + i * 0.55, 0.065, 1.2, 1, 0.3, { seg: 5 });
+  b.box(0.7, 0.08, 0.2, 0xe5383b, 0.1, 2.6, 0).sph(0.11, 0x8a5a3c, 0, 2.78, 0, 1, 0.9, 1.2, { seg: 7 }).sph(0.07, 0x8a5a3c, 0, 2.9, 0.1, 1, 1, 1, { seg: 6 }).cone(0.025, 0.08, 0xe5383b, 0, 2.89, 0.19, PI / 2, 0, 0, { seg: 4 });
+});
+def('spottyBall', 'low', 1.1, 1.0, 1.0, (b) => {
+  // a ball in a giraffe's coat, rolling down the lane
+  b.sph(0.5, GIR.coat, 0, 0, 0, 1, 1, 1, { seg: 12 });
+  for (let i = 0; i < 14; i++) { const u = (i + 0.5) / 14, ph = Math.acos(1 - 2 * u), th = i * 2.4; b.sph(0.15, GIR.spot, Math.sin(ph) * Math.cos(th) * 0.42, Math.cos(ph) * 0.42, Math.sin(ph) * Math.sin(th) * 0.42, 1, 1, 1, { seg: 5 }); }
+}, { center: true });
+def('marula', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the oxpecker drops: a big yellow fruit with a leaf on it
+  b.sph(0.46, 0xffd23f, 0, 0, 0, 1, 0.94, 1, { seg: 11 }).sph(0.2, 0xffe680, 0.18, 0.22, 0.2, 1, 1, 1, { seg: 6 });
+  b.cyl(0.03, 0.03, 0.16, GIR.bark, 0, 0.48, 0, 0, 0, 0.3, { seg: 4 }).sph(0.16, GIR.leaf, 0.14, 0.52, 0, 1.4, 0.25, 0.7, { seg: 6 });
+}, { center: true });
+def('calfTrot', 'low', 1.5, 0.98, 0.8, (b) => {
+  // a very small giraffe at a gallop, neck stretched out in front; it faces +x
+  b.sph(0.26, GIR.coat, 0, 0.5, 0, 1.5, 0.85, 0.85, { seg: 9 });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.05, 0.035, 0.44, GIR.coat, sx * 0.24 + sx * 0.08, 0.22, sz * 0.11, 0, 0, sx * -0.4, { seg: 5 }).sph(0.045, GIR.hoof, sx * 0.24 + sx * 0.17, 0.04, sz * 0.11, 1, 0.8, 1, { seg: 5 });
+  b.cyl(0.07, 0.12, 0.5, GIR.coat, 0.5, 0.72, 0, 0, 0, -0.95, { seg: 7 });
+  b.at(0.7, 0.82, 0, PI / 2, () => giraffeHeadInto(b), 0.6);
+  for (let i = 0; i < 7; i++) b.sph(0.06, GIR.spot, -0.3 + i * 0.1, 0.62 + (i % 2) * 0.06, (i % 2 ? 0.14 : -0.14), 1, 1, 0.6, { seg: 5 });
+  b.cyl(0.015, 0.02, 0.3, GIR.coat, -0.46, 0.62, 0, 0, 0, 1.0, { seg: 4 }).sph(0.04, GIR.hoof, -0.6, 0.72, 0, 1, 1, 1, { seg: 5 });
+});
+def('oxpecker', 'deco', 2.0, 1.0, 1.2, (b) => {
+  // the little bird that rides about on giraffes, with a fruit in its feet
+  b.sph(0.34, 0x8a6a4a, 0, 0, 0, 0.85, 0.8, 1.3, { seg: 10 }).sph(0.26, 0xf0d8a8, 0, -0.1, 0.06, 0.8, 0.6, 1.2, { seg: 8 });
+  b.sph(0.2, 0x8a6a4a, 0, 0.14, 0.44, 1, 1, 1, { seg: 9 }).cone(0.07, 0.2, 0xe5383b, 0, 0.1, 0.68, PI / 2, 0, 0, { seg: 6 }).cone(0.045, 0.1, 0xffd23f, 0, 0.1, 0.78, PI / 2, 0, 0, { seg: 5 });
+  for (const sx of [-1, 1]) b.sph(0.05, 0xffd23f, sx * 0.13, 0.2, 0.56, 0.6, 1, 1, { seg: 6 }).sph(0.028, 0x1b1f24, sx * 0.15, 0.2, 0.58, 0.6, 1, 1, { seg: 5 }).cyl(0.016, 0.016, 0.2, 0x4a3424, sx * 0.1, -0.34, 0, 0, 0, 0, { seg: 4 });
+  b.cone(0.14, 0.4, 0x6a4f38, 0, 0.02, -0.56, -PI / 2, 0, 0, { seg: 5 });
+  b.sph(0.2, 0xffd23f, 0, -0.56, 0, 1, 0.94, 1, { seg: 8 });
+}, {
+  wings: (b, sx) => { b.sph(0.42, 0x8a6a4a, sx * 0.4, 0, 0, 1.2, 0.12, 0.6, { seg: 8 }).sph(0.26, 0x6a4f38, sx * 0.82, 0, -0.06, 1.3, 0.1, 0.5, { seg: 7 }); }, wingAt: [0.24, 0.06, 0],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -2737,9 +2883,11 @@ export const TALL_TYPES = {
   21: ['arcade', 'pxTree', 'blockTower', 'boxRobot', 'heartSign', 'blockTower'],
   22: ['speakerStack', 'lavaLamp', 'jukebox', 'neonNote', 'ballStand', 'speakerStack'],
   23: ['upTree', 'upLamp', 'upHut', 'headTeddy', 'upBrolly', 'upTree'],
+  24: ['youngGiraffe', 'acaciaTree', 'tallDoor', 'topiary', 'heightChart', 'youngGiraffe'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
 export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'],
   21: ['pxCrate', 'cubeJelly', 'retroTV', 'joystick', 'pxBush', 'cubeJelly'],
   22: ['recordStack', 'boomBox', 'platformShoes', 'floorLights', 'miniBall', 'boomBox'],
-  23: ['upCone', 'upBoat', 'upTable', 'upBucket', 'upHat', 'upCone'] };
+  23: ['upCone', 'upBoat', 'upTable', 'upBucket', 'upHat', 'upCone'],
+  24: ['calfNap', 'leafBasket', 'hoofBoots', 'scarfPile', 'antHill', 'calfNap'] };

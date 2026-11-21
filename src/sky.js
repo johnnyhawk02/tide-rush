@@ -34,6 +34,8 @@ const PAL = [
   { top: 0x140a3a, hor: 0x9a3aa8, sun: 0xffd0f4, sunI: 2.1, hemiS: 0xe0b8ff, hemiG: 0x7a4a9a, hemiI: 1.6, deep: 0x2a0f5a, shal: 0x8a3ac0, foam: 0xff9fe0, cloud: 0x7a4aa8, el: 0.6, az: -0.35, stars: 0.9, storm: 0 },
   // 23 the Upside-Down World: the sky is the wrong way up too (pale overhead, deep blue low down), and there is no sea at all (nosea)
   { top: 0xd8f0ff, hor: 0x4f9ae8, sun: 0xfff6dc, sunI: 2.8, hemiS: 0xe8f4ff, hemiG: 0xf4f8e4, hemiI: 1.5, deep: 0x4f9ae8, shal: 0x8fc4f4, foam: 0xffffff, cloud: 0xffffff, el: 0.7, az: 0.3, stars: 0, storm: 0, nosea: 1 },
+  // 24 Giraffe World: a golden afternoon on the savannah
+  { top: 0x3f8fd8, hor: 0xffe2a8, sun: 0xfff0c8, sunI: 3.0, hemiS: 0xfff0d0, hemiG: 0xd8b070, hemiI: 1.3, deep: 0x2f8f9a, shal: 0x7fd0c0, foam: 0xfff6e0, cloud: 0xfff6e8, el: 0.5, az: 0.5, stars: 0, storm: 0 },
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 

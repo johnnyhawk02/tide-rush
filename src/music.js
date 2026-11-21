@@ -541,4 +541,23 @@ THEMES[23] = theme('Topsy-Turvy', {
   drums: { thump: 'x.......x.......', tick: '..x...x...x...x.', rim: '....x.......x...' },
 });
 
+// ---- 24. Giraffe World: "Head in the Clouds", a marimba tune full of very tall leaps (G major) ----
+THEMES[24] = theme('Head in the Clouds', {
+  key: 7, scale: 'maj', base: 67, gain: 1.35, tempo: 1.0, voice: 'pan', bassVoice: 'pizz', stab: 'pluck',
+  chords: 'I IV I V I IV V I',
+  tune: [
+    "1:2 1':2 5:2 3:2 5:4 1':4",
+    "4:2 4':2 1':2 6:2 1':4 6:4",
+    "3:2 3':2 1':2 5:2 3':4 1':4",
+    "2:2 2':2 7:2 5:2 2':4 -:4",
+    "5:2 3:2 1:2 3:2 5:2 1':2 3':4",
+    "6:2 4:2 1:2 4:2 6:2 1':2 4':4",
+    "5':2 2':2 7:2 5:2 7:2 2':2 5':4",
+    "3':4 1':4 5:4 1:4",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 12, _, _, _, 7, _, _, _],
+  stabs: '....x.......x...',
+  drums: { thump: 'x.......x.......', tick: '..x.x...x.x...x.', rim: '....x.......x...' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -2838,10 +2838,93 @@ const upSet = (k) => prefab('upSet' + k, () => {
   return b.build({ cast: false, receive: false });
 });
 
+// ---------- Giraffe World ----------
+// A giraffe whose neck (the part named 'neck') can nod: 0 plain, 1 in a long stripy scarf.
+const giraffe = (v) => prefab('giraffe' + v, () => {
+  const g = new THREE.Group(), b = new Builder(0.86), n = new Builder(0.86);
+  giraffeBodyInto(b);
+  g.add(b.build({ cast: true, receive: false }));
+  giraffeNeckInto(n, 2.2, 0.35);
+  if (v === 1) { for (let i = 0; i < 4; i++) n.tor(0.27 - i * 0.012, 0.07, i % 2 ? 0xfff3d6 : 0xe5383b, 0, 0.5 + i * 0.13, 0.19 + i * 0.047, PI / 2 + 0.35, 0, 0, { seg: 10, tseg: 5 }); n.cap(0.07, 0.7, 0xe5383b, 0.26, 0.2, 0.3, 0.1, 0, 0.15, { seg: 6 }).cap(0.07, 0.5, 0xfff3d6, 0.3, 0.3, 0.1, -0.1, 0, 0.3, { seg: 6 }); }
+  const m = n.build({ cast: true, receive: false }); m.name = 'neck'; m.position.set(0, 2.35, 0.62); g.add(m);
+  return g;
+});
+// A patch of savannah standing in the water hole: golden grass with tufts, r across, its top just below the deck.
+const savIsleInto = (b, x, z, r, rng) => {
+  const y0 = WATER_Y - 1.2, y = -0.5;
+  b.cyl(r, r * 1.08, y - y0, 0xc8a060, x, (y + y0) / 2, z, 0, 0, 0, { seg: 14, grad: 0.75 }).cyl(r * 0.96, r, 0.14, GIR.grass, x, y + 0.02, z, 0, 0, 0, { seg: 14, grad: 1 });
+  for (let i = 0; i < 9; i++) { const a = rng() * 6.28, d = r * (0.2 + rng() * 0.7); b.cone(0.16, 0.5 + rng() * 0.3, i % 2 ? GIR.grassD : 0xd0c868, x + Math.cos(a) * d, y + 0.3, z + Math.sin(a) * d, 0, 0, (rng() - 0.5) * 0.4, { seg: 4 }); }
+};
+// A tall thin house for a tall thin person, who is at home: the chimney is for the neck. It faces +z.
+const giraffeHouseInto = (b) => {
+  b.box(2.6, 5.2, 2.6, 0xfff3d6, 0, 2.6, 0, 0, 0, 0, { grad: 0.9 }).prism(3.0, 1.4, 3.0, 0xc94a3a, 0, 5.2, 0, 0);
+  b.box(0.9, 3.4, 0.08, 0x3f8fd8, 0, 1.7, 1.32).sph(0.07, 0xffd23f, 0.3, 2.6, 1.38, 1, 1, 1, { seg: 5 }).box(0.5, 0.5, 0.04, 0xffe9a0, 0, 3.0, 1.37, 0, 0, 0, { glow: true, grad: 1 });
+  for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) b.box(0.5, 0.6, 0.06, 0xffe9a0, sx * 0.85, 1.2 + i * 1.5, 1.31, 0, 0, 0, { glow: true, grad: 1 }).box(0.6, 0.06, 0.1, 0xffffff, sx * 0.85, 0.86 + i * 1.5, 1.33);
+  b.cyl(0.42, 0.42, 1.0, 0xb5553c, 0.5, 6.1, -0.4, 0, 0, 0, { seg: 8 });
+  b.at(0.5, 6.0, -0.4, 0.5, () => giraffeNeckInto(b, 1.9, 0.12));
+  for (let i = 0; i < 6; i++) b.sph(0.16, GIR.spot, -1.31, 0.8 + i * 0.8, -0.8 + ((i * 5) % 4) * 0.5, 0.3, 1.2, 1, { seg: 5 });
+};
+// Two enormous giraffes, one either side of the pier, touching noses high over the middle of it.
+const giraffeKiss = () => prefab('giraffeKiss', () => {
+  const b = new Builder(0.86), S = 3.2, z0 = -2;
+  for (const sd of [-1, 1]) {
+    b.at(sd * 8.6, WATER_Y - 0.4, z0, 0, () => giraffeBodyInto(b), S);
+    // the neck: a curve of short lengths from the shoulder up and over
+    const P = (u) => { const a = 1 - u; return [sd * (a * a * 8.6 + 2 * a * u * 8.4 + u * u * 2.5), a * a * 4.5 + 2 * a * u * 12.2 + u * u * 11.4]; };
+    const N = 12;
+    for (let i = 0; i < N; i++) {
+      const [x0, y0] = P(i / N), [x1, y1] = P((i + 1) / N), dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy), r0 = 0.95 - 0.5 * (i / N), r1 = 0.95 - 0.5 * ((i + 1) / N), rz = Math.atan2(-dx, dy);
+      b.cyl(r1, r0, L * 1.04, GIR.coat, (x0 + x1) / 2, (y0 + y1) / 2, 0, 0, 0, rz, { seg: 9 }).sph(r1, GIR.coat, x1, y1, 0, 1, 1, 1, { seg: 8 });
+      for (const sz of [-1, 1]) b.sph(0.34 - 0.012 * i, GIR.spot, (x0 + x1) / 2 + (i % 2 ? 0.2 : -0.2), (y0 + y1) / 2, sz * (r0 + r1) / 2 * 0.86, 1.2, 1.2, 0.5, { seg: 5 });
+      b.sph(0.3 - 0.01 * i, GIR.spot, (x0 + x1) / 2 + Math.cos(rz) * sd * (r0 + r1) / 2 * 0.86, (y0 + y1) / 2 + Math.sin(rz) * sd * (r0 + r1) / 2 * 0.86, 0, 0.6, 1.2, 1.2, { seg: 5 });
+    }
+    b.at(sd * 2.5, 11.4, 0, -sd * PI / 2, () => giraffeHeadInto(b), S * 0.86);
+  }
+  // a heart over the two of them
+  for (const sx of [-1, 1]) b.sph(0.42, 0xff6f9f, sx * 0.3, 14.2, 0, 1, 1, 0.7, { seg: 9, glow: true, grad: 1 });
+  b.cone(0.62, 0.8, 0xff6f9f, 0, 13.62, 0, PI, 0, 0, { seg: 4, glow: true, grad: 1 });
+  return b.build({ cast: false, receive: false });
+});
+// A hot-air balloon in a giraffe's coat, with a passenger whose head will not fit in the basket (it bobs).
+const giraffeBalloon = () => prefab('giraffeBalloon', () => {
+  const b = new Builder(0.9);
+  b.sph(2.3, GIR.coat, 0, 4.6, 0, 1, 1.15, 1, { seg: 14 }).cyl(0.7, 1.3, 1.4, GIR.coat, 0, 1.9, 0, 0, 0, 0, { seg: 12 });
+  for (let i = 0; i < 22; i++) { const u = (i + 0.5) / 22, ph = Math.acos(1 - 1.7 * u), th = i * 2.4; b.sph(0.5, GIR.spot, Math.sin(ph) * Math.cos(th) * 2.16, 4.6 + Math.cos(ph) * 2.5, Math.sin(ph) * Math.sin(th) * 2.16, 1, 1, 1, { seg: 5 }); }
+  b.box(1.4, 0.9, 1.4, 0xc8964a, 0, 0.0, 0, 0, 0, 0, { grad: 0.85 }).box(1.5, 0.12, 1.5, 0xa87a3a, 0, 0.46, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.02, 0.02, 1.1, 0xfff3d6, sx * 0.66, 0.95, sz * 0.66, sz * -0.1, 0, sx * 0.1, { seg: 3 });
+  b.at(0.2, 0.2, 0.3, 0.6, () => giraffeNeckInto(b, 1.3, 0.3), 0.8);
+  return b.build({ cast: false, receive: false });
+});
+// Everything that stands still in one stretch of Giraffe World, as one model.
+const giraffeSet = (k) => prefab('giraffeSet' + k, () => {
+  const b = new Builder(0.86), rng = makeRng(2410 + k);
+  if (k === 0) {
+    savIsleInto(b, 13, -13, 5.2, rng); acaciaInto(b, 14.8, -0.45, -15, 1.5, 0.4); acaciaInto(b, 15.4, -0.45, -10.4, 1.0, 2);
+    savIsleInto(b, -13, -28, 5.2, rng); b.at(-13.4, -0.45, -28, PI / 2, () => giraffeHouseInto(b)); acaciaInto(b, -15.5, -0.45, -24.6, 1.1, 1);
+  } else if (k === 1) {
+    savIsleInto(b, -13, -12, 5.2, rng); acaciaInto(b, -15, -0.45, -13.6, 1.6, 1.2);
+    for (const [x, z] of [[-11.2, -8.8], [-10.4, -15]]) b.cone(0.7, 1.5, 0xb5814f, x, 0.3, z, 0, 0, 0, { seg: 8 }).cone(0.36, 0.8, 0xa87444, x + 0.5, -0.05, z + 0.3, 0, 0, -0.15, { seg: 6 });
+    savIsleInto(b, 14.5, -30, 4.4, rng); acaciaInto(b, 15, -0.45, -30.5, 1.4, 2.6);
+  } else {
+    savIsleInto(b, 13, -26, 5.4, rng); giraffeInto(b, 13.6, -0.45, -24.4, 1.0, { ry: -PI / 2 - 0.3 }); giraffeInto(b, 11.6, -0.45, -27.6, 0.5, { ry: -PI / 2 + 0.2, neck: 1.9 }); acaciaInto(b, 15.8, -0.45, -28.4, 1.3, 0.7);
+    savIsleInto(b, -14.5, -30, 4.2, rng); acaciaInto(b, -14.8, -0.45, -30, 1.5, 0.3);
+  }
+  // golden hills far off, with somebody looking over each one
+  for (const sd of [-1, 1]) for (let i = 0; i < 3; i++) {
+    const x = sd * (34 + rng() * 10), z = -4 - i * 13 - rng() * 4, r = 8 + rng() * 5;
+    b.sph(r, i % 2 ? GIR.grass : GIR.grassD, x, WATER_Y - 1, z, 1.3, 0.55 + rng() * 0.2, 1, { seg: 10, grad: 0.7 });
+    if ((i + k) % 2 === 0) b.at(x + sd * r * 0.5, WATER_Y + r * 0.2, z - 2, -sd * PI / 2 + (rng() - 0.5), () => giraffeNeckInto(b, 2.2, 0.3), 3.2);
+    else acaciaInto(b, x - sd * r * 0.3, WATER_Y + r * 0.42, z, 2.2, rng() * 6);
+  }
+  // reeds at the edge of the water hole
+  for (const sd of [-1, 1]) for (let i = 0; i < 4; i++) { const x = sd * (6 + rng() * 14), z = -rng() * CHUNK; for (let q = 0; q < 4; q++) b.cyl(0.03, 0.04, 1.2 + q * 0.2, GIR.leafD, x + q * 0.16, WATER_Y + 0.5, z + (q % 2) * 0.14, 0, 0, (q - 1.5) * 0.08, { seg: 4 }).sph(0.07, GIR.bark, x + q * 0.16 - (q - 1.5) * 0.06, WATER_Y + 1.15 + q * 0.1, z + (q % 2) * 0.14, 1, 2.2, 1, { seg: 5 }); }
+  return b.build({ cast: true, receive: false });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -2849,7 +2932,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); if (zone === 23) s.rotation.z = PI;   // (the sign for the Upside-Down World is upside down, of course)
   g.add(s);
   return g;
@@ -2863,7 +2946,7 @@ export function populate(group, rawIndex, zone, anim) {
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
   if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19) place(group, rail40(), L, 0, 0); }
-  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && zone !== 23 && !coast);   // the right-hand side opens onto ground at deck level
+  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && zone !== 23 && zone !== 24 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
@@ -3088,6 +3171,17 @@ export function populate(group, rawIndex, zone, anim) {
     for (const sd of [-1, 1]) bob(hang(group, upIsle((index + (sd > 0 ? 1 : 3)) % 4), sd * (27 + rng() * 6), UP_H + 7 + rng() * 5, -6 - rng() * 28, rng() * 6.28, 1.7), 1);
     if (index % 3 === 1) hang(group, upPier(), 0, 17.5, -20);
     else bob(hang(group, upIslet((index + 1) % 3), side * 2, 18, -22, rng() * 6.28), 1.6);
+  } else if (zone === 24) {
+    // Giraffe World: a water hole on the savannah, where everybody is very tall and very interested in Robyn
+    const k = index % 3;
+    place(group, giraffeSet(k), 0, 0, 0);
+    if (index % 2 === 0) place(group, giraffeKiss(), 0, 0, -20);
+    const nod = (v, x, y, z, ry, s) => anim.push({ o: place(group, giraffe(v), x, y, z, ry, s), kind: 'nod', p: rng() * 6 });
+    // (the ones at y = -4.3 stand in the water right beside the pier, so that their heads come up level with Robyn over the rail)
+    if (k === 0) { nod(1, 11.4, -0.45, -11.6, -PI / 2 + 0.25, 1); nod(0, -7.9, -4.3, -10, PI / 2, 1.55); }
+    else if (k === 1) { nod(0, -11.6, -0.45, -11, PI / 2 - 0.2, 1.05); nod(1, 7.9, -4.3, -34, -PI / 2, 1.55); }
+    else nod(1, -7.9, -4.3, -12, PI / 2, 1.55);
+    if (k !== 1) anim.push({ o: place(group, giraffeBalloon(), (index % 2 ? 1 : -1) * (20 + rng() * 6), 9 + rng() * 4, -8 - rng() * 24, rng() * 6.28), kind: 'bob', p: rng() * 6, amp: 2.2 });
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }
@@ -3228,6 +3322,10 @@ export function animate(anim, t, dt) {
       const amp = a.amp || 1;
       a.o.position.y = (a.baseY ?? (a.baseY = a.o.position.y)) + Math.sin(t * 1.3 + a.p) * 0.18 * amp;
       a.o.rotation.z = Math.sin(t * 1.1 + a.p * 1.7) * 0.07 * amp; a.o.rotation.x = Math.sin(t * 0.9 + a.p) * 0.04 * amp;
+    } else if (a.kind === 'nod') {
+      // a giraffe: the neck sways, and every so often dips for a closer look
+      const n = a.n || (a.n = a.o.getObjectByName('neck'));
+      if (n) { n.rotation.x = Math.sin(t * 0.8 + a.p) * 0.08 + Math.max(0, Math.sin(t * 0.31 + a.p * 2)) * 0.16; n.rotation.z = Math.sin(t * 0.5 + a.p) * 0.06; }
     } else if (a.kind === 'flash') {
       // a dance floor: its two sets of lit squares take turns
       const A = a.a || (a.a = a.o.getObjectByName('a')), B = a.b || (a.b = a.o.getObjectByName('b')), on = Math.floor(t * 2.1 + a.p) % 2 === 0;
