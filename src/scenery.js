@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -2385,10 +2385,112 @@ const exWhale = () => prefab('exWhale', () => {
   return b.build({ cast: true });
 });
 
+// ---------- Dream Time ----------
+// A puffy cloud to stand things on, about 2 s across; its top is near y + 0.5 s.
+const puffInto = (b, x, y, z, s = 1, col = 0xffffff) => {
+  for (const [dx, dy, dz, r] of [[0, 0, 0, 1], [-0.9, -0.1, 0.2, 0.7], [0.9, -0.12, -0.1, 0.72], [0.3, -0.05, 0.8, 0.66], [-0.4, -0.08, -0.8, 0.68], [1.5, -0.25, 0.4, 0.45], [-1.5, -0.22, -0.3, 0.48]]) b.sph(r * s, col, x + dx * s, y + dy * s, z + dz * s, 1, 0.55, 1, { seg: 9 });
+};
+const CL = WATER_Y + 0.5;     // where the clouds float
+// A great four-poster bed on a cloud, with somebody fast asleep in it; the foot of the bed faces +z.
+const bedInto = (b, who) => {
+  const WD = 0x7a5a9a, Q = [DREAM.pink, DREAM.blue, DREAM.mint, DREAM.cream, DREAM.lilac];
+  puffInto(b, 0, CL, 0, 3.6); puffInto(b, 2.5, CL - 0.3, 2.4, 2.0, 0xf0e8ff);
+  const y0 = CL + 1.5;
+  b.box(4.4, 0.5, 6.2, WD, 0, y0 + 0.4, 0).box(4.2, 0.5, 6.0, 0xffffff, 0, y0 + 0.85, 0);
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) b.box(1.08, 0.14, 1.0, Q[(i * 2 + j) % 5], -1.62 + i * 1.08, y0 + 1.14 + Math.sin(i * 1.3 + j) * 0.03, 2.5 - j * 1.0);
+  b.box(4.6, 2.6, 0.3, WD, 0, y0 + 1.3, -3.1).cyl(1.6, 1.6, 0.3, WD, 0, y0 + 2.6, -3.1, PI / 2, 0, 0, { seg: 14 }).box(4.6, 1.2, 0.3, WD, 0, y0 + 0.9, 3.1);
+  starInto(b, 0, y0 + 2.9, -2.93, 1.1, DREAM.star, { glow: true, grad: 1 });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { b.cyl(0.16, 0.18, 5.4, WD, sx * 2.2, y0 + 2.5, sz * 3.1, 0, 0, 0, { seg: 8 }).sph(0.3, DREAM.star, sx * 2.2, y0 + 5.4, sz * 3.1, 1, 1, 1, { glow: true, seg: 8, grad: 0.9 }); }
+  b.box(4.8, 0.14, 6.6, DREAM.lilac, 0, y0 + 5.1, 0);
+  for (let i = 0; i < 8; i++) for (const sx of [-1, 1]) b.cone(0.42, 0.7, i % 2 ? DREAM.lilac : 0xffffff, sx * 2.38, y0 + 4.7, -2.9 + i * 0.83, PI, 0, 0, { seg: 4 });
+  pillowInto(b, 0, y0 + 1.1, -2.2, 2.6, 0xffffff, 0, 0, DREAM.lilac);
+  if (who === 'teddy') { b.at(0, y0 + 1.25, -1.6, 0, () => { b.sph(0.6, DREAM.teddy, 0, 0.3, 0, 1.05, 0.95, 1, { seg: 12 }).sph(0.28, DREAM.teddyL, 0, 0.2, 0.5, 1.15, 0.85, 0.8, { seg: 8 }).sph(0.1, 0x3a2a22, 0, 0.3, 0.74, 1.2, 0.8, 0.7, { seg: 6 }); for (const sx of [-1, 1]) b.sph(0.22, DREAM.teddy, sx * 0.48, 0.78, 0, 1, 1, 0.6, { seg: 7 }).tor(0.1, 0.025, 0x3a2a22, sx * 0.25, 0.44, 0.55, 0, 0, PI, { arc: PI, seg: 6 }); nightcapInto(b, 0, 0.75, 0, 0.5, DREAM.pink, 1); }); b.sph(1.5, Q[1], 0, y0 + 1.1, 0.4, 1, 0.42, 1.5, { seg: 10 }); }
+  else { sheepInto(b, 0, y0 + 1.2, -0.6, 2.4, { asleep: true, ry: -PI / 2 }); }
+  for (let i = 0; i < 3; i++) zedInto(b, 1.2 + i * 0.9, y0 + 3.0 + i * 1.1, -1.4 + i * 0.3, 0.7 + i * 0.3);
+};
+// A giant alarm clock, dozing on a cloud; it faces +z.
+const clockInto = (b) => {
+  puffInto(b, 0, CL, 0, 3.0);
+  const y = CL + 4.2, R = 2.3;
+  b.cyl(R, R, 1.2, 0xe5587b, 0, y, 0, PI / 2, 0, 0, { seg: 24 }).cyl(R * 0.86, R * 0.86, 1.26, DREAM.cream, 0, y, 0, PI / 2, 0, 0, { seg: 24 });
+  for (const sx of [-1, 1]) { b.sph(0.9, DREAM.star, sx * 1.5, y + 2.1, 0, 1, 0.8, 1, { seg: 10 }).cyl(0.1, 0.1, 0.7, 0x9aa6ae, sx * 1.2, y + 1.7, 0, 0, 0, sx * -0.6, { seg: 6 }).cap(0.22, 1.0, 0xe5587b, sx * 1.3, y - 2.3, 0, 0, 0, sx * 0.5, { seg: 8 }); }
+  b.cyl(0.12, 0.12, 1.0, 0x9aa6ae, 0, y + 2.6, 0, 0, 0, 0, { seg: 6 }).sph(0.28, 0x9aa6ae, 0, y + 3.1, 0, 1, 1, 1, { seg: 7 });
+  for (let i = 0; i < 12; i++) b.box(0.12, i % 3 ? 0.24 : 0.44, 0.05, 0x5a4280, Math.sin(i * PI / 6) * 1.65, y + Math.cos(i * PI / 6) * 1.65, 0.64, 0, 0, -i * PI / 6);
+  for (const sx of [-1, 1]) b.tor(0.3, 0.06, 0x5a4280, sx * 0.7, y + 0.4, 0.66, 0, 0, PI, { arc: PI, seg: 8 }).sph(0.26, 0xffb0c0, sx * 1.15, y - 0.2, 0.64, 1, 0.7, 0.3, { seg: 6 });
+  b.sph(0.2, 0x5a4280, 0, y - 0.5, 0.66, 1, 1.2, 0.4, { seg: 7 });
+  for (let i = 0; i < 3; i++) zedInto(b, 2.6 + i * 0.8, y + 2.0 + i * 1.0, 0.4, 0.7 + i * 0.25);
+};
+// The moon in a nightcap, fishing for stars from a cloud; it faces +z.
+const moonSeatInto = (b) => {
+  puffInto(b, 0, CL, 0, 2.6); puffInto(b, 1.0, CL + 3.4, 0, 1.6, 0xf0e8ff);
+  moonInto(b, 0, CL + 7.6, 0, 7.0);
+  b.cone(1.0, 2.2, DREAM.blue, 0.2, CL + 11.5, 0, 0, 0, 0.5, { seg: 10 }).sph(0.4, 0xffffff, -0.5, CL + 12.4, 0, 1, 1, 1, { seg: 7 }).tor(0.95, 0.2, 0xffffff, 0.55, CL + 10.6, 0, PI / 2, 0, 0.5, { seg: 12 });
+  b.cyl(0.04, 0.03, 4.4, 0x8a5a3c, -2.6, CL + 7.6, 0.3, 0, 0, 1.0, { seg: 5 }).cyl(0.012, 0.012, 3.6, 0xffffff, -4.45, CL + 7.0, 0.3, 0, 0, 0, { seg: 3 });
+  starInto(b, -4.45, CL + 4.9, 0.3, 0.8, DREAM.star, { glow: true, grad: 1 });
+};
+// A giant teddy reading a bedtime story, on a cloud; it faces +z.
+const storyTeddyInto = (b) => {
+  puffInto(b, 0, CL, 0, 3.4);
+  teddyInto(b, 0, CL + 1.3, 0, 5.0, { pj: DREAM.mint, cap: DREAM.blue });
+  b.box(2.2, 0.16, 1.5, 0xe5587b, 0, CL + 3.0, 2.5, -0.6, 0, 0).box(1.0, 0.1, 1.36, 0xffffff, -0.52, CL + 3.1, 2.56, -0.6, 0, 0.08).box(1.0, 0.1, 1.36, 0xffffff, 0.52, CL + 3.1, 2.56, -0.6, 0, -0.08);
+  starInto(b, 0, CL + 2.6, 3.0, 0.5, DREAM.star, { glow: true, grad: 1 });
+};
+// Far out on the clouds: hills like plumped-up pillows and a patchwork quilt.
+const quiltHillsInto = (b, v) => {
+  const rng = makeRng(2010 + v), cols = [DREAM.pink, DREAM.blue, DREAM.mint, DREAM.lilac, DREAM.cream];
+  for (const sd of [-1, 1]) {
+    for (let i = 0; i < 4; i++) { const x = sd * (30 + rng() * 14), z = -3 - i * 10 - rng() * 4, r = 6 + rng() * 5; b.sph(r, cols[(i + (sd > 0 ? 0 : 2) + v) % 5], x, WATER_Y - 0.5, z, 1.2, 0.5 + rng() * 0.3, 1, { seg: 10, grad: 0.7 }); if (i % 2) for (let k = 0; k < 4; k++) b.sph(0.4, 0xffffff, x - sd * r * 0.5 + (k - 1.5) * 1.6, WATER_Y - 0.5 + r * 0.45, z + 2, 1, 0.5, 1, { seg: 5 }); }
+    for (let i = 0; i < 4; i++) puffInto(b, sd * (7 + rng() * 16), CL - 0.5, -rng() * CHUNK, 1.0 + rng() * 1.2, i % 2 ? 0xf0e8ff : 0xffffff);
+    for (let i = 0; i < 3; i++) starInto(b, sd * (10 + rng() * 22), 7 + rng() * 9, -rng() * CHUNK, 0.6 + rng() * 0.5, i % 2 ? DREAM.star : 0xffffff, { glow: true, grad: 1 });
+  }
+};
+// Everything that stands still in one stretch of Dream Time, as one model.
+const dreamSet = (k) => prefab('dreamSet' + k, () => {
+  const b = new Builder(0.86);
+  if (k === 0) { b.at(13, 0, -14, -PI / 2, () => bedInto(b, 'teddy')); b.at(-12.5, 0, -31, PI / 2 - 0.3, () => clockInto(b)); }
+  else if (k === 1) { b.at(14.5, 0, -24, -PI / 2 + 0.2, () => moonSeatInto(b)); b.at(-13, 0, -13, PI / 2, () => storyTeddyInto(b)); }
+  else { b.at(-13, 0, -22, PI / 2, () => bedInto(b, 'sheep')); b.at(12.5, 0, -30, -PI / 2 + 0.3, () => clockInto(b)); }
+  quiltHillsInto(b, k);
+  return b.build({ cast: true, receive: false });
+});
+// Counting sheep: a fence on a cloud, and a sheep (a part named 'leap') that jumps over it, again and again; it jumps along x.
+const sheepJump = () => prefab('sheepJump', () => {
+  const b = new Builder(0.86), g = new THREE.Group();
+  puffInto(b, 0, CL, 0, 3.2); puffInto(b, -4.4, CL - 0.2, 0.4, 2.0, 0xf0e8ff); puffInto(b, 4.4, CL - 0.2, -0.3, 2.0, 0xf0e8ff);
+  const y = CL + 1.5;
+  for (const sz of [-1, 1]) b.box(0.24, 1.9, 0.24, 0xffffff, 0, y + 0.95, sz * 1.5).cone(0.2, 0.3, 0xffffff, 0, y + 2.05, sz * 1.5, 0, PI / 4, 0, { seg: 4 });
+  for (const yy of [0.6, 1.3]) b.box(0.14, 0.26, 3.0, 0xf0e8ff, 0, y + yy, 0);
+  sheepInto(b, -4.4, CL + 0.9, 0.4, 1.7, { asleep: true }); sheepInto(b, 4.6, CL + 0.9, -0.3, 1.7);
+  g.add(b.build({ cast: true, receive: false }));
+  const s = new Builder(0.86); sheepInto(s, 0, -0.9, 0, 1.9);
+  const m = s.build({ cast: true, receive: false }); m.name = 'leap'; m.position.set(0, y + 1.0, 0); g.add(m);
+  return g;
+});
+// A mobile over the pier: a cloud arch hung with stars and moons.
+const dreamArch = () => prefab('dreamArch', () => {
+  const b = new Builder(0.9);
+  for (let i = 0; i <= 14; i++) { const a = PI * i / 14, x = Math.cos(a) * 5.6, y = 1.5 + Math.sin(a) * 6.0; b.sph(0.8 + (i % 2) * 0.25, i % 3 ? 0xffffff : 0xf0e8ff, x, y, 0, 1, 0.8, 0.9, { seg: 8 }); }
+  for (const sx of [-1, 1]) puffInto(b, sx * 5.6, 0.6, 0, 1.0);
+  for (const [x, len, kind] of [[-3.2, 1.4, 0], [-1.6, 2.2, 1], [0, 1.5, 0], [1.6, 2.4, 1], [3.2, 1.3, 0]]) {
+    const top = 1.5 + Math.sqrt(Math.max(0, 1 - (x / 5.6) ** 2)) * 6.0 - 0.6;
+    b.cyl(0.012, 0.012, len, 0xffffff, x, top - len / 2, 0, 0, 0, 0, { seg: 3 });
+    if (kind) moonInto(b, x, top - len - 0.4, 0, 0.9); else starInto(b, x, top - len - 0.32, 0, 0.55, x ? DREAM.star : 0xffffff, { glow: true, grad: 1 });
+  }
+  return b.build({ cast: true, receive: false });
+});
+// A paper lantern that drifts over the clouds (0 a star lantern, 1 a round one with a sleepy face, 2 a little hot-air balloon with a teddy in it).
+const dreamLantern = (v) => prefab('dreamLantern' + v, () => {
+  const b = new Builder(0.86), o = { glow: true, grad: 0.85 };
+  if (v === 0) { starInto(b, 0, 2.2, 0, 1.6, DREAM.star, o); b.cyl(0.01, 0.01, 1.2, 0xffffff, 0, 0.9, 0, 0, 0, 0, { seg: 3 }); puffInto(b, 0, 0.1, 0, 0.5); }
+  else if (v === 1) { b.sph(0.9, 0xffc0d8, 0, 2.0, 0, 1, 1.1, 1, { seg: 12, ...o }); for (const sx of [-1, 1]) b.tor(0.14, 0.03, 0x6a5a9a, sx * 0.3, 2.1, 0.84, 0, 0, PI, { arc: PI, seg: 6, glow: true, grad: 1 }); b.cyl(0.4, 0.4, 0.12, 0x7a5a9a, 0, 3.0, 0, 0, 0, 0, { seg: 8 }).cyl(0.4, 0.4, 0.12, 0x7a5a9a, 0, 1.0, 0, 0, 0, 0, { seg: 8 }); for (let i = 0; i < 4; i++) b.box(0.05, 0.6, 0.02, DREAM.star, Math.cos(i * 1.57) * 0.3, 0.66, Math.sin(i * 1.57) * 0.3); }
+  else { b.sph(1.2, DREAM.blue, 0, 3.2, 0, 1, 1.15, 1, { seg: 12 }); for (let i = 0; i < 3; i++) b.add(new THREE.SphereGeometry(1.21, 10, 8), i % 2 ? 0xffffff : DREAM.pink, 0, 3.2, 0, 0, i * PI / 3, 0, 0.18, 1.15, 1); b.box(0.9, 0.6, 0.9, 0xc9a26b, 0, 1.1, 0); for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.015, 0.015, 1.1, 0xffffff, sx * 0.4, 1.9, sz * 0.4, 0, 0, 0, { seg: 3 }); teddyInto(b, 0, 1.2, 0, 0.8, { cap: DREAM.pink }); }
+  return b.build({ cast: true, receive: false });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -2396,7 +2498,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -2409,7 +2511,7 @@ export function populate(group, rawIndex, zone, anim) {
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
   if (!coast) { place(group, under40(), 0, 0, 0); if (zone !== 19) place(group, rail40(), L, 0, 0); }
-  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && !coast);   // the right-hand side opens onto ground at deck level
+  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
@@ -2596,6 +2698,13 @@ export function populate(group, rawIndex, zone, anim) {
     else if (v === 1) { R(exStatues(0), -10); R(exEgypt(), -30, 8.5); anim.push({ o: place(group, exOrrery(), -7.5, 0, -20), kind: 'spin', v: 0.35 }); }
     else if (v === 2) { R(exPaintings(1), -11, MUS_W); R(exPaintings(2), -30, MUS_W); Lf(exStatues(1), -10); Lf(exStatues(2), -30); }
     else { anim.push({ o: place(group, exOrrery(), 7.5, 0, -11), kind: 'spin', v: -0.35 }); R(exStatues(2), -30); Lf(exEgypt(), -11, 8.5); Lf(exPaintings(0), -30, MUS_W); place(group, exWhale(), 6.6, 8.7, -26); }
+  } else if (zone === 20) {
+    // Dream Time: bedtime above the clouds, where the sheep you count jump their fence and everybody else is fast asleep
+    place(group, dreamSet(index % 3), 0, 0, 0);
+    if (index % 2 === 0) place(group, dreamArch(), 0, 0, -20);
+    if (index % 3 === 0) anim.push({ o: place(group, sheepJump(), -12, 0, -11, PI / 2), kind: 'leap', p: rng() });
+    else if (index % 3 === 2) anim.push({ o: place(group, sheepJump(), 12, 0, -10, -PI / 2), kind: 'leap', p: rng() });
+    for (let i = 0; i < 2; i++) { const sd = (index + i) % 2 ? 1 : -1; anim.push({ o: place(group, dreamLantern((index + i) % 3), sd * (7.5 + rng() * 3), 1.5 + rng() * 3, -6 - i * 20 - rng() * 8, sd > 0 ? -0.6 : 0.6), kind: 'bob', p: rng() * 6, amp: 2.2 }); }
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }
@@ -2736,6 +2845,10 @@ export function animate(anim, t, dt) {
       const amp = a.amp || 1;
       a.o.position.y = (a.baseY ?? (a.baseY = a.o.position.y)) + Math.sin(t * 1.3 + a.p) * 0.18 * amp;
       a.o.rotation.z = Math.sin(t * 1.1 + a.p * 1.7) * 0.07 * amp; a.o.rotation.x = Math.sin(t * 0.9 + a.p) * 0.04 * amp;
+    } else if (a.kind === 'leap') {
+      // over the fence, then round again
+      const c = a.c || (a.c = a.o.getObjectByName('leap')), u = (t * 0.32 + a.p) % 1, by = a.by ?? (a.by = c.position.y);
+      c.position.x = -4 + 8 * u; c.position.y = by + Math.sin(u * PI) * 2.6; c.rotation.z = (0.5 - u) * 1.0; c.scale.setScalar(Math.max(0.001, Math.min(1, u * 10, (1 - u) * 10)));
     } else if (a.kind === 'wave') {
       // a friendly wave: the arm swings up and waggles for a couple of seconds, then rests
       const arm = a.arm || (a.arm = a.o.getObjectByName('arm')), u = (t * 0.45 + a.p) % 1.6, up = u < 1 ? Math.sin(u * PI) ** 0.5 : 0;

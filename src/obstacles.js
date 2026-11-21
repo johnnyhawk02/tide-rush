@@ -1613,6 +1613,176 @@ def('pteroBones', 'deco', 2.4, 1.2, 1.6, (b) => {
   }, wingAt: [0.2, 0.06, 0],
 });
 
+// ---------- Dream Time ----------
+export const DREAM = { lilac: 0xc8b8f0, deep: 0x5a4aa8, cream: 0xfff6e0, blue: 0x8fb8f5, pink: 0xf7a8c8, star: 0xffe27a, mint: 0xa8e6cf, teddy: 0xc9955a, teddyL: 0xecd0a0 };
+// A plump pillow, lying flat; s is its length.
+export function pillowInto(b, x, y, z, s = 1, col = 0xffffff, ry = 0, rz = 0, trim = DREAM.lilac) {
+  b.at(x, y, z, ry, () => {
+    b.sph(1, col, 0, 0.17 * s, 0, 0.5 * s, 0.17 * s, 0.34 * s, { seg: 12 });
+    b.add(new THREE.SphereGeometry(1, 12, 8), col, 0, 0.17 * s, 0, 0, 0, rz, 0.5 * s, 0.17 * s, 0.34 * s);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.sph(0.07 * s, trim, sx * 0.43 * s, 0.17 * s, sz * 0.27 * s, 1, 0.7, 1, { seg: 5 });
+    b.box(0.9 * s, 0.03 * s, 0.03 * s, trim, 0, 0.17 * s, 0.33 * s).box(0.9 * s, 0.03 * s, 0.03 * s, trim, 0, 0.17 * s, -0.33 * s);
+  });
+}
+// A five-pointed star, flat on to +z.
+export function starInto(b, x, y, z, s = 1, col = DREAM.star, o) {
+  for (let i = 0; i < 5; i++) { const a = PI / 2 + i * PI * 0.4; b.add(new THREE.ConeGeometry(0.21 * s, 0.56 * s, 4), col, x + Math.cos(a) * 0.36 * s, y + Math.sin(a) * 0.36 * s, z, 0, 0, a - PI / 2, 1, 1, 0.45, o); }
+  b.sph(0.3 * s, col, x, y, z, 1, 1, 0.4, { seg: 8, ...o });
+}
+// A crescent moon, flat on to +z, with a sleepy smile; s is its height.
+export function moonInto(b, x, y, z, s = 1, col = 0xfff3b0, o = { glow: true, grad: 0.9 }) {
+  for (let i = 0; i <= 12; i++) { const a = -1.9 + i * (3.8 / 12), r = 0.17 * s * Math.sin((i + 0.6) / 13.2 * PI) + 0.02 * s; b.sph(r, col, x - Math.cos(a) * 0.36 * s + 0.1 * s, y + Math.sin(a) * 0.42 * s, z, 1, 1, 0.55, { seg: 8, ...o }); }
+  b.tor(0.05 * s, 0.012 * s, 0x6a5a9a, x - 0.22 * s, y + 0.1 * s, z + 0.1 * s, 0, 0, 0, { arc: PI, seg: 6, ...o }).tor(0.07 * s, 0.012 * s, 0x6a5a9a, x - 0.2 * s, y - 0.06 * s, z + 0.1 * s, 0, 0, PI, { arc: PI, seg: 6, ...o });
+  b.sph(0.045 * s, 0xffb0c0, x - 0.3 * s, y - 0.02 * s, z + 0.09 * s, 1, 0.7, 0.4, { seg: 5, ...o });
+}
+// A letter Z, for somebody fast asleep.
+export function zedInto(b, x, y, z, s = 1, col = 0xffffff) {
+  const o = { glow: true, grad: 1 };
+  b.box(0.5 * s, 0.1 * s, 0.06 * s, col, x, y + 0.26 * s, z, 0, 0, 0, o).box(0.5 * s, 0.1 * s, 0.06 * s, col, x, y - 0.26 * s, z, 0, 0, 0, o).box(0.66 * s, 0.1 * s, 0.06 * s, col, x, y, z, 0, 0, 0.9, o);
+}
+// A nightcap with a bobble, to sit on a head of radius r at (x, y, z); it flops over to one side.
+export function nightcapInto(b, x, y, z, r, col = DREAM.blue, side = 1) {
+  b.cyl(r * 0.92, r * 1.02, r * 0.3, 0xffffff, x, y, z, 0, 0, 0, { seg: 10 }).cone(r * 0.88, r * 1.3, col, x + side * r * 0.2, y + r * 0.7, z, 0, 0, side * -0.45, { seg: 10 });
+  b.cap(r * 0.16, r * 0.6, col, x + side * r * 0.9, y + r * 1.0, z, 0, 0, side * 0.9, { seg: 6 }).sph(r * 0.26, 0xffffff, x + side * r * 1.25, y + r * 0.72, z, 1, 1, 1, { seg: 7 });
+}
+// A teddy bear facing +z: sitting (about 0.92 s high and 0.85 s wide) or, with o.stand, standing (about 1.5 s high and 0.8 s wide).
+export function teddyInto(b, x, y, z, s = 1, o = {}) {
+  const T = o.col || DREAM.teddy, L = DREAM.teddyL, st = !!o.stand, by = st ? 0.78 : 0.3, hy = by + 0.44;
+  b.at(x, y, z, o.ry || 0, () => {
+    b.sph(0.3, o.pj || T, 0, by, 0, 1, st ? 1.25 : 1.05, 0.9, { seg: 12 }).sph(0.19, L, 0, by - 0.02, 0.17, 1, 1.05, 0.6, { seg: 9 });
+    if (o.pj) for (let i = 0; i < 3; i++) b.sph(0.03, 0xffffff, 0, by - 0.16 + i * 0.14, 0.28 - Math.abs(i - 1) * 0.02, 1, 1, 0.6, { seg: 5 });
+    b.sph(0.24, T, 0, hy, 0.02, 1.05, 0.95, 1, { seg: 12 }).sph(0.11, L, 0, hy - 0.06, 0.2, 1.15, 0.85, 0.8, { seg: 8 }).sph(0.04, 0x3a2a22, 0, hy - 0.02, 0.29, 1.2, 0.8, 0.7, { seg: 6 });
+    for (const sx of [-1, 1]) {
+      b.sph(0.09, T, sx * 0.19, hy + 0.2, 0, 1, 1, 0.6, { seg: 7 }).sph(0.05, L, sx * 0.19, hy + 0.2, 0.04, 1, 1, 0.5, { seg: 6 });
+      if (o.asleep) b.tor(0.04, 0.01, 0x3a2a22, sx * 0.1, hy + 0.04, 0.22, 0, 0, PI, { arc: PI, seg: 6 }); else b.sph(0.03, 0x1b1f24, sx * 0.1, hy + 0.05, 0.22, 1, 1, 0.6, { seg: 6 });
+      if (st) { b.cap(0.085, 0.3, o.pj || T, sx * 0.34, by + 0.02, 0.02, 0, 0, sx * 0.3, { seg: 7 }).sph(0.09, T, sx * 0.42, by - 0.2, 0.04, 1, 1, 1, { seg: 6 }); b.cap(0.11, 0.36, o.pj || T, sx * 0.15, 0.3, 0, 0, 0, 0, { seg: 7 }).sph(0.13, T, sx * 0.15, 0.08, 0.05, 1, 0.6, 1.3, { seg: 7 }); }
+      else { b.cap(0.085, 0.22, T, sx * 0.32, by + 0.05, 0.1, 0.9, 0, sx * 0.4, { seg: 7 }); b.cap(0.11, 0.2, T, sx * 0.2, 0.12, 0.3, PI / 2, sx * 0.25, 0, { seg: 7 }).sph(0.08, L, sx * 0.25, 0.12, 0.5, 1, 1, 0.4, { seg: 6 }); }
+    }
+    if (o.cap) nightcapInto(b, 0, hy + 0.18, 0, 0.2, o.cap, 1);
+  }, s);
+}
+// A woolly sheep facing +x, about 0.95 s high; o.ball curls it up into a ball of wool (for rolling).
+export function sheepInto(b, x, y, z, s = 1, o = {}) {
+  const W = 0xffffff, K = 0x3a3440;
+  b.at(x, y, z, o.ry || 0, () => {
+    const cy = o.ball ? 0 : 0.52, R = o.ball ? 0.4 : 0.3;
+    for (let i = 0; i < 14; i++) { const u = (i + 0.5) / 14, ph = Math.acos(1 - 2 * u), th = i * 2.4; b.sph(0.17, i % 3 ? W : 0xf0ecff, Math.sin(ph) * Math.cos(th) * R * (o.ball ? 1 : 1.25), cy + Math.cos(ph) * R, Math.sin(ph) * Math.sin(th) * R, 1, 1, 1, { seg: 7 }); }
+    b.sph(R * 0.95, W, 0, cy, 0, o.ball ? 1 : 1.25, 1, 1, { seg: 9 });
+    const hx = o.ball ? 0.36 : 0.46, hy = o.ball ? 0.12 : 0.66;
+    b.sph(0.15, K, hx, hy, 0, 1.15, 1, 0.9, { seg: 9 }).sph(0.12, W, hx - 0.07, hy + 0.12, 0, 1, 0.7, 1, { seg: 7 });
+    for (const sz of [-1, 1]) {
+      b.sph(0.06, K, hx - 0.05, hy + 0.05, sz * 0.15, 0.6, 0.5, 1.2, { seg: 5 });
+      if (o.asleep || o.ball) b.tor(0.03, 0.008, 0xffffff, hx + 0.1, hy + 0.03, sz * 0.09, 0, PI / 2, PI, { arc: PI, seg: 5 }); else b.sph(0.03, 0xffffff, hx + 0.1, hy + 0.04, sz * 0.08, 0.6, 1, 1, { seg: 5, grad: 1 }).sph(0.015, 0x1b1f24, hx + 0.12, hy + 0.04, sz * 0.08, 0.6, 1, 1, { seg: 4, grad: 1 });
+      if (!o.ball) for (const sx of [-1, 1]) b.cap(0.04, 0.2, K, sx * 0.2, 0.14, sz * 0.14, 0, 0, 0, { seg: 5 });
+    }
+  }, s);
+}
+def('pillowPile', 'low', 1.5, 0.95, 1.0, (b) => {
+  // a heap of pillows
+  pillowInto(b, 0, 0, 0, 1.3, 0xffffff, 0.1, 0, DREAM.lilac); pillowInto(b, 0.06, 0.3, 0.02, 1.15, DREAM.pink, -0.25, 0, 0xffffff); pillowInto(b, -0.05, 0.58, 0, 1.0, DREAM.blue, 0.3, 0, 0xffffff);
+  starInto(b, 0.3, 0.86, 0.2, 0.2, DREAM.star, { glow: true, grad: 1 });
+});
+def('sleepyTeddy', 'low', 1.25, 0.98, 1.0, (b) => {
+  // a teddy bear, fast asleep in its nightcap
+  teddyInto(b, 0, 0, 0, 0.98, { asleep: true, cap: DREAM.pink });
+});
+def('slippers', 'low', 1.5, 0.85, 1.1, (b) => {
+  // a giant pair of bunny slippers
+  for (const sx of [-1, 1]) b.at(sx * 0.38, 0, 0, sx * -0.12, () => {
+    b.sph(0.34, DREAM.pink, 0, 0.26, 0.05, 1, 0.75, 1.5, { seg: 10 }).sph(0.27, 0xffffff, 0, 0.36, -0.2, 1, 0.5, 1, { seg: 8 }).sph(0.2, 0x6a5a9a, 0, 0.4, -0.22, 1, 0.3, 1, { seg: 7 });
+    for (const s2 of [-1, 1]) { b.sph(0.07, DREAM.pink, s2 * 0.12, 0.66, 0.26, 0.8, 2.2, 0.5, { seg: 6 }).sph(0.04, 0xffffff, s2 * 0.12, 0.66, 0.29, 0.8, 2.0, 0.4, { seg: 5 }); b.sph(0.035, 0x1b1f24, s2 * 0.1, 0.42, 0.5, 1, 1, 0.6, { seg: 5 }); }
+    b.sph(0.045, 0xff7aa8, 0, 0.34, 0.55, 1.2, 0.8, 0.7, { seg: 5 }).sph(0.06, 0xffffff, 0, 0.2, -0.46, 1, 1, 1, { seg: 5 });
+  });
+});
+def('nightLight', 'low', 1.2, 0.98, 1.0, (b) => {
+  // a toadstool night-light
+  b.cyl(0.2, 0.28, 0.44, DREAM.cream, 0, 0.22, 0, 0, 0, 0, { seg: 10 }).cyl(0.34, 0.38, 0.06, DREAM.lilac, 0, 0.03, 0, 0, 0, 0, { seg: 12 });
+  b.add(new THREE.SphereGeometry(0.52, 14, 8, 0, PI * 2, 0, PI / 2), 0xffb0c8, 0, 0.42, 0, 0, 0, 0, 1, 0.95, 1, { glow: true, grad: 0.8 });
+  for (let i = 0; i < 6; i++) { const a = i * 1.05, r = 0.3 + (i % 2) * 0.12; b.sph(0.07, 0xffffff, Math.cos(a) * r, 0.44 + Math.sqrt(Math.max(0, 0.27 - r * r)) * 0.95, Math.sin(a) * r, 1, 0.5, 1, { glow: true, seg: 6, grad: 1 }); }
+  for (const sx of [-1, 1]) b.tor(0.03, 0.01, 0x6a5a9a, sx * 0.08, 0.28, 0.2, 0, 0, PI, { arc: PI, seg: 5 });
+  b.tor(0.04, 0.01, 0x6a5a9a, 0, 0.18, 0.24, 0, 0, PI, { arc: PI, seg: 5 });
+});
+def('toyBlocks', 'low', 1.4, 0.96, 1.0, (b) => {
+  // building blocks left out at bedtime
+  for (const [x, y, z, c, r] of [[-0.3, 0.22, 0, DREAM.blue, 0.15], [0.3, 0.22, 0.05, DREAM.pink, -0.2], [0.02, 0.66, 0, DREAM.mint, 0.4]]) {
+    b.box(0.46, 0.44, 0.46, c, x, y, z, 0, r, 0).box(0.36, 0.34, 0.47, 0xffffff, x, y, z, 0, r, 0);
+    starInto(b, x + Math.sin(r) * 0.24, y, z + Math.cos(r) * 0.24, 0.16, c);
+  }
+});
+def('grandClock', 'tall', 1.3, 2.9, 1.0, (b) => {
+  // a grandfather clock, nodding off
+  const WD = 0x7a5a9a, WDD = 0x5a4280;
+  b.box(1.0, 0.3, 0.7, WDD, 0, 0.15, 0).box(0.8, 1.4, 0.56, WD, 0, 1.0, 0).box(1.0, 0.9, 0.66, WD, 0, 2.1, 0).box(1.1, 0.12, 0.74, WDD, 0, 2.6, 0);
+  b.box(0.5, 1.1, 0.04, 0x2a2450, 0, 1.0, 0.27).cyl(0.012, 0.012, 0.8, DREAM.star, 0.08, 1.15, 0.3, 0, 0, 0.12, { seg: 4 }).sph(0.11, DREAM.star, 0.13, 0.74, 0.3, 1, 1, 0.5, { glow: true, seg: 8, grad: 1 });
+  b.cyl(0.38, 0.38, 0.05, DREAM.cream, 0, 2.1, 0.33, PI / 2, 0, 0, { seg: 18 }).tor(0.38, 0.03, DREAM.star, 0, 2.1, 0.35, 0, 0, 0, { seg: 18, tseg: 5 });
+  for (const sx of [-1, 1]) b.tor(0.06, 0.014, 0x3a2a5a, sx * 0.14, 2.16, 0.37, 0, 0, PI, { arc: PI, seg: 6 }).sph(0.05, 0xffb0c0, sx * 0.24, 2.04, 0.36, 1, 0.7, 0.4, { seg: 5 });
+  b.sph(0.04, 0x3a2a5a, 0, 1.98, 0.37, 1, 1.2, 0.5, { seg: 6 });
+  nightcapInto(b, 0, 2.66, 0, 0.36, DREAM.blue, 1);
+  zedInto(b, 0.5, 2.5, 0.4, 0.22); zedInto(b, 0.62, 2.78, 0.4, 0.15);
+});
+def('pillowTower', 'tall', 1.5, 2.75, 1.0, (b) => {
+  // a wobbly tower of pillows with a sheep asleep on top
+  const cols = [0xffffff, DREAM.pink, DREAM.blue, DREAM.mint, DREAM.lilac, DREAM.cream];
+  for (let i = 0; i < 6; i++) pillowInto(b, Math.sin(i * 1.9) * 0.08, i * 0.34, 0, 1.25 - i * 0.03, cols[i], Math.sin(i * 2.3) * 0.3, 0, i % 2 ? 0xffffff : DREAM.lilac);
+  sheepInto(b, -0.05, 2.02, 0, 0.72, { asleep: true, ry: -0.5 });
+});
+def('bigTeddy', 'tall', 1.5, 2.8, 1.0, (b) => {
+  // a great big teddy in stripy pyjamas, out of bed
+  teddyInto(b, 0, 0, 0, 1.78, { stand: true, pj: DREAM.blue, cap: DREAM.pink });
+});
+def('moonLamp', 'tall', 1.4, 2.85, 1.0, (b) => {
+  // a bedside lamp like a crescent moon, with a star on a string
+  b.cyl(0.42, 0.5, 0.14, DREAM.deep, 0, 0.07, 0, 0, 0, 0, { seg: 12 }).cyl(0.05, 0.07, 1.7, DREAM.lilac, 0, 0.98, 0, 0, 0, 0, { seg: 8 }).sph(0.1, DREAM.star, 0, 1.84, 0, 1, 1, 1, { seg: 7 });
+  moonInto(b, 0.02, 2.35, 0, 1.15);
+  b.cyl(0.008, 0.008, 0.5, 0xffffff, 0.38, 2.36, 0, 0, 0, 0, { seg: 3 });
+  starInto(b, 0.38, 2.02, 0, 0.26, DREAM.star, { glow: true, grad: 1 });
+});
+def('wardrobe', 'tall', 1.6, 2.8, 1.0, (b) => {
+  // a wardrobe with the door ajar and a scarf escaping
+  const WD = 0x8fb8f5, WDD = 0x6f98d8;
+  b.box(1.5, 2.5, 0.8, WD, 0, 1.4, -0.05).box(1.6, 0.14, 0.9, WDD, 0, 2.72, -0.05).box(1.56, 0.16, 0.86, WDD, 0, 0.1, -0.05);
+  for (const sx of [-1, 1]) b.sph(0.08, WDD, sx * 0.62, 0.02, 0.2, 1, 0.5, 1, { seg: 6 });
+  b.box(0.7, 2.2, 0.05, 0xa8c8fa, -0.37, 1.4, 0.37).box(0.7, 2.2, 0.05, 0xa8c8fa, 0.44, 1.4, 0.5, 0, -0.4, 0).box(0.1, 2.2, 0.3, 0x2a2450, 0.06, 1.4, 0.3);
+  b.sph(0.05, DREAM.star, -0.1, 1.4, 0.42, 1, 1, 1, { seg: 6 }).sph(0.05, DREAM.star, 0.2, 1.4, 0.62, 1, 1, 1, { seg: 6 });
+  starInto(b, -0.37, 2.1, 0.41, 0.22, DREAM.star); moonInto(b, -0.37, 0.9, 0.41, 0.4, 0xfff3b0, { grad: 1 });
+  for (let i = 0; i < 6; i++) b.box(0.16, 0.16, 0.05, i % 2 ? 0xe5483b : 0xffffff, 0.1, 0.95 - i * 0.15, 0.48 + i * 0.012, 0, 0, 0.1);
+  b.sph(0.1, DREAM.teddy, 0.1, 1.55, 0.44, 1, 1.4, 0.8, { seg: 6 });
+});
+def('woolBall', 'low', 1.1, 1.0, 1.0, (b) => {
+  // a sheep that has curled up and rolled out of somebody's dream
+  sheepInto(b, 0, 0, 0, 1.0, { ball: true, ry: -PI / 2 });
+}, { center: true });
+def('sockBall', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the owl drops: a rolled-up pair of stripy socks
+  b.sph(0.44, 0xffffff, 0, 0, 0, 1, 1, 1, { seg: 14, grad: 0.88 });
+  for (let i = 0; i < 4; i++) b.tor(0.44 * Math.cos((i - 1.5) * 0.5), 0.05, i % 2 ? DREAM.pink : DREAM.blue, (i - 1.5) * 0.21, 0, 0, 0, PI / 2, 0, { seg: 14, tseg: 5 });
+  b.sph(0.14, DREAM.pink, 0, 0.36, 0.2, 1.3, 0.7, 1, { seg: 6 });
+}, { center: true });
+def('sheepHop', 'low', 1.2, 0.98, 0.9, (b) => {
+  // one of the sheep you count, hopping across; it faces +x
+  sheepInto(b, 0, 0, 0, 1.0);
+  b.cyl(0.07, 0.09, 0.08, DREAM.star, 0.36, 0.5, 0, 0, 0, 0, { seg: 7 });
+});
+def('nightOwl', 'deco', 2.2, 1.4, 1.3, (b) => {
+  // an owl in a nightcap, up past bedtime, with socks to drop
+  const O = 0x9a7ab8, OL = 0xe6d8f5;
+  b.sph(0.46, O, 0, 0, 0, 1, 1.15, 0.95, { seg: 12 }).sph(0.32, OL, 0, -0.12, 0.2, 1, 1.1, 0.7, { seg: 10 });
+  for (let i = 0; i < 5; i++) b.sph(0.05, O, -0.16 + (i % 3) * 0.16, -0.2 + Math.floor(i / 3) * 0.16, 0.42, 1, 0.6, 0.4, { seg: 5 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.17, 0xffffff, sx * 0.17, 0.2, 0.36, 1, 1, 0.5, { seg: 10, grad: 1 }).sph(0.08, 0x1b1f24, sx * 0.16, 0.19, 0.44, 1, 1, 0.5, { seg: 7, grad: 1 }).sph(0.03, 0xffffff, sx * 0.14, 0.22, 0.48, 1, 1, 0.5, { seg: 5, grad: 1 });
+    b.box(0.24, 0.05, 0.04, 0x5a4280, sx * 0.18, 0.39, 0.4, 0, 0, sx * 0.2).cone(0.08, 0.2, O, sx * 0.3, 0.52, 0.05, 0, 0, sx * -0.3, { seg: 5 });
+    b.cap(0.03, 0.08, 0xffb347, sx * 0.14, -0.52, 0.12, 0.4, 0, 0, { seg: 5 });
+  }
+  b.cone(0.07, 0.16, 0xffb347, 0, 0.08, 0.5, PI / 2 + 0.5, 0, 0, { seg: 5 });
+  nightcapInto(b, 0, 0.46, 0, 0.3, DREAM.blue, -1);
+  b.sph(0.2, 0xffffff, 0, -0.62, 0.1, 1, 1, 1, { seg: 8 }).tor(0.2, 0.03, DREAM.pink, 0, -0.62, 0.1, 0, PI / 2, 0, { seg: 10, tseg: 4 });
+}, {
+  wings: (b, sx) => {
+    b.sph(0.44, 0x9a7ab8, sx * 0.46, 0, 0, 1.25, 0.1, 0.7, { seg: 10 });
+    for (let i = 0; i < 4; i++) b.sph(0.17, 0x7a5a9a, sx * (0.78 + i * 0.09), 0.005, 0.26 - i * 0.18, 1.3, 0.1, 0.5, { seg: 6 });
+  }, wingAt: [0.3, 0.1, 0],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -2210,6 +2380,7 @@ export const TALL_TYPES = {
   17: ['bigBottle', 'hayStack', 'scareCow', 'milkFloat', 'butterChurn', 'bigBottle'],
   18: ['standMirror', 'mirrorPillar', 'wonkyMirror', 'prismTower', 'vanity', 'standMirror'],
   19: ['statueBust', 'bigVase', 'armour', 'easel', 'mummyCase', 'bigVase'],
+  20: ['grandClock', 'pillowTower', 'bigTeddy', 'moonLamp', 'wardrobe', 'pillowTower'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
-export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'] };
+export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'] };

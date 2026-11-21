@@ -463,4 +463,24 @@ THEMES[19] = theme('The Grand Gallery', {
   drums: { thump: 'x.......x.......', tick: '..x...x...x...x.', rim: '....x.......x...' },
 });
 
+// ---- 20. Dream Time: "Counting Sheep", a rocking lullaby with a twinkle on top (G major, 3/4) ----
+THEMES[20] = theme('Counting Sheep', {
+  key: 7, scale: 'maj', base: 67, len: 12, tempo: 1.12, gain: 1.7, echo: 0.35, voice: 'tri', bassVoice: 'pizz', stab: 'pad',
+  chords: 'I I IV I vi ii V I',
+  tune: [
+    "3:4 5:4 1':4",
+    "7:4 5:8",
+    "6:4 1':4 4':4",
+    "3':8 1':4",
+    "1':4 3':4 6':4",
+    "4':4 2':4 6:4",
+    "7:4 2':4 4':4",
+    "3':4 1':8",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 12, _, _, _],
+  stabs: 'x...........',
+  arp: { pat: [0, 2, 1, 2], wave: 'sine', oct: 24, vol: 0.022, every: 2 },
+  drums: { thump: 'x...........', tick: '....x...x...' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

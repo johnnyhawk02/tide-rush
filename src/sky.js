@@ -27,6 +27,7 @@ const PAL = [
   { top: 0x3f9be8, hor: 0xdff5ff, sun: 0xfffbe8, sunI: 3.0, hemiS: 0xeaf6ff, hemiG: 0x9fc878, hemiI: 1.4, deep: 0x1a78b0, shal: 0x58c8d8, cloud: 0xffffff, el: 0.8, az: -0.4, stars: 0, storm: 0 },   // Moo Town: a bright spring morning over green meadows
   { top: 0x2f7fe0, hor: 0xcbe4ff, sun: 0xfffaf0, sunI: 2.9, hemiS: 0xe6f0ff, hemiG: 0xc8d8f0, hemiI: 1.4, deep: 0x4f90d0, shal: 0xa8d4f0, cloud: 0xffffff, el: 0.6, az: 0.5, stars: 0, storm: 0, mirror: 1 },   // the Land of Mirrors: a clear pearly sky, and a sea as still as glass
   { top: 0x4f93e6, hor: 0xe2eefa, sun: 0xfff4dc, sunI: 2.6, hemiS: 0xfff6e6, hemiG: 0xd8c8a8, hemiI: 1.5, deep: 0x12689a, shal: 0x45c6cf, cloud: 0xffffff, el: 0.95, az: 0.05, stars: 0, storm: 0 },   // the Museum: high noon, pouring in through the open roof
+  { top: 0x1c1a5a, hor: 0xa88ae0, sun: 0xfff0d0, sunI: 2.0, hemiS: 0xd8ccff, hemiG: 0x9a88d8, hemiI: 1.55, deep: 0x8a78d8, shal: 0xe6dcff, foam: 0xffffff, cloud: 0xd8c8ff, el: 0.55, az: -0.3, stars: 0.8, storm: 0 },   // Dream Time: a starry lilac dusk over a sea of cloud
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 
