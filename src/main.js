@@ -27,6 +27,7 @@ const WARP_CURVE = 0.0016;  // how sharply the Star Tunnel sweeps round
 const TWIST_MAX = 0.013;   // how tightly Spiral Bay corkscrews, in radians per metre
 const CURVE_MAX = 0.0042, BANK_MAX = 0.1;   // Rollercoaster World: how sharply the road ahead bends sideways, and how far the view leans into each bend (radians)
 const TIDE_STEP = 0.2, TIDE_LIMIT = 0.81, TIDE_FADE = 40;
+const PIXEL = 21;   // zone id of Pixel Land, where the picture is drawn in chunky pixels
 const ROCKET_SPEED = 1.5, FLY_Y = 6.0, FLY_Y_TUBE = 3.9;
 // how high the rocket cruises at a point along the coast: lower inside the Glass Tunnel, so that she stays under its roof
 const flyYAt = (s) => {
@@ -38,12 +39,12 @@ const SPACE = 9;
 // the flying attackers: what to call each one when it is zapped, and the colours of its puff
 const FLYER = {
   ufo: ['UFO', [0xff7ad9, 0x8ff0ff, 0xffe27a, 0xffffff]], gull: ['Bomber gull', [0xffffff, 0xf5a623, 0xdfe6ee, 0xffe27a]], bat: ['Slime bat', [0x8dff5a, 0xb59cff, 0xffe27a, 0xffffff]],
-  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]], flosscloud: ['Candyfloss cloud', [0xff9fd0, 0xffffff, 0xffe24a, 0x8fd8ff]], twister: ['Little twister', [0x9fece4, 0xffffff, 0xff8fd6, 0xffd23f]], eagle: ['Grumpy eagle', [0x6b4a2e, 0xffffff, 0xffb300, 0xd9c7a8]], bandit: ['Balloon bandit', [0xe5383b, 0xffc928, 0x2f7fe0, 0xff6fae]], inkOcto: ['Inky octopus', [0x9a6fe0, 0x3a2a6a, 0xffd23f, 0xffffff]], chocJug: ['Chocolate jug', [0x7a4526, 0xfff6ee, 0x4f8fe0, 0xffe27a]], crow: ['Bossy crow', [0x2a2a34, 0xffc928, 0xffffff, 0xf2c230]], flashMirror: ['Flying mirror', [0xf2c230, 0xffffff, 0x8fcaff, 0xfff3a8]], pteroBones: ['Bony pterodactyl', [0xf6eed8, 0xffffff, 0xdccfae, 0xffd23f]], nightOwl: ['Night owl', [0x9a7ab8, 0xffffff, 0x8fb8f5, 0xffe27a]],
+  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]], flosscloud: ['Candyfloss cloud', [0xff9fd0, 0xffffff, 0xffe24a, 0x8fd8ff]], twister: ['Little twister', [0x9fece4, 0xffffff, 0xff8fd6, 0xffd23f]], eagle: ['Grumpy eagle', [0x6b4a2e, 0xffffff, 0xffb300, 0xd9c7a8]], bandit: ['Balloon bandit', [0xe5383b, 0xffc928, 0x2f7fe0, 0xff6fae]], inkOcto: ['Inky octopus', [0x9a6fe0, 0x3a2a6a, 0xffd23f, 0xffffff]], chocJug: ['Chocolate jug', [0x7a4526, 0xfff6ee, 0x4f8fe0, 0xffe27a]], crow: ['Bossy crow', [0x2a2a34, 0xffc928, 0xffffff, 0xf2c230]], flashMirror: ['Flying mirror', [0xf2c230, 0xffffff, 0x8fcaff, 0xfff3a8]], pteroBones: ['Bony pterodactyl', [0xf6eed8, 0xffffff, 0xdccfae, 0xffd23f]], nightOwl: ['Night owl', [0x9a7ab8, 0xffffff, 0x8fb8f5, 0xffe27a]], blockBird: ['Block bird', [0x4f8fe0, 0xffffff, 0xffb347, 0xe5383b]],
 };
 // picking up a laser while one is already running powers it up: it fires faster and reaches further
 const LASER_LV = [null, { name: 'Laser zapper!', gap: 0.16, reach: 0, col: 0x6ff6ff, size: 1.1 }, { name: 'Double laser!', gap: 0.1, reach: 4, col: 0x9dff6a, size: 1.25 }, { name: 'Triple laser!', gap: 0.065, reach: 8, col: 0xffb347, size: 1.4 }];
 // what her footsteps sound like in each world
-const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal', 10: 'snow', 12: 'wood', 13: 'wood', 14: 'wood', 15: 'wood', 17: 'wood', 18: 'wood', 19: 'wood', 20: 'wood' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
+const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal', 10: 'snow', 12: 'wood', 13: 'wood', 14: 'wood', 15: 'wood', 17: 'wood', 18: 'wood', 19: 'wood', 20: 'wood', 21: 'wood' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
 const PET_POP = { izzi: ['Izzi is here! She rounds up shells', "Izzi's off for a sniff"], pixel: ['Pixel is here! Shells count double', 'Pixel wandered off'] };
 const FW_COLORS = [0xffe27a, 0xff8ab0, 0x8ff0ff, 0xa6ff9a, 0xffb36b, 0xd9a6ff];
 const rnd = (a = 1) => (Math.random() - 0.5) * 2 * a;
@@ -62,7 +63,7 @@ class Game {
     const coarse = window.matchMedia('(pointer: coarse)').matches;
     const small = Math.min(window.innerWidth, window.innerHeight) < 600;   // phones get a lighter setup than tablets and desktops
     this.quality = { low: coarse && small, shadows: true, shadowSize: coarse && small ? 1024 : 2048, maxPR: coarse && small ? 1.5 : 2 };
-    this.pr = Math.min(window.devicePixelRatio || 1, this.quality.maxPR);
+    this.pr = Math.min(window.devicePixelRatio || 1, this.quality.maxPR); this.chunky = 1;
 
     this.audio = new GameAudio();
     this.ui = new UI({
@@ -190,11 +191,20 @@ class Game {
     this.audio.unlock(); this.audio.power(); this.sparkle(0, 1.1, 0, OUTFITS[i].coat, 22);
   }
 
+  // Pixel Land is drawn in big chunky pixels: the picture is rendered small and stretched without smoothing.
+  // `chunky` is how many screen points wide each of those pixels is (1 = the normal, sharp picture).
+  setChunky(on) {
+    const h = Math.max(1, this.app.clientHeight), n = on ? clamp(Math.round(h / 250), 2, 4) : 1;
+    if (n === this.chunky) return;
+    this.chunky = n; this.renderer.domElement.style.imageRendering = n > 1 ? 'pixelated' : '';
+    this.resize();
+  }
+
   resize() {
-    const w = Math.max(1, this.app.clientWidth), h = Math.max(1, this.app.clientHeight);
-    this.renderer.setPixelRatio(this.pr);
+    const w = Math.max(1, this.app.clientWidth), h = Math.max(1, this.app.clientHeight), pr = this.chunky > 1 ? 1 / this.chunky : this.pr;
+    this.renderer.setPixelRatio(pr);
     this.renderer.setSize(w, h, false);
-    this.sky.snowMat.uniforms.uScale.value = h * this.pr; this.sky.bubbleMat.uniforms.uScale.value = h * this.pr;
+    this.sky.snowMat.uniforms.uScale.value = h * pr; this.sky.bubbleMat.uniforms.uScale.value = h * pr;
     const aspect = w / h;
     this.camera.aspect = aspect;
     // keep all three lanes in view: widen the vertical field of view on tall screens, then pull the camera back
@@ -202,7 +212,7 @@ class Game {
     this.baseFov = clamp(need, 60, 86);
     this.camBack = Math.tan(THREE.MathUtils.degToRad(need / 2)) / Math.tan(THREE.MathUtils.degToRad(this.baseFov / 2));
     this.camera.fov = this.baseFov; this.camera.updateProjectionMatrix();
-    this.fx.mat.uniforms.uScale.value = (h * this.pr) / (2 * Math.tan(THREE.MathUtils.degToRad(this.baseFov / 2)));
+    this.fx.mat.uniforms.uScale.value = (h * pr) / (2 * Math.tan(THREE.MathUtils.degToRad(this.baseFov / 2)));
   }
 
   // ---------- flow ----------
@@ -335,6 +345,7 @@ class Game {
   frame(now) {
     const dt = Math.min(0.05, Math.max(0, (now - this.last) / 1000)); this.last = now;
     if (this.mode !== 'pause') this.update(dt);
+    this.setChunky(zoneAtS(this.dist) === PIXEL);
     this.renderer.render(this.scene, this.camera);
     // adapt resolution if the device is struggling
     if (this.mode === 'run') {
@@ -342,7 +353,7 @@ class Game {
       if (this.frames >= 120) {
         const avg = this.acc / this.frames; this.acc = 0; this.frames = 0;
         if (avg > 1 / 44) {
-          if (this.pr > 1.01) { this.pr = Math.max(1, this.pr - 0.25); this.resize(); }
+          if (this.chunky > 1) { /* already drawing very few pixels */ } else if (this.pr > 1.01) { this.pr = Math.max(1, this.pr - 0.25); this.resize(); }
           else if (this.renderer.shadowMap.enabled) { this.renderer.shadowMap.enabled = false; this.sky.sun.castShadow = false; this.scene.traverse((o) => { if (o.material) o.material.needsUpdate = true; }); }
         }
       }
@@ -667,6 +678,7 @@ class Game {
       else if (z === 6) { this.gullT = 2 + Math.random() * 4; if (r < 0.7) A.drip(); else A.squeak(3, 1.6); }
       else if (z === 9) A.blips();
       else if (z === 7) { if (r < 0.5) A.gust(); else A.chime(); }
+      else if (z === 21) { this.gullT = 3 + Math.random() * 4; if (r < 0.35) A.blip(); else if (r < 0.6) A.bloop(); else if (r < 0.8) A.coin8(); else A.powerDown8(); }
       else if (z === 20) { this.gullT = 3 + Math.random() * 4; if (r < 0.35) A.hoot(); else if (r < 0.6) A.snore(); else if (r < 0.8) A.bleat(); else A.twinkle(); }
       else if (z === 19) { this.gullT = 3 + Math.random() * 4; if (r < 0.3) A.bingBong(); else if (r < 0.75) A.tock(); else A.chime(); }
       else if (z === 18) { this.gullT = 2.6 + Math.random() * 4; if (r < 0.45) A.twinkle(); else if (r < 0.8) A.glassTing(); else A.chime(); }

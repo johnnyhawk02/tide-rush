@@ -28,6 +28,8 @@ const PAL = [
   { top: 0x2f7fe0, hor: 0xcbe4ff, sun: 0xfffaf0, sunI: 2.9, hemiS: 0xe6f0ff, hemiG: 0xc8d8f0, hemiI: 1.4, deep: 0x4f90d0, shal: 0xa8d4f0, cloud: 0xffffff, el: 0.6, az: 0.5, stars: 0, storm: 0, mirror: 1 },   // the Land of Mirrors: a clear pearly sky, and a sea as still as glass
   { top: 0x4f93e6, hor: 0xe2eefa, sun: 0xfff4dc, sunI: 2.6, hemiS: 0xfff6e6, hemiG: 0xd8c8a8, hemiI: 1.5, deep: 0x12689a, shal: 0x45c6cf, cloud: 0xffffff, el: 0.95, az: 0.05, stars: 0, storm: 0 },   // the Museum: high noon, pouring in through the open roof
   { top: 0x1c1a5a, hor: 0xa88ae0, sun: 0xfff0d0, sunI: 2.0, hemiS: 0xd8ccff, hemiG: 0x9a88d8, hemiI: 1.55, deep: 0x8a78d8, shal: 0xe6dcff, foam: 0xffffff, cloud: 0xd8c8ff, el: 0.55, az: -0.3, stars: 0.8, storm: 0 },   // Dream Time: a starry lilac dusk over a sea of cloud
+  // 21 Pixel Land: a bright games-machine day; the sea is drawn in square tiles (pixel)
+  { top: 0x2f86e8, hor: 0xbfe6ff, sun: 0xfff6d8, sunI: 2.9, hemiS: 0xd8f0ff, hemiG: 0x8fc070, hemiI: 1.25, deep: 0x2f6fd8, shal: 0x5ad0e0, foam: 0xffffff, cloud: 0xffffff, el: 0.8, az: 0.4, stars: 0, storm: 0, pixel: 1 },
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 
@@ -35,7 +37,7 @@ export class Sky {
   constructor(scene, quality) {
     this.scene = scene;
     this.group = new THREE.Group(); scene.add(this.group);
-    this.cur = { top: col(0), hor: col(0), sun: col(0), hemiS: col(0), hemiG: col(0), deep: col(0), shal: col(0), cloud: col(0), stars: 0, storm: 0, fun: 0, snow: 0, aurora: 0, under: 0, space: 0, swirl: 0, mirror: 0 };
+    this.cur = { top: col(0), hor: col(0), sun: col(0), hemiS: col(0), hemiG: col(0), deep: col(0), shal: col(0), cloud: col(0), stars: 0, storm: 0, fun: 0, snow: 0, aurora: 0, under: 0, space: 0, swirl: 0, mirror: 0, pixel: 0 };
     this.flash = 0; this.boltT = 0; this.hidden = false;
     this.sunDir = new THREE.Vector3(0, 1, 0);
 
@@ -165,7 +167,7 @@ export class Sky {
       side: THREE.DoubleSide,     // (seen from underneath in the Glass Tunnel)
       uniforms: {
         uTime: { value: 0 }, uScroll: { value: 0 }, uDeep: { value: col(0) }, uShal: { value: col(0) }, uFog: { value: col(0) },
-        uSun: { value: col(0) }, uSky: { value: col(0) }, uSunDir: { value: this.sunDir }, uNear: { value: 70 }, uFar: { value: 300 }, uAmp: { value: 1 }, uFoam: { value: col(0xffffff) }, uMirror: { value: 0 }, uTop: { value: col(0) }, uHor: { value: col(0) },
+        uSun: { value: col(0) }, uSky: { value: col(0) }, uSunDir: { value: this.sunDir }, uNear: { value: 70 }, uFar: { value: 300 }, uAmp: { value: 1 }, uFoam: { value: col(0xffffff) }, uMirror: { value: 0 }, uPixel: { value: 0 }, uTop: { value: col(0) }, uHor: { value: col(0) },
       },
       vertexShader: `uniform float uTime, uScroll, uAmp, uMirror; varying vec2 vW; varying float vH; varying float vDepth; varying vec3 vPos; ${BEND_GLSL}
         void main(){ vec3 p = position; vec2 w = vec2(p.x, p.z - uScroll);
@@ -174,28 +176,31 @@ export class Sky {
           p.y += h; vH = h; vW = w;
           vec4 wp = modelMatrix * vec4(p, 1.0); vPos = wp.xyz; wp = bendSea(wp);
           vec4 mv = viewMatrix * wp; vDepth = -mv.z; gl_Position = projectionMatrix * mv; }`,
-      fragmentShader: `uniform float uTime, uNear, uFar, uAmp, uMirror; uniform vec3 uDeep, uShal, uFog, uSun, uSky, uSunDir, uFoam, uTop, uHor;
+      fragmentShader: `uniform float uTime, uNear, uFar, uAmp, uMirror, uPixel; uniform vec3 uDeep, uShal, uFog, uSun, uSky, uSunDir, uFoam, uTop, uHor;
         varying vec2 vW; varying float vH; varying float vDepth; varying vec3 vPos; ${BEND_GLSL}
         void main(){
+          // Pixel Land: the sea is laid in square tiles, each one a flat colour
+          vec2 W = vW; float H = vH;
+          if (uPixel > 0.5) { W = floor(vW / 1.6) * 1.6 + 0.8; H = floor(vH * 5.0 + 0.5) / 5.0; }
           // where the Glass Tunnel dives through the surface, the water stands back from the glass
           if (uHill.x < 0.0) { float sl = uHill.y - vPos.z; if (sl > 0.0 && sl < uHill.z) { float hg = ${WATER_Y.toFixed(1)} - hillAt(sl); if (hg > -0.4 && hg < 6.8) { float dy = max(hg - 1.2, 0.0); if (abs(vPos.x) < sqrt(max(31.36 - dy * dy, 0.0))) discard; } } }
-          float n1 = sin(vW.x * 1.7 + uTime * 1.3) * sin(vW.y * 1.3 - uTime * 1.1);
-          float n2 = sin(vW.x * 0.63 - vW.y * 0.9 + uTime * 0.7);
-          float n3 = sin(vW.x * 4.3 + vW.y * 3.1 + uTime * 2.3) * sin(vW.x * 2.9 - vW.y * 4.7 - uTime * 1.9);
-          vec3 c = mix(uDeep, uShal, clamp(smoothstep(-0.3, 0.35, vH / uAmp) * 0.75 + n1 * 0.1 + n2 * 0.08, 0.0, 1.0));
-          vec3 N = normalize(vec3(cos(vW.x * 1.7 + uTime * 1.3) * 0.22 + n3 * 0.12 + cos(vW.x * 0.21 + uTime * 0.9) * 0.1, 1.0, cos(vW.y * 1.3 - uTime * 1.1) * 0.22 + n3 * 0.12));
+          float n1 = sin(W.x * 1.7 + uTime * 1.3) * sin(W.y * 1.3 - uTime * 1.1);
+          float n2 = sin(W.x * 0.63 - W.y * 0.9 + uTime * 0.7);
+          float n3 = sin(W.x * 4.3 + W.y * 3.1 + uTime * 2.3) * sin(W.x * 2.9 - W.y * 4.7 - uTime * 1.9);
+          vec3 c = mix(uDeep, uShal, clamp(smoothstep(-0.3, 0.35, H / uAmp) * 0.75 + n1 * 0.1 + n2 * 0.08, 0.0, 1.0));
+          vec3 N = normalize(vec3(cos(W.x * 1.7 + uTime * 1.3) * 0.22 + n3 * 0.12 + cos(W.x * 0.21 + uTime * 0.9) * 0.1, 1.0, cos(W.y * 1.3 - uTime * 1.1) * 0.22 + n3 * 0.12));
           vec3 V = normalize(cameraPosition - vPos);
           float fr = pow(1.0 - max(dot(N, V), 0.0), 3.0);
           c = mix(c, uSky, fr * 0.55);
           vec3 R = reflect(-uSunDir, N);
           c += uSun * pow(max(dot(R, V), 0.0), 70.0) * 0.9;
           float th = 0.3 + (uAmp - 1.0) * 0.25;
-          float foam = smoothstep(th, th + 0.1 * uAmp, vH + n1 * 0.07 + n3 * 0.05);
+          float foam = smoothstep(th, th + 0.1 * uAmp, H + n1 * 0.07 + n3 * 0.05);
           c = mix(c, uFoam, foam * 0.55);
           // the Land of Mirrors: the sea lies still and shows the sky (and, through it, the upside-down copies of the scenery)
           float alpha = 1.0;
           if (uMirror > 0.0) {
-            vec3 Nm = normalize(vec3(cos(vW.x * 0.9 + uTime * 0.6) * 0.03 + n3 * 0.012, 1.0, cos(vW.y * 0.7 - uTime * 0.5) * 0.03 + n3 * 0.012));
+            vec3 Nm = normalize(vec3(cos(W.x * 0.9 + uTime * 0.6) * 0.03 + n3 * 0.012, 1.0, cos(W.y * 0.7 - uTime * 0.5) * 0.03 + n3 * 0.012));
             vec3 m = mix(mix(uHor, uTop, 0.3), uTop, pow(clamp(reflect(-V, Nm).y, 0.0, 1.0), 0.5));
             m += uSun * pow(max(dot(reflect(-uSunDir, Nm), V), 0.0), 240.0) * 0.8 + vec3(0.06) * smoothstep(0.55, 0.9, n1 * n2);
             c = mix(c, m, uMirror); alpha = 1.0 - 0.56 * uMirror;
@@ -326,7 +331,7 @@ export class Sky {
     const c = this.cur;
     for (const key of ['top', 'hor', 'sun', 'hemiS', 'hemiG', 'deep', 'shal', 'cloud']) c[key].copy(this._a.set(A[key])).lerp(this._b.set(B[key]), k);
     c.stars = lerp(A.stars, B.stars, k); c.storm = lerp(A.storm, B.storm, k);
-    for (const key of ['fun', 'snow', 'aurora', 'under', 'space', 'swirl', 'mirror']) c[key] = lerp(A[key] || 0, B[key] || 0, k);
+    for (const key of ['fun', 'snow', 'aurora', 'under', 'space', 'swirl', 'mirror', 'pixel']) c[key] = lerp(A[key] || 0, B[key] || 0, k);
     // under the sea everything takes on the colour of the water, and gets bluer the deeper it goes
     this.dive = dive;
     if (dive > 0) {
@@ -349,7 +354,7 @@ export class Sky {
     const su = this.seaMat.uniforms;
     su.uTime.value = t; su.uScroll.value = dist; su.uDeep.value.copy(c.deep); su.uShal.value.copy(c.shal); su.uFog.value.copy(this.scene.fog.color);
     su.uSun.value.copy(c.sun); su.uSky.value.copy(c.top).lerp(c.hor, 0.5); su.uAmp.value = 1 + 1.7 * c.storm;
-    su.uMirror.value = c.mirror; su.uTop.value.copy(c.top); su.uHor.value.copy(c.hor);
+    su.uMirror.value = c.mirror; su.uPixel.value = c.pixel; su.uTop.value.copy(c.top); su.uHor.value.copy(c.hor);
     this.seaMat.transparent = c.mirror > 0.003; this.sea.renderOrder = this.seaMat.transparent ? -1 : 0;   // (see-through only here, so the reflections show)
     su.uFoam.value.copy(this._a.set(A.foam ?? 0xffffff)).lerp(this._b.set(B.foam ?? 0xffffff), k).lerp(c.hemiS, 0.5 * c.stars).multiplyScalar(1 - 0.5 * c.stars - 0.12 * c.storm);
     su.uNear.value = this.scene.fog.near; su.uFar.value = this.scene.fog.far;

@@ -1783,6 +1783,124 @@ def('nightOwl', 'deco', 2.2, 1.4, 1.3, (b) => {
   }, wingAt: [0.3, 0.1, 0],
 });
 
+// ---------- Pixel Land ----------
+export const PXPAL = { R: 0xe5383b, W: 0xffffff, Y: 0xffd23f, K: 0x24262c, G: 0x7fe04a, P: 0xff8fb0, B: 0x4f8fe0, E: 0x8a5a3c, N: 0x1b1f24, T: 0xff8fa0, O: 0xff8a3c, L: 0x4fae56, D: 0x2f7a34, S: 0x9aa6ae, V: 0xa070e0, C: 0x5ad0e0 };
+export const PXART = {
+  heart: ['.RR...RR.', 'RWRR.RRRR', 'RRRRRRRRR', 'RRRRRRRRR', '.RRRRRRR.', '..RRRRR..', '...RRR...', '....R....'],
+  star: ['....Y....', '....Y....', '...YYY...', 'YYYYYYYYY', '.YYYYYYY.', '..YYYYY..', '..YYYYY..', '.YYY.YYY.', '.Y.....Y.'],
+  cat: ['K........K', 'KK......KK', 'KKKKKKKKKK', 'KKKKKKKKKK', 'KGKKKKKKGK', 'KKKWWWWKKK', 'KKWWPPWWKK', '.KWWWWWWK.', '..KKKKKK..'],
+  dog: ['KK......KK', 'KKK....KKK', 'KKKKWWKKKK', 'KKKKWWKKKK', 'KEKWWWWKEK', 'KKWWWWWWKK', '.KWWNNWWK.', '.KWWWWWWK.', '..KWTTWK..'],
+  smiley: ['..YYYY..', '.YYYYYY.', 'YYKYYKYY', 'YYYYYYYY', 'YKYYYYKY', 'YYKKKKYY', '.YYYYYY.', '..YYYY..'],
+  rocket: ['...R...', '..RRR..', '..WWW..', '.WWBWW.', '.WWBWW.', '.WWWWW.', 'RWWWWWR', 'RR.O.RR', '...O...', '...Y...'],
+  duck: ['...YYY...', '..YYKY...', '..YYYOO..', '..YYY....', 'YYYYYYY..', 'YYYYYYYY.', '.YYYYYYY.', '..YYYYY..'],
+  flower: ['..P.P..', '.PPPPP.', '..PYP..', '.PPPPP.', '..P.P..', '...L...', '.L.L...', '..LL.L.', '...LL..'],
+};
+// A picture made of cubes: rows of letters (see PXPAL), the top row first; s is the size of a cube. It stands on (x, y, z) and faces +z.
+export function pixelArtInto(b, rows, x, y, z, s = 0.2, ry = 0, depth = 1) {
+  b.at(x, y, z, ry, () => {
+    const w = rows[0].length, h = rows.length;
+    rows.forEach((row, j) => { let i = 0; while (i < w) { const c = row[i]; if (c === '.') { i++; continue; } let n = 1; while (i + n < w && row[i + n] === c) n++; b.box(n * s, s, s * depth, PXPAL[c], (i + n / 2 - w / 2) * s, (h - j - 0.5) * s, 0, 0, 0, 0, { grad: 0.92 }); i += n; } });
+  });
+}
+// A cube with a darker rim round its top and foot, like a block out of an old computer game.
+export function blockInto(b, s, col, x, y, z, ry = 0, dark) {
+  const d = dark ?? new THREE.Color(col).multiplyScalar(0.72).getHex();
+  b.box(s, s, s, d, x, y + s / 2, z, 0, ry, 0, { grad: 1 }).box(s * 0.8, s * 0.8, s * 1.02, col, x, y + s / 2, z, 0, ry, 0, { grad: 1 }).box(s * 1.02, s * 0.8, s * 0.8, col, x, y + s / 2, z, 0, ry, 0, { grad: 1 }).box(s * 0.8, s * 1.02, s * 0.8, col, x, y + s / 2, z, 0, ry, 0, { grad: 1 });
+}
+// A tree made of cubes: a trunk h high and a blocky crown.
+export function cubeTreeInto(b, x, y, z, s = 1, crown = 0x4fae56, crown2 = 0x3f9a4a) {
+  b.box(0.4 * s, 1.4 * s, 0.4 * s, 0x8a5a3c, x, y + 0.7 * s, z).box(1.6 * s, 0.8 * s, 1.6 * s, crown2, x, y + 1.8 * s, z).box(1.2 * s, 0.6 * s, 1.2 * s, crown, x, y + 2.5 * s, z).box(0.6 * s, 0.4 * s, 0.6 * s, crown, x, y + 3.0 * s, z);
+  b.box(0.2 * s, 0.2 * s, 0.2 * s, 0xe5383b, x + 0.5 * s, y + 1.9 * s, z + 0.82 * s).box(0.2 * s, 0.2 * s, 0.2 * s, 0xe5383b, x - 0.4 * s, y + 2.4 * s, z + 0.62 * s);
+}
+// Square eyes, looking along +z from (x, y, z); gap is how far apart they are.
+const pxEyes = (b, x, y, z, s, gap) => { for (const sx of [-1, 1]) b.box(s, s * 1.3, 0.03, 0xffffff, x + sx * gap, y, z, 0, 0, 0, { grad: 1 }).box(s * 0.5, s * 0.6, 0.04, 0x1b1f24, x + sx * gap, y - s * 0.2, z + 0.01, 0, 0, 0, { grad: 1 }); };
+def('pxCrate', 'low', 1.4, 0.95, 1.0, (b) => {
+  // two blocks and a little one, stacked like a staircase
+  blockInto(b, 0.62, 0xffb347, -0.34, 0, 0, 0.1); blockInto(b, 0.62, 0x5ad0e0, 0.34, 0, 0.05, -0.12); blockInto(b, 0.32, 0xe5383b, 0.02, 0.62, 0, 0.3);
+});
+def('cubeJelly', 'low', 1.3, 0.95, 1.0, (b) => {
+  // a wobbly green cube of jelly, very pleased to see you
+  b.box(1.0, 0.8, 0.9, 0x5fd06a, 0, 0.4, 0, 0, 0, 0, { grad: 0.8 }).box(0.8, 0.12, 0.7, 0xa8f0a0, 0, 0.84, 0).box(0.2, 0.2, 0.02, 0xd8ffd0, -0.3, 0.6, 0.46);
+  pxEyes(b, 0, 0.5, 0.46, 0.16, 0.2);
+  b.box(0.3, 0.06, 0.03, 0x1b1f24, 0, 0.26, 0.46).box(0.06, 0.06, 0.03, 0x1b1f24, -0.18, 0.32, 0.46).box(0.06, 0.06, 0.03, 0x1b1f24, 0.18, 0.32, 0.46);
+});
+def('retroTV', 'low', 1.4, 0.98, 1.0, (b) => {
+  // an old telly showing a smiley
+  b.box(1.2, 0.8, 0.8, 0x8a5a3c, 0, 0.5, 0).box(0.84, 0.6, 0.04, 0x24262c, -0.12, 0.5, 0.4).box(0.14, 0.14, 0.06, 0xe5383b, 0.44, 0.66, 0.4).box(0.14, 0.14, 0.06, 0xffd23f, 0.44, 0.44, 0.4);
+  for (const sx of [-1, 1]) b.box(0.12, 0.12, 0.12, 0x24262c, sx * 0.4, 0.05, 0.2).box(0.04, 0.4, 0.04, 0x9aa6ae, sx * 0.2, 1.0, -0.1, 0, 0, sx * -0.5);
+  pixelArtInto(b, PXART.smiley, -0.12, 0.24, 0.425, 0.065, 0, 0.3);
+});
+def('joystick', 'low', 1.3, 0.98, 1.0, (b) => {
+  // a great big joystick
+  b.box(1.1, 0.3, 0.9, 0x24262c, 0, 0.15, 0).box(1.0, 0.06, 0.8, 0x3a4252, 0, 0.33, 0).box(0.14, 0.5, 0.14, 0x9aa6ae, -0.15, 0.6, -0.05, 0.12, 0, 0.14).box(0.34, 0.3, 0.34, 0xe5383b, -0.2, 0.86, -0.02, 0.12, 0, 0.14);
+  b.box(0.2, 0.08, 0.2, 0xffd23f, 0.3, 0.4, 0.2).box(0.2, 0.08, 0.2, 0x5ad0e0, 0.3, 0.4, -0.15);
+});
+def('pxBush', 'low', 1.5, 0.92, 1.0, (b) => {
+  // a bush made of cubes, with berries
+  b.box(1.3, 0.5, 0.8, 0x3f9a4a, 0, 0.25, 0).box(0.9, 0.3, 0.6, 0x4fae56, -0.1, 0.65, 0).box(0.4, 0.14, 0.4, 0x6fc24a, 0.1, 0.86, 0);
+  for (const [x, y] of [[-0.4, 0.3], [0.1, 0.5], [0.45, 0.2], [-0.2, 0.7]]) b.box(0.12, 0.12, 0.06, 0xe5383b, x, y, 0.41 - (y > 0.5 ? 0.1 : 0));
+});
+def('arcade', 'tall', 1.4, 2.7, 1.1, (b) => {
+  // an arcade machine with a game of hearts and stars on its screen
+  b.box(1.2, 1.2, 0.9, 0x3a4aa8, 0, 0.6, 0).box(1.2, 0.2, 1.0, 0x24262c, 0, 1.3, 0.1, -0.2, 0, 0).box(1.2, 1.0, 0.7, 0x3a4aa8, 0, 1.9, -0.1).box(1.24, 0.3, 0.8, 0xe5383b, 0, 2.52, -0.05);
+  b.box(0.96, 0.76, 0.04, 0x10142a, 0, 1.92, 0.26).box(0.12, 0.2, 0.12, 0x9aa6ae, -0.3, 1.44, 0.3).box(0.2, 0.16, 0.2, 0xe5383b, -0.3, 1.6, 0.3).box(0.14, 0.06, 0.14, 0xffd23f, 0.16, 1.39, 0.36).box(0.14, 0.06, 0.14, 0x5ad0e0, 0.38, 1.39, 0.36);
+  pixelArtInto(b, PXART.heart, -0.2, 1.72, 0.285, 0.045, 0, 0.3); pixelArtInto(b, PXART.star, 0.24, 1.86, 0.285, 0.04, 0, 0.3);
+  for (let i = 0; i < 5; i++) b.box(0.14, 0.14, 0.03, [0xffd23f, 0xffffff, 0x5ad0e0, 0xffffff, 0xffd23f][i], -0.44 + i * 0.22, 2.52, 0.36, 0, 0, 0, { glow: true, grad: 1 });
+  b.box(0.3, 0.1, 0.04, 0x24262c, 0, 0.6, 0.46).box(1.24, 0.1, 0.94, 0x24262c, 0, 0.05, 0);
+});
+def('pxTree', 'tall', 1.7, 2.9, 1.7, (b) => {
+  // a tree made of cubes
+  cubeTreeInto(b, 0, 0, 0, 0.9);
+});
+def('blockTower', 'tall', 1.2, 2.8, 1.2, (b) => {
+  // a tower of blocks; the top one keeps a look out
+  [0xe5383b, 0xffb347, 0xffd23f, 0x4fae56].forEach((c, i) => blockInto(b, 0.68, c, Math.sin(i * 2.1) * 0.06, i * 0.68, 0, Math.sin(i * 1.7) * 0.25));
+  pxEyes(b, 0.05, 2.42, 0.36, 0.14, 0.15);
+  b.box(0.2, 0.05, 0.03, 0x1b1f24, 0.05, 2.2, 0.36);
+});
+def('boxRobot', 'tall', 1.5, 2.7, 1.0, (b) => {
+  // a robot made of boxes, waving hello
+  const M = 0xb8c4d0, MD = 0x8c96a4;
+  for (const sx of [-1, 1]) b.box(0.3, 0.8, 0.3, MD, sx * 0.25, 0.4, 0).box(0.4, 0.16, 0.5, 0x3a4252, sx * 0.25, 0.08, 0.06).box(0.22, 0.8, 0.22, MD, sx * 0.62, sx > 0 ? 1.9 : 1.3, 0, 0, 0, sx > 0 ? -0.5 : 0).box(0.28, 0.24, 0.28, 0xe5383b, sx > 0 ? 0.84 : -0.62, sx > 0 ? 2.32 : 0.86, 0);
+  b.box(0.96, 0.9, 0.6, M, 0, 1.25, 0).box(0.5, 0.36, 0.04, 0x10142a, 0, 1.3, 0.3).box(0.1, 0.1, 0.06, 0x7fe04a, -0.12, 1.34, 0.31, 0, 0, 0, { glow: true, grad: 1 }).box(0.1, 0.1, 0.06, 0xffd23f, 0.1, 1.26, 0.31, 0, 0, 0, { glow: true, grad: 1 });
+  b.box(0.2, 0.14, 0.2, MD, 0, 1.77, 0).box(0.8, 0.66, 0.6, M, 0, 2.17, 0).box(0.06, 0.24, 0.06, MD, 0, 2.62, 0).box(0.14, 0.14, 0.14, 0xe5383b, 0, 2.78, 0, 0, 0, 0, { glow: true, grad: 1 });
+  pxEyes(b, 0, 2.24, 0.31, 0.16, 0.18);
+  b.box(0.36, 0.06, 0.03, 0x1b1f24, 0, 1.98, 0.31).box(0.06, 0.06, 0.03, 0x1b1f24, -0.2, 2.04, 0.31).box(0.06, 0.06, 0.03, 0x1b1f24, 0.2, 2.04, 0.31);
+});
+def('heartSign', 'tall', 1.5, 2.8, 0.9, (b) => {
+  // a great big heart on a post
+  b.box(0.7, 0.2, 0.7, 0x8c96a4, 0, 0.1, 0).box(0.2, 1.3, 0.2, 0x9aa6ae, 0, 0.85, 0);
+  pixelArtInto(b, PXART.heart, 0, 1.5, 0, 0.16, 0, 1.6);
+});
+def('rollCube', 'low', 1.1, 1.0, 1.0, (b) => {
+  // a cube tumbling down the lane
+  b.box(0.74, 0.74, 0.74, 0xa070e0, 0, 0, 0, 0, 0, 0, { grad: 1 });
+  [[0.38, 0, 0, 0xffd23f, 0.02, 0.5, 0.5], [-0.38, 0, 0, 0x5ad0e0, 0.02, 0.5, 0.5], [0, 0.38, 0, 0xff8fb0, 0.5, 0.02, 0.5], [0, -0.38, 0, 0x7fe04a, 0.5, 0.02, 0.5], [0, 0, 0.38, 0xffb347, 0.5, 0.5, 0.02], [0, 0, -0.38, 0xffffff, 0.5, 0.5, 0.02]].forEach(([x, y, z, c, w, h, d]) => b.box(w, h, d, c, x, y, z, 0, 0, 0, { grad: 1 }));
+}, { center: true });
+def('cubeEgg', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the block bird drops: a square egg (it still rolls, somehow)
+  b.box(0.6, 0.72, 0.6, 0xfff6e0, 0, 0, 0, 0, 0, 0, { grad: 0.92 }).box(0.44, 0.9, 0.44, 0xfff6e0, 0, 0, 0, 0, 0, 0, { grad: 0.92 });
+  for (const [x, y, z] of [[0.31, 0.1, 0.1], [-0.31, -0.15, -0.1], [0.1, 0.2, 0.31], [-0.12, -0.1, -0.31], [0.05, 0.46, 0.05]]) b.box(0.14, 0.14, 0.14, 0x5ad0e0, x * 0.94, y, z * 0.94);
+}, { center: true });
+def('cubePillar', 'low', 1.5, 0.9, 0.9, (b) => {
+  // a caterpillar made of cubes, humping across; it faces +x
+  [0x7fe04a, 0x4fae56, 0x7fe04a, 0x4fae56].forEach((c, i) => b.box(0.36, 0.36, 0.44, c, -0.52 + i * 0.3, 0.2 + (i % 2) * 0.08, 0, 0, 0, 0, { grad: 0.9 }));
+  b.box(0.46, 0.46, 0.5, 0xffd23f, 0.52, 0.34, 0, 0, 0, 0, { grad: 0.9 });
+  for (const sz of [-1, 1]) b.box(0.03, 0.16, 0.14, 0xffffff, 0.76, 0.4, sz * 0.13, 0, 0, 0, { grad: 1 }).box(0.04, 0.08, 0.07, 0x1b1f24, 0.77, 0.37, sz * 0.13, 0, 0, 0, { grad: 1 }).box(0.05, 0.22, 0.05, 0x1b1f24, 0.56, 0.66, sz * 0.13).box(0.1, 0.1, 0.1, 0xe5383b, 0.56, 0.8, sz * 0.13);
+  b.box(0.03, 0.05, 0.2, 0x1b1f24, 0.76, 0.22, 0);
+  for (let i = 0; i < 4; i++) for (const sz of [-1, 1]) b.box(0.08, 0.1, 0.08, 0x2f7a34, -0.52 + i * 0.3, 0.05, sz * 0.2);
+});
+def('blockBird', 'deco', 2.2, 1.2, 1.4, (b) => {
+  // a bird made of blocks, with a square egg to drop
+  b.box(0.7, 0.6, 0.9, 0x4f8fe0, 0, 0, 0, 0, 0, 0, { grad: 0.9 }).box(0.5, 0.3, 0.6, 0xffffff, 0, -0.2, 0.06).box(0.5, 0.5, 0.5, 0x4f8fe0, 0, 0.34, 0.5, 0, 0, 0, { grad: 0.9 }).box(0.2, 0.14, 0.3, 0xffb347, 0, 0.26, 0.86);
+  pxEyes(b, 0, 0.42, 0.76, 0.14, 0.15);
+  b.box(0.16, 0.26, 0.16, 0xe5383b, 0, 0.7, 0.44).box(0.3, 0.1, 0.5, 0x3a6ac0, 0, 0.1, -0.6).box(0.2, 0.1, 0.3, 0x3a6ac0, 0, 0.2, -0.86);
+  for (const sx of [-1, 1]) b.box(0.08, 0.2, 0.08, 0xffb347, sx * 0.16, -0.4, 0.05);
+  b.box(0.3, 0.36, 0.3, 0xfff6e0, 0, -0.6, 0.05);
+}, {
+  wings: (b, sx) => { b.box(0.7, 0.1, 0.6, 0x4f8fe0, sx * 0.4, 0, 0).box(0.4, 0.1, 0.44, 0x3a6ac0, sx * 0.9, 0, -0.06).box(0.2, 0.1, 0.26, 0x3a6ac0, sx * 1.16, 0, -0.14); }, wingAt: [0.3, 0.1, 0],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -2381,6 +2499,8 @@ export const TALL_TYPES = {
   18: ['standMirror', 'mirrorPillar', 'wonkyMirror', 'prismTower', 'vanity', 'standMirror'],
   19: ['statueBust', 'bigVase', 'armour', 'easel', 'mummyCase', 'bigVase'],
   20: ['grandClock', 'pillowTower', 'bigTeddy', 'moonLamp', 'wardrobe', 'pillowTower'],
+  21: ['arcade', 'pxTree', 'blockTower', 'boxRobot', 'heartSign', 'blockTower'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
-export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'] };
+export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'],
+  21: ['pxCrate', 'cubeJelly', 'retroTV', 'joystick', 'pxBush', 'cubeJelly'] };

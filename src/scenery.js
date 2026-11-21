@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -2487,10 +2487,134 @@ const dreamLantern = (v) => prefab('dreamLantern' + v, () => {
   return b.build({ cast: true, receive: false });
 });
 
+// ---------- Pixel Land ----------
+const PXGRASS = 0x5fbf4a, PXGRASS2 = 0x4fa540, PXEARTH = 0x8a5a3c, PXSTONE = 0x9aa6ae, PXSTONE2 = 0x7c8890;
+// A block island standing in the sea: grass on earth, with its top at y.
+const pxIsleInto = (b, x, z, w, d, y = -0.7) => {
+  const y0 = WATER_Y - 1.2;
+  b.box(w, y - 0.5 - y0, d, PXEARTH, x, (y - 0.5 + y0) / 2, z, 0, 0, 0, { grad: 0.8 }).box(w + 0.4, 0.5, d + 0.4, PXGRASS, x, y - 0.25, z, 0, 0, 0, { grad: 1 });
+  b.box(w * 0.4, 0.06, d * 0.4, PXGRASS2, x - w * 0.2, y + 0.03, z + d * 0.2, 0, 0, 0, { grad: 1 }).box(w * 0.3, 0.06, d * 0.3, PXGRASS2, x + w * 0.25, y + 0.03, z - d * 0.2, 0, 0, 0, { grad: 1 });
+};
+// A hill in steps, like a wedding cake: earth with grass on every step (or stone with snow on top). Returns where its top is.
+const pxHillInto = (b, x, z, w, d, n, rng, snow = false) => {
+  let cx = x, cz = z; const h = 2.4;
+  for (let i = 0; i < n; i++) {
+    const k = 1 - (i / n) * 0.78, y0 = WATER_Y - 1 + i * h;
+    b.box(w * k, h, d * k, snow ? PXSTONE : PXEARTH, cx, y0 + h / 2, cz, 0, 0, 0, { grad: 0.85 }).box(w * k + 0.5, 0.6, d * k + 0.5, snow ? (i >= n - 2 ? 0xffffff : PXSTONE2) : (i % 2 ? PXGRASS : PXGRASS2), cx, y0 + h + 0.3, cz, 0, 0, 0, { grad: 1 });
+    if (i < n - 1) { cx += (rng() - 0.5) * w * 0.1; cz += (rng() - 0.5) * d * 0.1; }
+  }
+  return [cx, WATER_Y - 1 + n * h + 0.6, cz];
+};
+// A castle built out of blocks, with flags.
+const pxCastleInto = (b) => {
+  b.box(6, 3.2, 5, PXSTONE, 0, 1.6, 0, 0, 0, 0, { grad: 0.9 }).box(1.6, 2.0, 0.2, 0x6f4630, 0, 1.0, 2.5).box(1.0, 0.5, 0.22, 0x6f4630, 0, 2.2, 2.5);
+  for (let i = -3; i <= 3; i += 2) b.box(0.7, 0.6, 0.7, PXSTONE2, i * 0.85, 3.5, 2.15);
+  for (const [x, z, c] of [[-3, 2.5, 0xe5383b], [3, 2.5, 0x4f8fe0], [-3, -2.5, 0xffd23f], [3, -2.5, 0x7fe04a]]) {
+    b.box(1.8, 5.4, 1.8, PXSTONE2, x, 2.7, z, 0, 0, 0, { grad: 0.9 }).box(2.2, 0.5, 2.2, PXSTONE, x, 5.65, z);
+    for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) b.box(0.6, 0.6, 0.6, PXSTONE, x + dx * 0.8, 6.2, z + dz * 0.8);
+    b.box(0.5, 0.7, 0.1, 0x24262c, x, 3.8, z + (z > 0 ? 0.91 : -0.91)).box(0.12, 1.6, 0.12, 0x6f4630, x, 6.7, z).box(0.9, 0.5, 0.08, c, x + 0.5, 7.2, z);
+  }
+  b.box(2.4, 3.6, 2.4, PXSTONE, 0, 4.8, -0.6, 0, 0, 0, { grad: 0.9 }).box(2.8, 0.5, 2.8, PXSTONE2, 0, 6.85, -0.6).box(0.6, 0.8, 0.1, 0xffd23f, 0, 5.4, 0.61, 0, 0, 0, { glow: true, grad: 1 });
+  for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) b.box(0.7, 0.7, 0.7, PXSTONE, dx * 1.05, 7.45, -0.6 + dz * 1.05);
+};
+// A waterfall of blocks tumbling down the front (+z side) of a stepped hill with n steps.
+const pxFallInto = (b, x, z, d, n) => {
+  for (let i = 0; i < n; i++) { const k = 1 - (i / n) * 0.78, y0 = WATER_Y - 1 + i * 2.4; b.box(1.6, 2.5, 0.3, i % 2 ? 0x5ad0e0 : 0x4f8fe0, x, y0 + 1.25, z + d * k / 2 + 0.2, 0, 0, 0, { grad: 1 }).box(1.6, 0.3, d * 0.78 / n / 2 + 0.6, 0x5ad0e0, x, y0 + 2.75, z + d * k / 2 - d * 0.78 / n / 4 + 0.1); }
+  for (const [dx, dz] of [[-1.0, 0.7], [0, 1.0], [0.9, 0.6], [-0.4, 1.5]]) b.box(0.6, 0.5, 0.6, 0xffffff, x + dx, WATER_Y + 0.2, z + d / 2 + dz);
+};
+// A picture board: pixel art standing on two posts, facing +z.
+const pxBoardInto = (b, art, s = 0.62) => {
+  const w = PXART[art][0].length * s, h = PXART[art].length * s;
+  for (const sx of [-1, 1]) b.box(0.4, 2.4, 0.4, 0x6f4630, sx * w * 0.3, 1.2, -0.1);
+  b.box(w + 1.0, h + 1.0, 0.3, 0x24323f, 0, 2.0 + h / 2 + 0.5, -0.2, 0, 0, 0, { grad: 0.9 }).box(w + 1.4, 0.4, 0.5, 0xffd23f, 0, 2.0 + h + 1.1, -0.2).box(w + 1.4, 0.4, 0.5, 0xffd23f, 0, 1.9, -0.2);
+  pixelArtInto(b, PXART[art], 0, 2.5, 0.1, s, 0, 0.7);
+};
+// Everything that stands still in one stretch of Pixel Land, as one model.
+const pixelSet = (k) => prefab('pixelSet' + k, () => {
+  const b = new Builder(0.9), rng = makeRng(2110 + k);
+  if (k === 0) {
+    pxIsleInto(b, 13.5, -13, 9, 9); b.at(13.5, -0.7, -13, -PI / 2, () => pxBoardInto(b, 'cat'));
+    cubeTreeInto(b, 11, -0.7, -9.6, 0.8); cubeTreeInto(b, 15.6, -0.7, -16.4, 1.0, 0xffb347, 0xe58a2c);
+    pxIsleInto(b, -14.5, -28, 11, 10); b.at(-14.5, -0.7, -28, PI / 2, () => pxCastleInto(b));
+  } else if (k === 1) {
+    pxIsleInto(b, -13.5, -12, 9, 9); b.at(-13.5, -0.7, -12, PI / 2, () => pxBoardInto(b, 'dog'));
+    cubeTreeInto(b, -11, -0.7, -8.6, 0.8, 0xff8fb0, 0xe5709a); cubeTreeInto(b, -15.8, -0.7, -15.4, 1.0);
+    pxIsleInto(b, 14, -28, 9, 9); b.at(14, -0.7, -28, -PI / 2, () => pxBoardInto(b, 'rocket', 0.7));
+    cubeTreeInto(b, 11.4, -0.7, -31.4, 0.9);
+  } else {
+    pxIsleInto(b, 13.5, -24, 9, 12); b.at(13.5, -0.7, -24, -PI / 2, () => { pixelArtInto(b, PXART.heart, -3.4, 0, 0, 0.5, 0, 2); pixelArtInto(b, PXART.star, 3.2, 0, 0, 0.5, 0, 2); for (let i = 0; i < 4; i++) pixelArtInto(b, PXART.flower, -2.4 + i * 1.6, 0, 3.2, 0.24, 0, 1); });
+    const top = pxHillInto(b, -19, -16, 16, 14, 4, rng); pxFallInto(b, -19, -16, 14, 4); cubeTreeInto(b, top[0] + 1.2, top[1], top[2] - 1, 1.2);
+  }
+  // the hills far off, some with snow on, and little trees on their steps
+  for (const sd of [-1, 1]) for (let i = 0; i < 3; i++) {
+    const x = sd * (34 + rng() * 12), z = -4 - i * 13 - rng() * 4, n = 3 + ((i + k + (sd > 0 ? 1 : 0)) % 3), snow = (i + k) % 3 === 0 && n > 3;
+    const top = pxHillInto(b, x, z, 15 + rng() * 6, 12 + rng() * 4, n, rng, snow);
+    if (!snow) cubeTreeInto(b, top[0], top[1], top[2], 1.3, i % 2 ? 0x4fae56 : 0x6fc24a, 0x3f9a4a);
+  }
+  // square stepping stones in the sea, and square lily pads
+  for (const sd of [-1, 1]) for (let i = 0; i < 4; i++) { const x = sd * (7 + rng() * 14), z = -rng() * CHUNK; b.box(1.2, 0.3, 1.2, i % 2 ? 0x7fe04a : PXSTONE, x, WATER_Y + 0.12, z, 0, 0, 0, { grad: 1 }); if (i % 2) b.box(0.3, 0.3, 0.3, 0xff8fb0, x + 0.2, WATER_Y + 0.4, z); }
+  return b.build({ cast: true, receive: false });
+});
+// A rainbow over the pier, built out of blocks, with a heart on top and two stars hanging from it.
+const pixelArch = () => prefab('pixelArch', () => {
+  const b = new Builder(0.92), cols = [0x4f8fe0, 0x7fe04a, 0xffd23f, 0xe5383b], g = 0.6;
+  for (let i = -13; i <= 13; i++) {
+    // each column of blocks, joined up into runs of one colour
+    let run = null; const x = i * g;
+    const flush = () => { if (run) b.box(g, (run.n) * g, g * 1.5, cols[run.c], x, 0.4 + (run.j0 + run.n / 2) * g, 0, 0, 0, 0, { grad: 1 }); run = null; };
+    for (let j = 0; j <= 23; j++) {
+      const r = Math.hypot(x, (j + 0.5) * g / 1.5), c = Math.floor((r - 5.0) / 0.62);
+      if (c < 0 || c > 3) { flush(); continue; }
+      if (run && run.c === c) run.n++; else { flush(); run = { c, j0: j, n: 1 }; }
+    }
+    flush();
+  }
+  for (const sx of [-1, 1]) b.box(4.4, 1.0, 2.0, 0xffffff, sx * 6.3, 0.5, 0.2, 0, 0, 0, { grad: 1 }).box(2.4, 0.8, 2.0, 0xffffff, sx * 6.0, 1.4, 0.2, 0, 0, 0, { grad: 1 }).box(1.2, 0.6, 1.6, 0xf0f6ff, sx * 7.6, 1.3, 0.3, 0, 0, 0, { grad: 1 });
+  pixelArtInto(b, PXART.heart, 0, 11.5, 0, 0.3, 0, 2);
+  for (const sx of [-1, 1]) { b.box(0.06, 1.2, 0.06, 0xffffff, sx * 3.3, 5.7, 0); pixelArtInto(b, PXART.star, sx * 3.3, 4.0, 0, 0.12, 0, 1.4); }
+  return b.build({ cast: true, receive: false });
+});
+// A square cloud (it bobs), three sizes.
+const pixelCloud = (v) => prefab('pixelCloud' + v, () => {
+  const b = new Builder(1), s = 1 + v * 0.35;
+  b.box(5 * s, 1.2 * s, 2.4 * s, 0xffffff, 0, 0, 0, 0, 0, 0, { grad: 0.92 }).box(2.6 * s, 1.0 * s, 2.0 * s, 0xffffff, -0.5 * s, 1.0 * s, 0, 0, 0, 0, { grad: 0.92 }).box(1.4 * s, 0.8 * s, 1.6 * s, 0xf0f6ff, 1.6 * s, 0.8 * s, 0.1, 0, 0, 0, { grad: 0.92 }).box(1.6 * s, 0.6 * s, 1.8 * s, 0xf0f6ff, -2.6 * s, -0.5 * s, 0, 0, 0, 0, { grad: 0.92 });
+  return b.build({ cast: false, receive: false });
+});
+// A duck made of blocks, paddling about (it bobs on the sea); it faces +x.
+const pixelDuck = () => prefab('pixelDuck', () => {
+  const b = new Builder(0.9);
+  b.box(2.6, 1.2, 1.8, 0xffd23f, 0, 0.5, 0, 0, 0, 0, { grad: 0.85 }).box(1.0, 0.6, 1.4, 0xffd23f, -1.5, 0.9, 0).box(0.5, 0.5, 1.0, 0xffe680, -2.0, 1.3, 0).box(1.3, 1.3, 1.3, 0xffd23f, 1.0, 1.7, 0, 0, 0, 0, { grad: 0.9 }).box(0.7, 0.3, 0.8, 0xff8a3c, 1.9, 1.5, 0);
+  for (const sz of [-1, 1]) b.box(0.24, 0.3, 0.06, 0x1b1f24, 1.3, 1.9, sz * 0.66).box(1.4, 0.7, 0.2, 0xffb820, -0.2, 0.7, sz * 0.95);
+  return b.build({ cast: true, receive: false });
+});
+// A treasure cube turning on a pedestal of blocks (the part named 'spin' turns).
+const pixelGem = () => prefab('pixelGem', () => {
+  const b = new Builder(0.9), g = new THREE.Group();
+  pxIsleInto(b, 0, 0, 5, 5); b.box(2.4, 0.8, 2.4, PXSTONE, 0, -0.3, 0).box(1.6, 0.8, 1.6, PXSTONE2, 0, 0.5, 0);
+  g.add(b.build({ cast: true, receive: false }));
+  const s = new Builder(1);
+  s.box(1.5, 1.5, 1.5, 0xffd23f, 0, 0, 0, 0, 0, 0, { grad: 0.9 }).box(1.56, 0.9, 0.9, 0xfff6c0, 0, 0, 0, 0, 0, 0, { glow: true, grad: 1 }).box(0.9, 0.9, 1.56, 0xfff6c0, 0, 0, 0, 0, 0, 0, { glow: true, grad: 1 });
+  for (const [x, y, z] of [[1, 1, 0], [-1, 1, 0], [0, 1, 1], [0, 1, -1]]) s.box(0.3, 0.3, 0.3, 0xffffff, x * 1.3, y * 0.6, z * 1.3, 0, 0, 0, { glow: true, grad: 1 });
+  const m = s.build({ cast: false, receive: false }); m.name = 'spin'; m.position.set(0, 2.2, 0); m.rotation.z = 0.3; g.add(m);
+  return g;
+});
+// A jelly cube hopping along a row of blocks (the part named 'leap' hops along x).
+const pixelHop = () => prefab('pixelHop', () => {
+  const b = new Builder(0.9), g = new THREE.Group();
+  for (let i = -2; i <= 2; i++) { b.box(1.8, 3 + (i & 1) * 0.5, 1.8, PXEARTH, i * 2.2, WATER_Y + 0.4, 0, 0, 0, 0, { grad: 0.85 }).box(2.0, 0.4, 2.0, i & 1 ? PXGRASS : PXGRASS2, i * 2.2, WATER_Y + 2.1 + (i & 1) * 0.25, 0, 0, 0, 0, { grad: 1 }); }
+  g.add(b.build({ cast: true, receive: false }));
+  const s = new Builder(0.9);
+  s.box(1.3, 1.1, 1.2, 0xff8fb0, 0, 0.55, 0, 0, 0, 0, { grad: 0.8 }).box(1.0, 0.14, 0.9, 0xffc0d4, 0, 1.16, 0);
+  for (const sx of [-1, 1]) s.box(0.22, 0.3, 0.04, 0xffffff, sx * 0.28, 0.7, 0.61, 0, 0, 0, { grad: 1 }).box(0.1, 0.14, 0.05, 0x1b1f24, sx * 0.28, 0.66, 0.62, 0, 0, 0, { grad: 1 });
+  s.box(0.36, 0.07, 0.04, 0x1b1f24, 0, 0.34, 0.61);
+  const m = s.build({ cast: true, receive: false }); m.name = 'leap'; m.position.set(0, WATER_Y + 2.6, 0); g.add(m);
+  return g;
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -2498,7 +2622,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -2511,7 +2635,7 @@ export function populate(group, rawIndex, zone, anim) {
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
   if (!coast) { place(group, under40(), 0, 0, 0); if (zone !== 19) place(group, rail40(), L, 0, 0); }
-  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && !coast);   // the right-hand side opens onto ground at deck level
+  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
@@ -2705,6 +2829,14 @@ export function populate(group, rawIndex, zone, anim) {
     if (index % 3 === 0) anim.push({ o: place(group, sheepJump(), -12, 0, -11, PI / 2), kind: 'leap', p: rng() });
     else if (index % 3 === 2) anim.push({ o: place(group, sheepJump(), 12, 0, -10, -PI / 2), kind: 'leap', p: rng() });
     for (let i = 0; i < 2; i++) { const sd = (index + i) % 2 ? 1 : -1; anim.push({ o: place(group, dreamLantern((index + i) % 3), sd * (7.5 + rng() * 3), 1.5 + rng() * 3, -6 - i * 20 - rng() * 8, sd > 0 ? -0.6 : 0.6), kind: 'bob', p: rng() * 6, amp: 2.2 }); }
+  } else if (zone === 21) {
+    // Pixel Land: everything is built out of blocks, and the whole picture is drawn in big chunky pixels (see main.js)
+    place(group, pixelSet(index % 3), 0, 0, 0);
+    if (index % 2 === 1) place(group, pixelArch(), 0, 0, -20);
+    for (let i = 0; i < 3; i++) { const sd = (index + i) % 2 ? 1 : -1; anim.push({ o: place(group, pixelCloud((index + i) % 3), sd * (9 + rng() * 16), 9 + rng() * 6, -4 - i * 13 - rng() * 5, rng() < 0.5 ? 0 : PI), kind: 'bob', p: rng() * 6, amp: 1.6 }); }
+    if (index % 3 === 0) anim.push({ o: place(group, pixelDuck(), -9.5, WATER_Y - 0.1, -10, 0.4), kind: 'bob', p: rng() * 6, amp: 1.2 });
+    else if (index % 3 === 1) anim.push({ o: place(group, pixelGem(), 11.5, 0, -10), kind: 'spin', v: 0.9 });
+    else { anim.push({ o: place(group, pixelHop(), 10.5, 0, -8, -PI / 2), kind: 'leap', p: rng() }); anim.push({ o: place(group, pixelDuck(), 9, WATER_Y - 0.1, -36, 2.6), kind: 'bob', p: rng() * 6, amp: 1.2 }); }
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }

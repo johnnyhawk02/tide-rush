@@ -483,4 +483,24 @@ THEMES[20] = theme('Counting Sheep', {
   drums: { thump: 'x...........', tick: '....x...x...' },
 });
 
+// ---- 21. Pixel Land: "Eight Little Bits", a bouncy chip tune off an old games machine (C major) ----
+THEMES[21] = theme('Eight Little Bits', {
+  key: 0, scale: 'maj', base: 72, gain: 1.2, tempo: 1.06, voice: 'chip', bassVoice: 'synth', stab: 'pluck',
+  chords: 'I vi IV V I iii IV V',
+  tune: [
+    "1:2 3:2 5:2 1':2 5:2 3:2 5:4",
+    "6:2 1':2 3':2 1':2 6:4 3:4",
+    "4:2 6:2 1':2 4':2 3':2 1':2 6:4",
+    "5:2 7:2 2':2 5':2 4':4 2':4",
+    "3':2 1':2 5:2 1':2 3':2 5':2 3':4",
+    "2':2 7:2 5:2 7:2 2':4 3':4",
+    "4':2 3':2 2':2 1':2 6:2 1':2 4':4",
+    "5':2 4':2 2':2 7:2 1':4 -:4",
+  ],
+  bass: [0, _, 12, _, 7, _, 12, _, 0, _, 12, _, 7, _, 12, _],
+  stabs: '....x.......x...',
+  arp: { pat: [0, 1, 2, 1], wave: 'square', oct: 12, vol: 0.012, every: 1 },
+  drums: { thump: 'x.......x.......', tick: '..x...x...x...x.', snap: '....x.......x...' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));
