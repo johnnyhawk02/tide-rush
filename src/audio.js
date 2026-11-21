@@ -308,6 +308,7 @@ export class GameAudio {
     else if (kind === 'pegasus') this.whinny();
     else if (kind === 'ptero') this.pteroCall();
     else if (kind === 'falcon') this.falconCry();
+    else if (kind === 'aquila') this.trumpets();
     else if (kind === 'flipGull') for (let i = 0; i < 3; i++) this.tone('sawtooth', 820, t + i * 0.17, 0.14, 0.07, null, { slide: 1350, lp: 2800, att: 0.02 });   // a gull's cry, backwards
     else if (kind === 'pteroBones') { this.rattle(); this.tone('sawtooth', 900, t + 0.1, 0.25, 0.03, null, { slide: 1300, lp: 2600, att: 0.03 }); }
     else if (kind === 'flashMirror') { this.twinkle(); this.tone('sine', 1320, t, 0.6, 0.04, null, { slide: 1980, att: 0.1 }); }
@@ -438,6 +439,10 @@ export class GameAudio {
   reedCall() { if (this.ok) { const t = this.ctx.currentTime; [[69, 0, 0.2], [70, 0.2, 0.2], [73, 0.4, 0.2], [74, 0.6, 0.36], [73, 0.98, 0.14], [70, 1.12, 0.14], [69, 1.26, 0.5]].forEach(([n, d, l]) => { this.tone('square', midi(n), t + d, l, 0.028, null, { lp: 1500, att: 0.03, vib: 0.012, vibHz: 6 }); this.tone('sine', midi(n), t + d, l, 0.03, null, { att: 0.03 }); }); } }
   camelGrunt() { if (this.ok) { const t = this.ctx.currentTime; this.tone('sawtooth', 150, t, 0.7, 0.08, null, { slide: 95, lp: 620, att: 0.08, vib: 0.08, vibHz: 16 }); this.tone('sine', 300, t, 0.6, 0.03, null, { slide: 190, att: 0.08, vib: 0.08, vibHz: 16 }); } }
   falconCry() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 3; i++) this.tone('sawtooth', 2100, t + i * 0.17, 0.13, 0.04, null, { slide: 1500, lp: 4200, att: 0.01 }); } }
+  // Ancient Rome: trumpets, a goose with something to say, and soldiers' drums
+  trumpets() { if (this.ok) { const t = this.ctx.currentTime; [[70, 0, 0.12], [70, 0.14, 0.12], [70, 0.28, 0.12], [74, 0.42, 0.2], [77, 0.64, 0.5]].forEach(([n, d, l]) => { this.tone('sawtooth', midi(n), t + d, l, 0.04, null, { lp: 1800, lpTo: 3400, att: 0.015 }); this.tone('square', midi(n - 12), t + d, l, 0.02, null, { lp: 1400, att: 0.015 }); }); } }
+  gooseHonk() { if (this.ok) { const t = this.ctx.currentTime; for (const d of [0, 0.24]) { this.tone('sawtooth', 430, t + d, 0.17, 0.06, null, { slide: 350, lp: 1500, att: 0.012, vib: 0.03, vibHz: 30 }); this.tone('square', 860, t + d, 0.17, 0.015, null, { slide: 700, lp: 2400, att: 0.012 }); } } }
+  marchDrum() { if (this.ok) { const t = this.ctx.currentTime; [0, 0.3, 0.6, 0.75, 0.9].forEach((d, i) => { this.tone('sine', 120, t + d, 0.16, 0.14, null, { slide: 70, att: 0.004 }); this.noise(t + d, 0.07, i > 1 ? 0.05 : 0.08, { type: 'bandpass', f: 1400, q: 1 }); }); } }
   birdsong() { if (this.ok) { const t = this.ctx.currentTime + 0.2; [[88, 0, 0.12], [91, 0.14, 0.1], [95, 0.26, 0.2], [91, 0.52, 0.08], [93, 0.62, 0.08], [96, 0.72, 0.26]].forEach(([n, d, l]) => this.tone('sine', midi(n), t + d, l, 0.05, null, { slide: midi(n + 1), att: 0.015, vib: 0.01, vibHz: 9 })); } }
   appleBite() { if (this.ok) { const t = this.ctx.currentTime; this.noise(t, 0.07, 0.16, { type: 'highpass', f: 1800 }); this.noise(t + 0.05, 0.12, 0.1, { type: 'bandpass', f: 900, q: 1 }); for (let i = 0; i < 3; i++) this.noise(t + 0.3 + i * 0.16, 0.07, 0.06, { type: 'bandpass', f: 800 + i * 150, q: 1.5 }); } }
   // Giraffe World: somebody munching leaves, a little bird, and the low hum that giraffes make to each other
@@ -500,6 +505,7 @@ export class GameAudio {
     else if (zone === 7) run([87, 91, 94, 99, 103], 'sine', 0.06, 0.06);
     else if (zone === 20) { run([79, 76, 72, 67, 72, 76, 84], 'sine', 0.11, 0.09); this.hoot(); }
     else if (zone === 25) { run([74, 78, 81, 86, 81, 86, 90], 'triangle', 0.09, 0.09); this.birdsong(); }
+    else if (zone === 30) { run([58, 62, 65, 70, 65, 70, 74], 'sawtooth', 0.09, 0.05); this.trumpets(); }
     else if (zone === 29) { run([62, 63, 66, 69, 70, 69, 74], 'triangle', 0.1, 0.1); this.sistrum(); }
     else if (zone === 28) { run([48, 48, 55, 52, 55, 60, 64], 'triangle', 0.12, 0.12); this.dinoCall(); }
     else if (zone === 27) { run([74, 78, 81, 86, 90, 86, 93], 'triangle', 0.08, 0.09); this.lyre(); }

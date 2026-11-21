@@ -3082,6 +3082,182 @@ def('falcon', 'deco', 2.2, 1.1, 1.4, (b) => {
   wings: (b, sx) => { for (let i = 0; i < 4; i++) b.sph(0.3 - i * 0.03, [0xc89850, EGY.blue, 0xc89850, EGY.gold][i], sx * (0.24 + i * 0.2), 0.02 - i * 0.01, -0.02 - i * 0.07, 1.1, 0.1, 0.62, { seg: 7 }); }, wingAt: [0.18, 0.08, -0.05],
 });
 
+// ---------- Ancient Rome ----------
+export const ROM = { brick: 0xc8643a, brickD: 0xa84f30, roof: 0xd8703a, roofD: 0xb85a30, stucco: 0xf2d8a8, stuccoD: 0xe0b878, red: 0xc8282a, redD: 0x9a1f24, gold: 0xf2c230, purple: 0x7a3a9a, stone: 0xe0d6c0, stoneD: 0xb8ac98, pine: 0x3a7a4a, pineD: 0x2a5f3a, bark: 0x8a5a3a, bronze: 0xc88a3a, grape: 0x7a3a9a, leaf: 0x5fa84a, beak: 0xffa030, eye: 0x1b1f24, cheek: 0xff9ab0, water: 0x6fc8e8 };
+// A goose, the proudest citizen of Rome, facing +z and about 1 s high. Options: ry, col, helmet (a soldier's, with a red crest), wreath, sash (a purple one), wave (one wing up).
+export function gooseInto(b, x, y, z, s = 1, o = {}) {
+  b.at(x, y, z, o.ry || 0, () => {
+    const W = o.col || 0xffffff, BK = o.col ? ROM.gold : ROM.beak;
+    b.sph(0.26, W, 0, 0.36, -0.04, 0.95, 0.9, 1.25, { seg: 9 }).cone(0.14, 0.3, W, 0, 0.46, -0.4, -1.1, 0, 0, { seg: 5 });
+    for (let i = 0; i < 4; i++) b.sph(0.1 - i * 0.004, W, 0, 0.5 + i * 0.09, 0.14 + Math.sin(i * 0.5) * 0.03, 1, 1, 1, { seg: 6 });
+    b.sph(0.13, W, 0, 0.86, 0.18, 1, 0.95, 1.05, { seg: 8 }).cone(0.06, 0.18, BK, 0, 0.83, 0.37, PI / 2, 0, 0, { seg: 5 });
+    for (const sx of [-1, 1]) {
+      b.sph(0.028, ROM.eye, sx * 0.085, 0.87, 0.28, 0.6, 1.2, 0.6, { seg: 4 }).sph(0.03, o.col ? W : ROM.cheek, sx * 0.105, 0.81, 0.25, 0.6, 0.7, 1, { seg: 4 });
+      b.cyl(0.022, 0.022, 0.16, BK, sx * 0.1, 0.09, 0, 0, 0, 0, { seg: 4 }).sph(0.07, BK, sx * 0.1, 0.02, 0.05, 1, 0.3, 1.5, { seg: 5 });
+      if (o.wave && sx > 0) b.sph(0.17, W, 0.32, 0.62, 0, 0.35, 1.3, 0.8, { seg: 6 });
+      else b.sph(0.17, W, sx * 0.24, 0.38, -0.06, 0.35, 0.9, 1.3, { seg: 6 });
+    }
+    if (o.helmet) b.sph(0.14, ROM.bronze, 0, 0.97, 0.16, 1, 0.6, 1.05, { seg: 8 }).sph(0.16, ROM.red, 0, 1.06, 0.13, 0.25, 0.62, 1.1, { seg: 7 }).box(0.3, 0.025, 0.05, ROM.gold, 0, 0.93, 0.29);
+    if (o.wreath) b.tor(0.115, 0.028, o.col ? ROM.gold : ROM.leaf, 0, 0.96, 0.16, PI / 2 - 0.25, 0, 0, { seg: 8, tseg: 4 });
+    if (o.sash) b.tor(0.262, 0.035, ROM.purple, 0, 0.38, -0.02, 0, 0, 0.75, { seg: 10, tseg: 4 });
+  }, s);
+}
+// An umbrella pine: a tall bare trunk and a wide flat top. About 3.6 s high.
+export function stonePineInto(b, x, y, z, s = 1, a0 = 0) {
+  b.at(x, y, z, a0, () => {
+    b.cyl(0.1, 0.17, 2.8, ROM.bark, 0.08, 1.4, 0, 0, 0, -0.06, { seg: 6 });
+    for (const [bx, bz, l] of [[0.5, 0.1, 0.9], [-0.4, -0.2, 0.8], [0.1, 0.5, 0.7]]) b.cyl(0.04, 0.06, l, ROM.bark, 0.16 + bx * 0.5, 2.9, bz * 0.5, bz * 1.1, 0, -bx * 1.4, { seg: 4 });
+    b.sph(1.15, ROM.pine, 0.16, 3.15, 0, 1, 0.34, 1, { seg: 9 }).sph(0.8, ROM.pineD, 0.7, 3.3, 0.25, 1, 0.36, 1, { seg: 8 }).sph(0.75, ROM.pineD, -0.45, 3.32, -0.3, 1, 0.36, 1, { seg: 8 }).sph(0.6, ROM.pine, 0.2, 3.45, 0.1, 1, 0.4, 1, { seg: 7 });
+  }, s);
+}
+// A cypress: a tall dark green spire. About 3.4 s high.
+export function cypressInto(b, x, y, z, s = 1) {
+  b.cyl(0.06 * s, 0.08 * s, 0.4 * s, ROM.bark, x, y + 0.2 * s, z, 0, 0, 0, { seg: 5 }).sph(0.42 * s, ROM.pineD, x, y + 0.8 * s, z, 1, 1.3, 1, { seg: 7 }).cone(0.4 * s, 2.7 * s, ROM.pineD, x, y + 2.05 * s, z, 0, 0, 0, { seg: 7 });
+}
+// A wall with a round-topped arch through it: w wide, h high and d thick, standing on (x, y, z) and facing +z. Each side of the
+// opening is `pier` wide, and the round top springs from `spring` above the ground.
+export function archWallInto(b, x, y, z, w, h, d, c, pier, spring, ry = 0, o) {
+  const r = w / 2 - pier, s = new THREE.Shape();
+  s.moveTo(-w / 2, 0); s.lineTo(-r, 0); s.lineTo(-r, spring); s.absarc(0, spring, r, PI, 0, true); s.lineTo(r, 0); s.lineTo(w / 2, 0); s.lineTo(w / 2, h); s.lineTo(-w / 2, h); s.closePath();
+  const g = new THREE.ExtrudeGeometry(s, { depth: d, bevelEnabled: false, curveSegments: 7 }); g.translate(0, 0, -d / 2);
+  b.add(g, c, x, y, z, 0, ry, 0, 1, 1, 1, o);
+}
+// A soldier's tall red shield with a golden middle and wings, standing up and facing +z.
+export function shieldInto(b, x, y, z, rx, ry, s = 1) {
+  b.at(x, y, z, ry, () => {
+    b.box(0.5, 0.82, 0.06, ROM.red, 0, 0.41 * Math.cos(rx), 0.41 * Math.sin(rx), rx, 0, 0).sph(0.1, ROM.gold, 0, 0.41 * Math.cos(rx) - 0.05 * Math.sin(rx), 0.41 * Math.sin(rx) + 0.05 * Math.cos(rx), 1, 1, 0.6, { seg: 6 });
+    for (const sy of [-1, 1]) for (const sx of [-1, 1]) { const u = 0.41 + sy * 0.2; b.box(0.16, 0.05, 0.02, ROM.gold, sx * 0.13, u * Math.cos(rx) - 0.035 * Math.sin(rx), u * Math.sin(rx) + 0.035 * Math.cos(rx), rx, 0, sx * sy * 0.5); }
+    for (const sy of [0.03, 0.79]) b.box(0.5, 0.05, 0.07, ROM.gold, 0, sy * Math.cos(rx), sy * Math.sin(rx), rx, 0, 0);
+  }, s);
+}
+// A bunch of grapes hanging down from (x, y, z), with a leaf at the top.
+const grapesInto = (b, x, y, z, s = 1, c = ROM.grape) => {
+  let n = 0;
+  for (let r = 0; r < 4; r++) for (let i = 0; i < 4 - r; i++) { const a = i * 6.28 / (4 - r) + r; b.sph(0.065 * s, n++ % 3 ? c : 0x9a5ac0, x + Math.cos(a) * (0.11 - r * 0.03) * s, y - (0.05 + r * 0.09) * s, z + Math.sin(a) * (0.11 - r * 0.03) * s, 1, 1, 1, { seg: 5 }); }
+  b.sph(0.1 * s, ROM.leaf, x + 0.06 * s, y + 0.02 * s, z, 1.2, 0.25, 1, { seg: 5 });
+};
+// A round loaf scored into wedges.
+const loafInto = (b, x, y, z, r) => { b.sph(r, 0xd8a058, x, y, z, 1, 0.5, 1, { seg: 9 }); for (let i = 0; i < 4; i++) b.box(r * 1.8, 0.012, 0.02, 0xb88040, x, y + r * 0.47, z, 0, i * 0.785, 0); };
+def('helmetPair', 'low', 1.4, 0.92, 1.0, (b) => {
+  // two soldiers' helmets with red crests, polished and waiting on a bench
+  b.box(1.24, 0.08, 0.56, ROM.bark, 0, 0.3, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(0.08, 0.28, 0.08, 0x7a4f30, sx * 0.52, 0.14, sz * 0.2);
+  for (const sx of [-1, 1]) {
+    const x = sx * 0.32;
+    b.sph(0.23, ROM.bronze, x, 0.56, 0, 1, 0.95, 1.05, { seg: 10 }).cyl(0.245, 0.26, 0.06, ROM.gold, x, 0.45, 0, 0, 0, 0, { seg: 10 }).box(0.34, 0.04, 0.1, ROM.gold, x, 0.47, 0.25);
+    for (const s2 of [-1, 1]) b.box(0.03, 0.2, 0.14, ROM.bronze, x + s2 * 0.22, 0.4, 0.1);
+    for (let i = 0; i < 9; i++) { const a = -1.2 + i * 0.3; b.box(0.05, 0.18, 0.09, i % 2 ? ROM.red : ROM.redD, x, 0.56 + Math.cos(a) * 0.3, Math.sin(a) * 0.31, a, 0, 0); }
+  }
+  b.cyl(0.1, 0.1, 0.56, ROM.red, 0, 0.1, 0.4, 0, 0, PI / 2, { seg: 7 }).tor(0.1, 0.02, ROM.gold, 0, 0.1, 0.4, 0, PI / 2, 0, { seg: 7, tseg: 3 });
+});
+def('mosaicFountain', 'low', 1.4, 0.95, 1.3, (b) => {
+  // a little fountain with a mosaic rim and a bronze fish spouting in the middle
+  b.cyl(0.62, 0.66, 0.34, ROM.stone, 0, 0.17, 0, 0, 0, 0, { seg: 12, grad: 0.9 }).cyl(0.54, 0.54, 0.02, ROM.water, 0, 0.34, 0, 0, 0, 0, { seg: 12 }).tor(0.6, 0.05, ROM.stoneD, 0, 0.34, 0, PI / 2, 0, 0, { seg: 12, tseg: 4 });
+  for (let i = 0; i < 12; i++) { const a = i * 0.524; b.box(0.13, 0.13, 0.02, [ROM.red, ROM.gold, 0x2f6fd8, ROM.leaf][i % 4], Math.cos(a) * 0.655, 0.17, Math.sin(a) * 0.655, 0, -a + PI / 2, 0); }
+  b.cyl(0.1, 0.14, 0.3, ROM.stone, 0, 0.49, 0, 0, 0, 0, { seg: 8 }).sph(0.14, ROM.bronze, 0, 0.7, 0, 0.8, 1.2, 0.8, { seg: 7 }).cone(0.1, 0.16, ROM.bronze, 0, 0.56, -0.02, PI, 0, 0, { seg: 4 }).sph(0.03, ROM.eye, 0.06, 0.74, 0.09, 1, 1, 1, { seg: 4 }).sph(0.03, ROM.eye, -0.06, 0.74, 0.09, 1, 1, 1, { seg: 4 });
+  for (let i = 0; i < 5; i++) { const a = i * 1.257; for (let q = 1; q < 4; q++) b.sph(0.045 - q * 0.005, 0xd8f4ff, Math.cos(a) * q * 0.11, 0.86 - q * q * 0.045, Math.sin(a) * q * 0.11, 1, 1, 1, { seg: 4, glow: true }); }
+});
+def('grapeBowl', 'low', 1.4, 0.9, 1.0, (b) => {
+  // a feast laid out: a big bronze bowl of grapes and figs, and a jug
+  b.cyl(0.6, 0.6, 0.06, ROM.stone, 0, 0.36, 0, 0, 0, 0, { seg: 12 });
+  for (let i = 0; i < 3; i++) b.cyl(0.04, 0.03, 0.36, ROM.bronze, Math.cos(i * 2.094 + 0.5) * 0.42, 0.17, Math.sin(i * 2.094 + 0.5) * 0.42, 0, 0, 0, { seg: 5 }).sph(0.05, ROM.bronze, Math.cos(i * 2.094 + 0.5) * 0.42, 0.03, Math.sin(i * 2.094 + 0.5) * 0.42, 1.2, 0.6, 1.2, { seg: 5 });
+  b.cyl(0.36, 0.16, 0.2, ROM.bronze, -0.1, 0.49, 0, 0, 0, 0, { seg: 10 }).tor(0.36, 0.025, ROM.gold, -0.1, 0.59, 0, PI / 2, 0, 0, { seg: 10, tseg: 3 });
+  grapesInto(b, -0.2, 0.76, 0.1, 1.1); grapesInto(b, 0.06, 0.72, -0.08, 1.0, 0x8fc85a); grapesInto(b, -0.3, 0.62, 0.36, 0.9);
+  for (let i = 0; i < 3; i++) b.sph(0.08, i % 2 ? 0x6a3a6a : 0x9a4a7a, -0.3 + i * 0.16, 0.66, -0.16, 1, 1.15, 1, { seg: 5 });
+  b.sph(0.14, ROM.roof, 0.38, 0.54, 0.06, 1, 1.15, 1, { seg: 8 }).cyl(0.05, 0.07, 0.16, ROM.roof, 0.38, 0.74, 0.06, 0, 0, 0, { seg: 6 }).tor(0.07, 0.016, ROM.roof, 0.47, 0.68, 0.06, 0, 0, 0, { seg: 6, tseg: 3 });
+});
+def('shieldStack', 'low', 1.4, 0.95, 1.0, (b) => {
+  // three red shields leaning together, with a rolled cloak
+  shieldInto(b, -0.3, 0, -0.05, -0.25, 0.25); shieldInto(b, 0.34, 0, -0.05, -0.25, -0.25); shieldInto(b, 0.02, 0, 0.2, -0.35, 0, 1.05);
+  b.cyl(0.11, 0.11, 0.7, ROM.red, 0, 0.11, 0.34, 0, 0, PI / 2, { seg: 7 });
+  for (const sx of [-1, 1]) b.tor(0.11, 0.02, ROM.gold, sx * 0.2, 0.11, 0.34, 0, PI / 2, 0, { seg: 7, tseg: 3 });
+});
+def('gooseGuards', 'low', 1.4, 0.98, 0.9, (b) => {
+  // two geese in helmets, standing to attention
+  gooseInto(b, -0.32, 0, 0, 0.84, { helmet: true, ry: 0.15 }); gooseInto(b, 0.32, 0, 0, 0.84, { helmet: true, ry: -0.15 });
+  b.box(1.2, 0.03, 0.5, ROM.red, 0, 0.015, 0.02).box(1.2, 0.035, 0.06, ROM.gold, 0, 0.018, 0.26);
+});
+def('breadTray', 'low', 1.4, 0.85, 1.0, (b) => {
+  // a baker's table: round loaves, a wheel of cheese and a jar of oil
+  b.box(1.2, 0.08, 0.7, ROM.bark, 0, 0.4, 0).box(1.24, 0.03, 0.74, ROM.red, 0, 0.455, 0);
+  for (const sx of [-1, 1]) b.box(0.1, 0.4, 0.6, 0x7a4f30, sx * 0.5, 0.2, 0);
+  loafInto(b, -0.34, 0.54, 0.12, 0.2); loafInto(b, 0.02, 0.54, 0.14, 0.2); loafInto(b, -0.16, 0.68, 0.1, 0.18); loafInto(b, -0.3, 0.53, -0.2, 0.16);
+  b.cyl(0.18, 0.18, 0.12, 0xf2d060, 0.36, 0.53, 0.16, 0, 0, 0, { seg: 10 }).cyl(0.12, 0.08, 0.26, ROM.roof, 0.34, 0.6, -0.18, 0, 0, 0, { seg: 7 }).cyl(0.06, 0.08, 0.08, ROM.roof, 0.34, 0.77, -0.18, 0, 0, 0, { seg: 6 });
+});
+def('eagleStandard', 'tall', 1.3, 2.9, 1.0, (b) => {
+  // the army's golden eagle on a pole, with a red banner, and a goose to look after it
+  b.cyl(0.26, 0.3, 0.16, ROM.stoneD, -0.12, 0.08, 0, 0, 0, 0, { seg: 8 }).cyl(0.035, 0.035, 2.3, ROM.bark, -0.12, 1.3, 0, 0, 0, 0, { seg: 5 });
+  for (let i = 0; i < 3; i++) b.cyl(0.12, 0.12, 0.04, ROM.gold, -0.12, 1.0 + i * 0.22, 0.04, PI / 2, 0, 0, { seg: 9 });
+  b.box(0.6, 0.5, 0.04, ROM.red, -0.12, 1.92, 0.04).box(0.64, 0.05, 0.05, ROM.gold, -0.12, 2.18, 0.04).tor(0.14, 0.03, ROM.gold, -0.12, 1.94, 0.07, 0, 0, 0, { seg: 9, tseg: 3 });
+  for (let i = 0; i < 5; i++) b.cone(0.05, 0.12, ROM.gold, -0.36 + i * 0.12, 1.62, 0.04, PI, 0, 0, { seg: 3 });
+  b.sph(0.15, ROM.gold, -0.12, 2.56, 0, 0.9, 1.1, 0.9, { seg: 8, grad: 0.85 }).sph(0.1, ROM.gold, -0.12, 2.76, 0.05, 1, 1, 1, { seg: 7 }).cone(0.035, 0.1, ROM.bronze, -0.12, 2.74, 0.16, PI * 0.6, 0, 0, { seg: 4 });
+  for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) b.sph(0.16, i % 2 ? ROM.bronze : ROM.gold, -0.12 + sx * (0.2 + i * 0.13), 2.62 + i * 0.07, -0.02, 1, 0.9 - i * 0.2, 0.25, { seg: 6 });
+  gooseInto(b, 0.34, 0, 0.1, 0.9, { helmet: true, ry: -0.2 });
+});
+def('victoryColumn', 'tall', 1.3, 2.9, 1.0, (b) => {
+  // a tall column with a ribbon of pictures winding up it and a golden goose on top
+  b.box(0.9, 0.36, 0.9, ROM.stoneD, 0, 0.18, 0, 0, 0, 0, { grad: 0.9 }).box(0.74, 0.1, 0.74, ROM.stone, 0, 0.41, 0).cyl(0.28, 0.31, 1.6, ROM.stone, 0, 1.26, 0, 0, 0, 0, { seg: 12, grad: 0.92 });
+  for (let i = 0; i < 6; i++) b.tor(0.3, 0.03, ROM.bronze, 0, 0.62 + i * 0.26, 0, PI / 2 + 0.16, i * 1.1, 0, { seg: 12, tseg: 3 });
+  for (let i = 0; i < 9; i++) b.sph(0.035, [ROM.red, ROM.gold, ROM.leaf][i % 3], Math.cos(i * 2.2) * 0.305, 0.62 + i * 0.16, Math.sin(i * 2.2) * 0.305, 1, 1, 1, { seg: 4 });
+  b.cyl(0.38, 0.28, 0.14, ROM.stone, 0, 2.13, 0, 0, 0, 0, { seg: 12 }).box(0.72, 0.08, 0.72, ROM.stoneD, 0, 2.24, 0);
+  gooseInto(b, 0, 2.28, -0.02, 0.62, { col: ROM.gold, wreath: true });
+});
+def('togaStatue', 'tall', 1.4, 2.8, 1.0, (b) => {
+  // a marble goose in a purple sash and a wreath, making a speech
+  b.box(0.95, 0.9, 0.85, ROM.stoneD, 0, 0.45, 0, 0, 0, 0, { grad: 0.88 }).box(1.06, 0.1, 0.96, ROM.stone, 0, 0.95, 0).box(1.06, 0.1, 0.96, ROM.stone, 0, 0.05, 0);
+  b.tor(0.2, 0.04, ROM.gold, 0, 0.5, 0.44, 0, 0, 0, { seg: 10, tseg: 4 });
+  for (let i = 0; i < 6; i++) b.sph(0.05, ROM.leaf, Math.cos(i * 1.047) * 0.2, 0.5 + Math.sin(i * 1.047) * 0.2, 0.46, 1.3, 0.7, 0.5, { seg: 4 });
+  gooseInto(b, 0, 1.0, 0, 1.7, { col: ROM.stone, wreath: true, sash: true, wave: true });
+});
+def('pinePlanter', 'tall', 1.6, 3.0, 1.6, (b) => {
+  // an umbrella pine in a round stone tub
+  b.cyl(0.44, 0.36, 0.44, ROM.stone, 0, 0.22, 0, 0, 0, 0, { seg: 10, grad: 0.9 }).tor(0.44, 0.04, ROM.stoneD, 0, 0.44, 0, PI / 2, 0, 0, { seg: 10, tseg: 4 }).cyl(0.4, 0.4, 0.03, 0x6a4a30, 0, 0.44, 0, 0, 0, 0, { seg: 10 });
+  for (let i = 0; i < 4; i++) b.box(0.16, 0.16, 0.02, i % 2 ? ROM.red : ROM.gold, Math.cos(i * 1.571 + 0.785) * 0.41, 0.24, Math.sin(i * 1.571 + 0.785) * 0.41, 0, -(i * 1.571 + 0.785) + PI / 2, 0);
+  stonePineInto(b, -0.06, 0.4, 0, 0.7, 0.6);
+});
+def('archDoor', 'tall', 1.5, 2.8, 0.9, (b) => {
+  // a brick archway with a little tiled roof, its green door shut and a wreath hung on it
+  archWallInto(b, 0, 0, 0, 1.44, 2.5, 0.5, ROM.brick, 0.26, 1.4, 0, { grad: 0.9 });
+  for (let i = 0; i < 5; i++) b.box(1.46, 0.02, 0.52, ROM.brickD, 0, 0.3 + i * 0.5, 0);
+  b.box(1.56, 0.14, 0.62, ROM.stone, 0, 2.57, 0).prism(1.56, 0.2, 0.62, ROM.roof, 0, 2.64, 0, 0);
+  b.box(0.92, 1.42, 0.1, 0x3f8a5a, 0, 0.71, 0.05).cyl(0.46, 0.46, 0.1, 0x3f8a5a, 0, 1.4, 0.05, PI / 2, 0, 0, { seg: 12 }).box(0.03, 1.8, 0.11, 0x2f6a44, 0, 0.9, 0.06).sph(0.05, ROM.gold, 0.12, 0.8, 0.12, 1, 1, 1, { seg: 5 }).sph(0.05, ROM.gold, -0.12, 0.8, 0.12, 1, 1, 1, { seg: 5 });
+  b.tor(0.16, 0.04, ROM.leaf, 0, 1.4, 0.12, 0, 0, 0, { seg: 9, tseg: 4 }).sph(0.045, ROM.red, 0, 1.24, 0.14, 1, 1, 1, { seg: 4 });
+});
+def('chariotWheel', 'low', 1.2, 1.0, 1.0, (b) => {
+  // a pair of chariot wheels that got away, rolling down the lane on their axle
+  b.cyl(0.05, 0.05, 1.1, ROM.bark, 0, 0, 0, 0, 0, PI / 2, { seg: 6 });
+  for (const sx of [-1, 1]) {
+    b.tor(0.44, 0.06, ROM.red, sx * 0.4, 0, 0, 0, PI / 2, 0, { seg: 14, tseg: 5 }).tor(0.49, 0.025, ROM.gold, sx * 0.4, 0, 0, 0, PI / 2, 0, { seg: 14, tseg: 3 }).cyl(0.11, 0.11, 0.16, ROM.gold, sx * 0.4, 0, 0, 0, 0, PI / 2, { seg: 8 }).sph(0.07, ROM.gold, sx * 0.56, 0, 0, 1, 1, 1, { seg: 5 });
+    for (let i = 0; i < 4; i++) b.box(0.05, 0.84, 0.05, i % 2 ? ROM.gold : ROM.bronze, sx * 0.4, 0, 0, i * 0.785, 0, 0);
+  }
+}, { center: true });
+def('bigGrape', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the eagle drops: one enormous grape, rolling
+  b.sph(0.4, ROM.grape, 0, 0, 0, 1, 1, 1, { seg: 12, grad: 0.85 }).sph(0.1, 0xb07ad0, 0.18, 0.24, 0.2, 1, 1, 1, { seg: 5 }).cyl(0.03, 0.03, 0.16, ROM.bark, 0, 0.44, 0, 0, 0, 0, { seg: 4 }).sph(0.16, ROM.leaf, 0.1, 0.46, 0, 1.3, 0.2, 0.9, { seg: 5 });
+}, { center: true });
+def('gooseChariot', 'low', 1.3, 0.98, 0.9, (b) => {
+  // a goose out for a drive in a little red chariot pulled by two goslings; it faces +x
+  b.box(0.5, 0.06, 0.52, ROM.bark, -0.22, 0.24, 0).box(0.06, 0.36, 0.56, ROM.red, 0.04, 0.44, 0).box(0.06, 0.06, 0.6, ROM.gold, 0.04, 0.64, 0).cyl(0.02, 0.02, 0.5, ROM.bark, 0.3, 0.22, 0, 0, 0, PI / 2 + 0.1, { seg: 4 });
+  for (const sz of [-1, 1]) {
+    b.box(0.5, 0.3, 0.05, ROM.red, -0.2, 0.42, sz * 0.27).box(0.5, 0.05, 0.06, ROM.gold, -0.2, 0.58, sz * 0.27);
+    b.tor(0.2, 0.035, ROM.gold, -0.24, 0.22, sz * 0.34, 0, 0, 0, { seg: 10, tseg: 4 }).sph(0.05, ROM.gold, -0.24, 0.22, sz * 0.36, 1, 1, 1, { seg: 5 });
+    for (let i = 0; i < 3; i++) b.box(0.03, 0.38, 0.02, ROM.bronze, -0.24, 0.22, sz * 0.34, 0, 0, i * 1.047);
+    b.sph(0.1, 0xffe27a, 0.5, 0.14, sz * 0.14, 1.2, 1, 1, { seg: 6 }).sph(0.075, 0xffe27a, 0.58, 0.27, sz * 0.14, 1, 1, 1, { seg: 6 }).cone(0.03, 0.08, ROM.beak, 0.67, 0.26, sz * 0.14, 0, 0, -PI / 2, { seg: 4 }).sph(0.016, ROM.eye, 0.62, 0.3, sz * 0.14 + 0.055, 1, 1, 1, { seg: 4 }).sph(0.016, ROM.eye, 0.62, 0.3, sz * 0.14 - 0.055, 1, 1, 1, { seg: 4 });
+  }
+  gooseInto(b, -0.24, 0.27, 0, 0.58, { helmet: true, ry: PI / 2 });
+});
+def('aquila', 'deco', 2.2, 1.1, 1.4, (b) => {
+  // a golden eagle in a laurel wreath, carrying an enormous grape
+  const G = 0xd8a030, GL = 0xf2c860;
+  b.sph(0.3, G, 0, 0, -0.05, 0.95, 0.85, 1.3, { seg: 9 }).sph(0.24, GL, 0, -0.08, 0.08, 0.85, 0.7, 1.1, { seg: 7 }).sph(0.21, GL, 0, 0.2, 0.4, 1, 0.95, 1, { seg: 8 });
+  b.tor(0.17, 0.035, ROM.leaf, 0, 0.3, 0.38, PI / 2 - 0.3, 0, 0, { seg: 9, tseg: 4 }).cone(0.06, 0.16, ROM.beak, 0, 0.14, 0.62, PI * 0.65, 0, 0, { seg: 5 });
+  for (const sx of [-1, 1]) b.sph(0.06, 0xffffff, sx * 0.1, 0.22, 0.56, 1, 1, 0.6, { seg: 5 }).sph(0.034, ROM.eye, sx * 0.1, 0.22, 0.59, 1, 1, 0.6, { seg: 4 }).sph(0.04, ROM.cheek, sx * 0.15, 0.14, 0.55, 0.7, 0.7, 0.6, { seg: 4 }).cyl(0.018, 0.018, 0.24, ROM.beak, sx * 0.1, -0.32, 0, 0, 0, sx * 0.25, { seg: 4 });
+  for (let i = 0; i < 3; i++) b.box(0.12, 0.03, 0.34, i % 2 ? ROM.red : G, (i - 1) * 0.12, -0.04, -0.52, 0.1, (i - 1) * -0.25, 0);
+  b.sph(0.17, ROM.grape, 0, -0.58, 0, 1, 1, 1, { seg: 8, grad: 0.85 }).sph(0.07, ROM.leaf, 0.05, -0.42, 0, 1.3, 0.25, 0.9, { seg: 5 });
+}, {
+  wings: (b, sx) => { for (let i = 0; i < 4; i++) b.sph(0.3 - i * 0.03, [0xd8a030, 0xf2c860, 0xd8a030, ROM.red][i], sx * (0.24 + i * 0.2), 0.02 - i * 0.01, -0.02 - i * 0.07, 1.1, 0.1, 0.62, { seg: 7 }); }, wingAt: [0.18, 0.08, -0.05],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -3689,6 +3865,7 @@ export const TALL_TYPES = {
   27: ['owlColumn', 'heroStatue', 'templeFront', 'oliveTree', 'bigVase', 'owlColumn'],
   28: ['paintRock', 'longNeckCalf', 'stoneTotem', 'cycadTree', 'rexHello', 'stoneTotem'],
   29: ['obelisk', 'camelCalf', 'potPalm', 'falconStatue', 'lotusColumn', 'obelisk'],
+  30: ['eagleStandard', 'victoryColumn', 'togaStatue', 'pinePlanter', 'archDoor', 'eagleStandard'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
 export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'],
@@ -3700,4 +3877,5 @@ export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'b
   26: ['ghostNap', 'pumpkinPals', 'ghostTea', 'sheetBasket', 'booBooks', 'pumpkinPals'],
   27: ['amphorae', 'laurelPrize', 'lyreScrolls', 'oliveBaskets', 'colDrums', 'amphorae'],
   28: ['eggNest', 'babyTrike', 'boneXylo', 'stewPot', 'shellFossils', 'eggNest'],
-  29: ['miniPyramid', 'catStatue', 'scarabChest', 'lotusPond', 'scribeDesk', 'miniPyramid'] };
+  29: ['miniPyramid', 'catStatue', 'scarabChest', 'lotusPond', 'scribeDesk', 'miniPyramid'],
+  30: ['helmetPair', 'mosaicFountain', 'grapeBowl', 'shieldStack', 'gooseGuards', 'breadTray'] };

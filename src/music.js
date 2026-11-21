@@ -656,4 +656,23 @@ THEMES[29] = theme('Down the Nile', {
   drums: { thump: 'x..x..x.x..x..x.', shake: '..x..x.x..x..x.x', rim: '......x.......x.' },
 });
 
+// ---- 30. Ancient Rome: "Hooray for the Parade", a bright march with trumpets and a snare drum (B flat major) ----
+THEMES[30] = theme('Hooray for the Parade', {
+  key: 10, scale: 'maj', base: 70, gain: 1.05, tempo: 1.04, voice: 'brass', bassVoice: 'tuba', stab: 'organ',
+  chords: 'I I IV V I vi V I',
+  tune: [
+    "1:3 1:1 1:2 3:2 5:4 3:4",
+    "5:3 5:1 5:2 1':2 3':4 1':4",
+    "4:3 4:1 4:2 6:2 1':4 6:4",
+    "5:2 7:2 2':2 7:2 5:4 -:4",
+    "1':3 1':1 1':2 5:2 3:4 5:4",
+    "6:2 1':2 3':2 1':2 6:4 3:4",
+    "5:2 7:2 2':2 7:2 2':4 7:4",
+    "1':4 5:2 5:2 1':8",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 0, _, _, _, 7, _, 12, _],
+  stabs: '....x.......x...',
+  drums: { thump: 'x.......x.......', snare: '....x.xx....x.xx', hat: 'x.x.x.x.x.x.x.x.' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

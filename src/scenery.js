@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto, GRK, greekColInto, amphoraInto, oliveInto, owlInto, woodHorseInto, DINO, fernInto, cycadInto, dinoNeckInto, longNeckInto, trikeInto, rexInto, caveKidInto, EGY, pyramidInto, datePalmInto, sitCatInto, camelInto, obeliskInto } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto, GRK, greekColInto, amphoraInto, oliveInto, owlInto, woodHorseInto, DINO, fernInto, cycadInto, dinoNeckInto, longNeckInto, trikeInto, rexInto, caveKidInto, EGY, pyramidInto, datePalmInto, sitCatInto, camelInto, obeliskInto, ROM, gooseInto, stonePineInto, cypressInto, archWallInto, shieldInto } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -3591,10 +3591,171 @@ const pylonGate = () => prefab('pylonGate', () => {
   return b.build({ cast: true, receive: false });
 });
 
+// ---------- Ancient Rome ----------
+const RM_PAVE = 0xe2d2b0, RM_PAVE_D = 0xcfbd98, RM_GRASS = 0x8fbf5a;
+// The ground on both sides of the boards: paving edged with kerb stones, urns of flowers, hedges, cypresses and umbrella pines,
+// grass further out and the hills of the city beyond. clear(x, z) is true where something bigger is going to stand.
+const romeGroundInto = (b, rng, clear) => {
+  for (const sd of [-1, 1]) {
+    b.box(46, 3.6, CHUNK, RM_PAVE, sd * (DECK_HALF + 23), -1.82, -CHUNK / 2).box(30, 0.06, CHUNK, RM_GRASS, sd * (DECK_HALF + 31), 0, -CHUNK / 2);
+    for (let i = 0; i < 10; i++) b.box(0.5, 0.26, 3.9, i % 2 ? ROM.stone : ROM.stoneD, sd * (DECK_HALF + 0.25), 0.05, -2 - i * 4);
+    for (let i = 0; i < 20; i++) b.box(0.56, 0.03, 0.56, [ROM.red, 0xeadcc0, 0x2f6fd8, 0xeadcc0, ROM.gold, 0xeadcc0][i % 6], sd * (DECK_HALF + 1.1), 0.01, -1 - i * 2, 0, PI / 4, 0);
+    for (let i = 0; i < 12; i++) b.box(1.6 + rng() * 1.6, 0.04, 1.4 + rng() * 1.4, i % 2 ? RM_PAVE_D : 0xeadcc0, sd * (DECK_HALF + 2 + rng() * 9), 0, -rng() * CHUNK, 0, rng() * 0.3, 0);
+    for (let i = 0; i < 13; i++) {
+      const x = sd * (DECK_HALF + 1.6 + rng() * 26), z = -rng() * CHUNK, t = rng(), s = rng();
+      if (clear(x, z)) continue;
+      if (Math.abs(x) < 9) { b.cyl(0.32, 0.2, 0.56, ROM.roof, x, 0.28, z, 0, 0, 0, { seg: 8 }).tor(0.32, 0.04, ROM.roofD, x, 0.56, z, PI / 2, 0, 0, { seg: 8, tseg: 3 }); for (let q = 0; q < 5; q++) b.sph(0.14, [0xff7aa8, 0xffffff, ROM.red][q % 3], x + Math.cos(q * 1.257) * 0.18, 0.68 + (q % 2) * 0.06, z + Math.sin(q * 1.257) * 0.18, 1, 1, 1, { seg: 5 }); }
+      else if (t < 0.42) cypressInto(b, x, 0, z, 1.2 + s * 0.7);
+      else if (t < 0.8) stonePineInto(b, x, 0, z, 1.3 + s * 0.7, s * 6);
+      else b.sph(0.8 + s * 0.5, ROM.pine, x, 0.2, z, 1.5, 0.7, 1, { seg: 6 });
+    }
+    for (let i = 0; i < 2; i++) {
+      const hx = sd * (58 + rng() * 8), hz = -8 - i * 20 - rng() * 6, r = 15 + rng() * 5, sy = 0.4 + rng() * 0.15, top = -2 + r * sy;
+      b.sph(r, i % 2 ? 0x9ac06a : 0x86b05a, hx, -2, hz, 1.2, sy, 1, { seg: 9, grad: 0.75 });
+      for (let q = 0; q < 3; q++) b.box(2.6, 2.4, 2.6, q % 2 ? ROM.stucco : 0xf0c090, hx - sd * (1 + q * 3.4), top - 0.6 - q * 0.9, hz + (q - 1) * 3).prism(3.1, 1.0, 3.1, ROM.roof, hx - sd * (1 + q * 3.4), top + 0.6 - q * 0.9, hz + (q - 1) * 3, 0);
+      cypressInto(b, hx + sd * 3, top - 0.6, hz - 2, 1.6);
+    }
+  }
+};
+// A town house facing +z: warm plaster on a brick foot, a tiled roof, a round-topped door, green shutters and a red awning.
+const insulaInto = (b, w, h, d, c = ROM.stucco) => {
+  b.box(w, h, d, c, 0, h / 2, 0, 0, 0, 0, { grad: 0.9 }).box(w + 0.2, 0.5, d + 0.2, ROM.brick, 0, 0.25, 0).prism(w + 0.8, h * 0.16 + 0.6, d + 0.8, ROM.roof, 0, h, 0, 0).box(w + 0.9, 0.14, d + 0.9, ROM.roofD, 0, h + 0.02, 0);
+  b.box(0.9, 1.7, 0.1, 0x6a4a30, 0, 0.85, d / 2 + 0.02).cyl(0.45, 0.45, 0.1, 0x6a4a30, 0, 1.7, d / 2 + 0.02, PI / 2, 0, 0, { seg: 10 });
+  const rows = Math.max(1, Math.floor((h - 2.6) / 1.8));
+  for (let r = 0; r < rows; r++) for (const sx of [-1, 1]) { const y = 3.3 + r * 1.8; b.box(0.7, 0.9, 0.08, 0x4a3a30, sx * w * 0.28, y, d / 2 + 0.02); for (const s2 of [-1, 1]) b.box(0.3, 0.9, 0.06, 0x3f8a5a, sx * w * 0.28 + s2 * 0.5, y, d / 2 + 0.05); }
+  b.box(w * 0.8, 0.06, 1.1, ROM.red, 0, 2.45, d / 2 + 0.5, 0.3, 0, 0);
+  for (let i = 0; i < 4; i++) b.box(w * 0.1, 0.07, 1.1, 0xffffff, -w * 0.3 + i * w * 0.2, 2.45, d / 2 + 0.5, 0.3, 0, 0);
+};
+// The aqueduct: two rows of arches carrying water along the top, running the whole length of the stretch at x.
+const aqueductInto = (b, x) => {
+  for (let i = 0; i < 5; i++) archWallInto(b, x, 0, -4 - i * 8, 8.02, 6.4, 1.6, i % 2 ? ROM.brick : 0xd07040, 1.2, 3.0, PI / 2, { grad: 0.85 });
+  b.box(1.9, 0.3, CHUNK, ROM.stone, x, 6.55, -CHUNK / 2);
+  for (let i = 0; i < 10; i++) archWallInto(b, x, 6.7, -2 - i * 4, 4.02, 3.0, 1.3, ROM.stuccoD, 0.6, 1.3, PI / 2, { grad: 0.9 });
+  b.box(1.7, 0.4, CHUNK, ROM.stone, x, 9.9, -CHUNK / 2).box(0.9, 0.1, CHUNK, ROM.water, x, 10.12, -CHUNK / 2);
+};
+// The arena: three rings of arches, one on top of another, with flags flying round the top.
+const arenaInto = (b, cx, cz) => {
+  const R = 10, N = 18, w = 2 * R * Math.sin(PI / N) + 0.06, ap = R * Math.cos(PI / N);
+  b.cyl(R - 0.5, R - 0.5, 9.8, 0x6a4a3a, cx, 4.9, cz, 0, 0, 0, { seg: 18 });
+  for (let i = 0; i < N; i++) {
+    const a = (i + 0.5) * 2 * PI / N; if (Math.sin(a) - Math.cos(a) < -0.45) continue;
+    for (let t = 0; t < 3; t++) archWallInto(b, cx + Math.cos(a) * ap, t * 3.2, cz + Math.sin(a) * ap, w, 3.2, 0.8, t === 1 ? ROM.stuccoD : ROM.stone, 0.62, 1.5, PI / 2 - a, { grad: 0.92 });
+    if (i % 2) b.cyl(0.05, 0.05, 2.2, ROM.bark, cx + Math.cos(a) * R, 12.2, cz + Math.sin(a) * R, 0, 0, 0, { seg: 4 }).box(0.9, 0.5, 0.04, i % 4 === 1 ? ROM.red : ROM.gold, cx + Math.cos(a) * R + 0.48, 13.0, cz + Math.sin(a) * R);
+  }
+  for (let t = 1; t < 4; t++) b.cyl(R + 0.2, R + 0.2, 0.3, ROM.stoneD, cx, t * 3.2, cz, 0, 0, 0, { seg: 18 });
+  b.cyl(R, R, 1.4, ROM.stone, cx, 10.4, cz, 0, 0, 0, { seg: 18, grad: 0.95 }).cyl(R + 0.2, R + 0.2, 0.2, ROM.stoneD, cx, 11.15, cz, 0, 0, 0, { seg: 18 });
+};
+// The race track: sand round a long stone barrier with golden markers on it, a turning post at each end, and a stand full of geese.
+const circusInto = (b, cx, cz) => {
+  b.sph(1, 0xf0dca8, cx, 0, cz, 8.6, 0.06, 15.2, { seg: 16 }).box(1.5, 0.9, 13, ROM.stone, cx, 0.45, cz, 0, 0, 0, { grad: 0.9 }).box(1.56, 0.2, 13.06, ROM.red, cx, 0.6, cz);
+  for (let i = 0; i < 5; i++) b.cyl(0.14, 0.16, 1.3, ROM.stone, cx, 1.55, cz - 4.8 + i * 2.4, 0, 0, 0, { seg: 7 }).sph(0.3, ROM.gold, cx, 2.4, cz - 4.8 + i * 2.4, 0.8, 1.1, 0.8, { seg: 7 });
+  for (const sz of [-1, 1]) for (let q = 0; q < 3; q++) b.cone(0.3, 2.2, ROM.gold, cx + (q - 1) * 0.6, 1.1, cz + sz * 7.6, 0, 0, 0, { seg: 7 });
+  gooseInto(b, cx, 0.9, cz, 1.4, { col: ROM.gold, wreath: true, ry: -PI / 2 });
+  for (let t = 0; t < 3; t++) b.box(1.5, 0.9 + t * 0.9, 22, t % 2 ? ROM.stoneD : ROM.stone, cx + 9.8 + t * 1.5, (0.9 + t * 0.9) / 2, cz);
+  for (let i = 0; i < 16; i++) { const t = i % 3, x = cx + 9.8 + t * 1.5, y = 0.9 + t * 0.9, z = cz - 9.6 + i * 1.28; b.sph(0.34, 0xffffff, x, y + 0.34, z, 1, 1, 1, { seg: 6 }).sph(0.2, 0xffffff, x - 0.1, y + 0.82, z, 1, 1, 1, { seg: 6 }).cone(0.07, 0.2, ROM.beak, x - 0.34, y + 0.8, z, 0, 0, PI / 2, { seg: 4 }); if (i % 4 === 0) b.box(0.4, 0.3, 0.03, i % 8 ? ROM.gold : ROM.red, x - 0.1, y + 1.3, z + 0.3); }
+  b.box(4.6, 0.12, 22.4, ROM.red, cx + 11.4, 5.4, cz, 0, 0, -0.2);
+  for (const sz of [-1, 0, 1]) b.cyl(0.08, 0.08, 5.6, ROM.bark, cx + 13.5, 2.8, cz + sz * 10.8, 0, 0, 0, { seg: 5 });
+};
+// A fountain: a wide stone bowl, a smaller one above it, a golden goose on top and water tumbling down.
+const fountainInto = (b, x, z) => {
+  b.cyl(2.3, 2.4, 0.6, ROM.stone, x, 0.3, z, 0, 0, 0, { seg: 14, grad: 0.9 }).cyl(2.1, 2.1, 0.04, ROM.water, x, 0.6, z, 0, 0, 0, { seg: 14 }).tor(2.25, 0.12, ROM.stoneD, x, 0.6, z, PI / 2, 0, 0, { seg: 14, tseg: 4 });
+  b.cyl(0.36, 0.5, 1.4, ROM.stone, x, 1.3, z, 0, 0, 0, { seg: 9 }).cyl(1.15, 0.3, 0.34, ROM.stone, x, 2.1, z, 0, 0, 0, { seg: 12 }).cyl(1.05, 1.05, 0.04, ROM.water, x, 2.27, z, 0, 0, 0, { seg: 12 }).cyl(0.2, 0.26, 0.5, ROM.stone, x, 2.5, z, 0, 0, 0, { seg: 8 });
+  gooseInto(b, x, 2.74, z, 0.9, { col: ROM.gold });
+  for (let i = 0; i < 8; i++) { const a = i * 0.785; for (let q = 0; q < 4; q++) b.sph(0.1 - q * 0.012, 0xd8f4ff, x + Math.cos(a) * (1.15 + q * 0.2), 2.2 - q * q * 0.17, z + Math.sin(a) * (1.15 + q * 0.2), 1, 1.3, 1, { seg: 4, glow: true }); }
+};
+// A round hall under a great green dome with a golden eye in the top, and a porch of columns hung with red banners. It faces +z.
+const domeTempleInto = (b) => {
+  b.cyl(5, 5, 5.6, ROM.stucco, 0, 2.8, -3, 0, 0, 0, { seg: 16, grad: 0.9 }).cyl(5.3, 5.3, 0.5, ROM.stone, 0, 5.75, -3, 0, 0, 0, { seg: 16 }).sph(5, 0x8fbfa8, 0, 6.0, -3, 1, 0.62, 1, { seg: 14, grad: 0.85 });
+  for (let i = 1; i < 3; i++) b.cyl(5.15 - i * 0.7, 5.15 - i * 0.7, 0.4, 0x7aa890, 0, 6.0 + i * 0.5, -3, 0, 0, 0, { seg: 16 });
+  b.cyl(0.9, 0.9, 0.16, ROM.gold, 0, 9.1, -3, 0, 0, 0, { seg: 10, glow: true, grad: 0.9 });
+  b.box(7.4, 0.5, 4, ROM.stone, 0, 0.25, 3.2).box(4.6, 4.5, 2.6, ROM.stucco, 0, 2.75, 2.2).box(1.7, 3.3, 0.1, ROM.bronze, 0, 2.15, 3.52).box(0.06, 3.3, 0.12, 0x9a6a2a, 0, 2.15, 3.54);
+  for (let i = 0; i < 4; i++) b.cyl(0.34, 0.38, 4.3, ROM.stone, -2.7 + i * 1.8, 2.65, 4.5, 0, 0, 0, { seg: 9, grad: 0.9 }).box(0.9, 0.2, 0.9, ROM.stoneD, -2.7 + i * 1.8, 4.9, 4.5).box(0.9, 0.2, 0.9, ROM.stoneD, -2.7 + i * 1.8, 0.6, 4.5);
+  b.box(6.9, 0.5, 3.8, ROM.stone, 0, 5.25, 3.3).prism(7.3, 1.5, 4, ROM.stuccoD, 0, 5.5, 3.3, 0).box(7.5, 0.14, 4.2, ROM.roofD, 0, 5.5, 3.3).tor(0.4, 0.08, ROM.gold, 0, 6.0, 5.32, 0, 0, 0, { seg: 10, tseg: 4 });
+  for (const sx of [-1, 1]) b.box(0.8, 2.2, 0.05, ROM.red, sx * 1.8, 3.4, 4.5).box(0.86, 0.1, 0.07, ROM.gold, sx * 1.8, 4.5, 4.5).cone(0.4, 0.5, ROM.red, sx * 1.8, 2.06, 4.5, PI, 0, 0, { seg: 3 });
+  for (const sx of [-1, 1]) cypressInto(b, sx * 5.6, 0, 3.4, 1.7);
+};
+// Everything that stands still in one stretch of Ancient Rome, as one model.
+const romeSet = (k) => prefab('romeSet' + k, () => {
+  const b = new Builder(0.86), rng = makeRng(3010 + k);
+  const near = (x, z, cx, cz, r) => (x - cx) ** 2 + (z - cz) ** 2 < r * r, aq = (x) => x < -23.5 && x > -29;
+  if (k === 0) {
+    // the arena, and the road the soldiers march down (populate adds them)
+    romeGroundInto(b, rng, (x, z) => aq(x) || near(x, z, 24, -20, 12.5) || near(x, z, -9.5, -15, 5.5) || near(x, z, -18, -30, 5) || near(x, z, -17, -5, 4.5));
+    arenaInto(b, 24, -20);
+    b.at(-18, 0, -30, PI / 2, () => insulaInto(b, 5, 6.2, 4.4)); b.at(-17.5, 0, -5, PI / 2, () => insulaInto(b, 4.4, 4.4, 4, ROM.stuccoD));
+  } else if (k === 1) {
+    // the race track, and a street of houses with a fountain
+    romeGroundInto(b, rng, (x, z) => aq(x) || (x > 8 && x < 33) || (x < -12 && x > -20 && z < -7 && z > -25) || near(x, z, -10.5, -31, 4));
+    circusInto(b, 17.5, -20);
+    b.at(-16.5, 0, -11, PI / 2, () => insulaInto(b, 5, 7.8, 4.6)); b.at(-16.5, 0, -15.8, PI / 2, () => insulaInto(b, 4.6, 5.2, 4.4, 0xf0c090)); b.at(-16.7, 0, -20.9, PI / 2, () => insulaInto(b, 5.6, 6.4, 4.8, ROM.stuccoD));
+    fountainInto(b, -10.5, -31);
+  } else {
+    // the round hall with the green dome; the mill stands across the way (populate adds it)
+    romeGroundInto(b, rng, (x, z) => aq(x) || near(x, z, 17.5, -22, 10) || near(x, z, -19, -18, 7) || near(x, z, -10.5, -6, 4));
+    b.at(18, 0, -22, -PI / 2, () => domeTempleInto(b));
+    fountainInto(b, -10.5, -6);
+  }
+  aqueductInto(b, -26);
+  return b.build({ cast: true, receive: true });
+});
+// Soldiers on the march: six geese in helmets with red shields, and one out in front carrying the golden eagle. They face +z.
+const legion = () => prefab('gooseLegion', () => {
+  const b = new Builder(0.88);
+  for (let r = 0; r < 3; r++) for (const sx of [-1, 1]) { gooseInto(b, sx * 0.9, 0, -r * 1.8, 1.6, { helmet: true }); shieldInto(b, sx * 1.55, 0.1, -r * 1.8 + 0.2, -0.1, sx * 0.5, 1.25); }
+  gooseInto(b, 0, 0, 2.2, 1.8, { helmet: true });
+  b.cyl(0.05, 0.05, 4.2, ROM.bark, 0.75, 2.1, 2.3, 0, 0, 0, { seg: 5 }).box(1.0, 0.8, 0.05, ROM.red, 0.75, 3.5, 2.34).box(1.06, 0.08, 0.07, ROM.gold, 0.75, 3.92, 2.34).tor(0.22, 0.05, ROM.gold, 0.75, 3.5, 2.38, 0, 0, 0, { seg: 9, tseg: 3 }).sph(0.24, ROM.gold, 0.75, 4.4, 2.3, 0.9, 1.1, 0.9, { seg: 7 }).sph(0.15, ROM.gold, 0.75, 4.7, 2.36, 1, 1, 1, { seg: 6 });
+  for (const sx of [-1, 1]) b.sph(0.34, ROM.gold, 0.75 + sx * 0.4, 4.52, 2.28, 1, 0.6, 0.25, { seg: 6 });
+  return b.build({ cast: true, receive: false });
+});
+// A racing chariot: a red and gold car, a goose in a helmet driving, and two geese running in front. It goes nose (+x) first.
+const chariot = () => prefab('raceChariot', () => {
+  const b = new Builder(0.88);
+  b.box(1.3, 0.12, 1.3, ROM.bark, -0.9, 0.6, 0).box(0.12, 0.9, 1.4, ROM.red, -0.3, 1.1, 0).box(0.14, 0.12, 1.5, ROM.gold, -0.3, 1.6, 0).cyl(0.05, 0.05, 2.2, ROM.bark, 0.8, 0.62, 0, 0, 0, PI / 2, { seg: 5 });
+  for (const sz of [-1, 1]) {
+    b.box(1.2, 0.7, 0.1, ROM.red, -0.85, 1.0, sz * 0.68).box(1.2, 0.1, 0.12, ROM.gold, -0.85, 1.38, sz * 0.68);
+    b.tor(0.55, 0.08, ROM.gold, -0.95, 0.55, sz * 0.84, 0, 0, 0, { seg: 12, tseg: 4 }).sph(0.12, ROM.gold, -0.95, 0.55, sz * 0.9, 1, 1, 1, { seg: 6 });
+    for (let i = 0; i < 4; i++) b.box(0.07, 1.06, 0.05, ROM.bronze, -0.95, 0.55, sz * 0.84, 0, 0, i * 0.785);
+    gooseInto(b, 2.1, 0, sz * 0.62, 1.5, { ry: PI / 2 });
+    b.box(2.2, 0.04, 0.04, ROM.red, 0.85, 1.05, sz * 0.62, 0, 0, -0.2);
+  }
+  gooseInto(b, -0.85, 0.66, 0, 1.4, { helmet: true, ry: PI / 2, wave: true });
+  b.box(0.9, 0.06, 0.7, ROM.red, -1.95, 1.55, 0, 0, 0, 0.3);
+  return b.build({ cast: true, receive: false });
+});
+// A mill: a small house with a tiled roof, a pond, and a big water wheel on the front (the part named 'whirl' turns). It faces +z.
+const waterMill = () => prefab('romeMill', () => {
+  const g = new THREE.Group(), b = new Builder(0.88);
+  b.at(0, 0, -2.4, 0, () => insulaInto(b, 4.6, 4.4, 4));
+  b.cyl(3.0, 3.0, 0.08, ROM.water, 0.4, 0.04, 2.4, 0, 0, 0, { seg: 12 }).tor(3.0, 0.2, ROM.stoneD, 0.4, 0.06, 2.4, PI / 2, 0, 0, { seg: 12, tseg: 4 }).cyl(0.14, 0.14, 1.6, ROM.bark, 2.6, 2.3, 0.3, PI / 2, 0, 0, { seg: 6 });
+  b.box(0.7, 0.3, 5, ROM.stone, 2.6, 4.5, -1.6).box(0.4, 0.06, 5, ROM.water, 2.6, 4.67, -1.6).box(0.3, 1.6, 0.3, ROM.stone, 2.6, 3.6, -3.6);
+  g.add(b.build({ cast: true, receive: false }));
+  const w = new Builder(0.9);
+  for (const z of [-0.3, 0.3]) w.tor(1.9, 0.09, ROM.bark, 0, 0, z, 0, 0, 0, { seg: 16, tseg: 4 });
+  for (let i = 0; i < 8; i++) { const a = i * PI / 4; if (i < 4) w.box(0.08, 3.8, 0.08, ROM.bark, 0, 0, -0.3, 0, 0, a).box(0.08, 3.8, 0.08, ROM.bark, 0, 0, 0.3, 0, 0, a); w.box(0.6, 0.06, 0.7, 0xa87848, Math.cos(a) * 1.95, Math.sin(a) * 1.95, 0, 0, 0, a); }
+  w.cyl(0.22, 0.22, 0.8, ROM.gold, 0, 0, 0, PI / 2, 0, 0, { seg: 8 });
+  const m = w.build({ cast: true, receive: false }); m.name = 'whirl'; m.position.set(2.6, 2.3, 1.0); g.add(m);
+  return g;
+});
+// The way in: a great stone arch with a red panel across the top and golden geese standing on it.
+const triumphGate = () => prefab('triumphGate', () => {
+  const b = new Builder(0.9);
+  archWallInto(b, 0, 0, 0, 14.4, 10.0, 2.2, ROM.stone, 2.4, 4.2, 0, { grad: 0.88 });
+  b.box(15, 0.5, 2.6, ROM.stoneD, 0, 10.25, 0).box(13.6, 1.7, 2.0, ROM.stone, 0, 11.35, 0, 0, 0, 0, { grad: 0.92 }).box(14.4, 0.4, 2.4, ROM.stoneD, 0, 12.4, 0);
+  b.box(4.6, 1.1, 0.08, ROM.red, 0, 11.35, 1.03).box(4.9, 0.12, 0.1, ROM.gold, 0, 11.96, 1.03).box(4.9, 0.12, 0.1, ROM.gold, 0, 10.74, 1.03).box(0.9, 1.3, 0.4, ROM.stoneD, 0, 9.4, 1.0);
+  for (const sx of [-1, 1]) {
+    b.box(1.0, 0.5, 1.0, ROM.stoneD, sx * 6.0, 0.25, 1.4).cyl(0.34, 0.38, 8.6, ROM.stuccoD, sx * 6.0, 4.8, 1.4, 0, 0, 0, { seg: 9, grad: 0.9 }).box(0.9, 0.3, 0.9, ROM.gold, sx * 6.0, 9.25, 1.4);
+    b.tor(0.46, 0.1, ROM.gold, sx * 4.4, 11.35, 1.06, 0, 0, 0, { seg: 10, tseg: 4 });
+    gooseInto(b, sx * 4.6, 12.6, 0.2, 1.3, { col: ROM.gold, ry: sx * -0.3 });
+    b.cyl(0.06, 0.06, 2.6, ROM.bark, sx * 6.9, 13.9, 0, 0, 0, 0, { seg: 5 }).box(1.2, 0.6, 0.04, ROM.red, sx * 6.9 + 0.64, 14.8, 0);
+  }
+  gooseInto(b, 0, 12.6, 0, 2.0, { col: ROM.gold, wreath: true, wave: true });
+  return b.build({ cast: true, receive: false });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD', 'ANCIENT GREECE', 'ANCIENT TIME', 'ANCIENT EGYPT'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD', 'ANCIENT GREECE', 'ANCIENT TIME', 'ANCIENT EGYPT', 'ANCIENT ROME'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8, 0x2f6fd8, 0x4f9a48, 0xd89a2a][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8, 0x2f6fd8, 0x4f9a48, 0xd89a2a, 0xc8282a][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -3602,7 +3763,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280', '#1f4fa8', '#2f6a2a', '#1f4a9a'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280', '#1f4fa8', '#2f6a2a', '#1f4a9a', '#8a1f24'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); if (zone === 23) s.rotation.z = PI;   // (the sign for the Upside-Down World is upside down, of course)
   g.add(s);
   return g;
@@ -3615,7 +3776,7 @@ export function populate(group, rawIndex, zone, anim) {
   const rng = makeRng(index * 7919 + 13);
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
-  if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19 && zone !== 25 && zone !== 28) place(group, rail40(), L, 0, 0); }
+  if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19 && zone !== 25 && zone !== 28 && zone !== 30) place(group, rail40(), L, 0, 0); }
   const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && zone !== 23 && zone !== 24 && zone !== 26 && zone !== 27 && zone !== 29 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
@@ -3891,6 +4052,10 @@ export function populate(group, rawIndex, zone, anim) {
     if (k === 0) anim.push({ o: place(group, felucca(), -12.5, WATER_Y + 0.5, -18), kind: 'bob', p: rng() * 6 });
     else if (k === 1) anim.push({ o: place(group, crocodile(), 9.5, WATER_Y + 0.25, -9, -2.1, 1.3), kind: 'bob', p: rng() * 6, amp: 0.8 });
     else anim.push({ o: place(group, hippo(), -9.5, WATER_Y - 2.6, -14, PI / 2), kind: 'peek', p: rng(), rise: 3.1 });
+  } else if (zone === 30) { const k = index % 3; place(group, romeSet(k), 0, 0, 0); if (index % 2 === 1) place(group, triumphGate(), 0, 0, -20);
+    if (k === 0) anim.push({ o: place(group, legion(), -9.5, 0.13, -15, 0.25), kind: 'bob', p: rng() * 6, amp: 0.7 });
+    else if (k === 1) { const o = chariot(); o.scale.setScalar(1.25); group.add(o); anim.push({ o, kind: 'swim', c: [17.5, 0, -20], r: [5.4, 0, 11.5], w: 0.5, p: rng() * 6 }); }
+    else anim.push({ o: place(group, waterMill(), -19, 0, -18, 0.5), kind: 'whirl', v: 0.7 });
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }
