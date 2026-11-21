@@ -61,7 +61,7 @@ function buildIzzi() {
     b.finish(0.2).ball(0.04, NOSE, 0, -0.026, -0.258, 1.25, 0.9, 0.85, { seg: 10 });
     for (const sx of [-1, 1]) {
       eye(b, sx * 0.07, 0.03, -0.126, 0.047, 0xa9652b, { white: 1, turn: sx * -0.3 });
-      b.finish(FUR).ball(1, K, sx * 0.072, 0.082, -0.12, 0.044, 0.018, 0.03, { seg: 8, rz: sx * -0.32 });    // brows, lifted in the middle
+      b.finish(FUR).ball(1, K, sx * 0.07, 0.1, -0.112, 0.036, 0.012, 0.024, { seg: 8, rz: sx * -0.18 });    // soft brows, clear of her eyes so they stay round and bright
     }
   });
   // her mouth hangs open in a pant, tongue lolling out
