@@ -599,4 +599,23 @@ THEMES[26] = theme('Boo to You Too', {
   drums: { thump: 'x.......x.......', tick: '..x...x...x...x.', rim: '....x.......x...' },
 });
 
+// ---- 27. Ancient Greece: "Olive Grove Dance", a quick plucked dance that goes round and round (D major) ----
+THEMES[27] = theme('Olive Grove Dance', {
+  key: 2, scale: 'maj', base: 74, gain: 1.15, tempo: 1.08, voice: 'pluck', bassVoice: 'pizz', stab: 'pluck',
+  chords: 'I V I V IV I V I',
+  tune: [
+    "5:2 5:2 6:2 5:2 3:2 5:2 1':4",
+    "4:2 4:2 5:2 4:2 2:2 4:2 7:4",
+    "5:2 5:2 6:2 5:2 3:2 5:2 1':4",
+    "2':2 1':2 7:2 6:2 5:4 -:4",
+    "6:2 6:2 1':2 6:2 4:2 6:2 1':4",
+    "5:2 5:2 1':2 5:2 3:2 5:2 3':4",
+    "2':2 2':2 4':2 2':2 7:2 2':2 5':4",
+    "3':2 1':2 5:2 3:2 1:8",
+  ],
+  bass: [0, _, 7, _, 0, _, 7, _, 0, _, 7, _, 12, _, 7, _],
+  stabs: '..x...x...x...x.',
+  drums: { thump: 'x...x...x...x...', tick: '..x...x...x...x.', rim: '....x.......x...' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

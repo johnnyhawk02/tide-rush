@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto, GRK, greekColInto, amphoraInto, oliveInto, owlInto, woodHorseInto } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -3190,10 +3190,129 @@ const ghostArch = () => prefab('ghostArch', () => {
   return g;
 });
 
+// ---------- Ancient Greece ----------
+const GK_ROCK = 0xe8dcc0, GK_ROCK_D = 0xcfc0a0, GK_GRASS = 0xb8c878;
+// A sun-bleached rocky island with a little dry grass on top.
+const gkIsleInto = (b, x, z, r, rng) => {
+  const y0 = WATER_Y - 1.2, y = -0.5;
+  b.cyl(r, r * 1.12, y - y0, GK_ROCK, x, (y + y0) / 2, z, 0, 0, 0, { seg: 12, grad: 0.78 }).cyl(r * 0.95, r, 0.14, GK_GRASS, x, y + 0.02, z, 0, 0, 0, { seg: 12, grad: 1 });
+  for (let i = 0; i < 6; i++) { const a = rng() * 6.28, d = r * (0.78 + rng() * 0.18); b.sph(0.3 + rng() * 0.4, i % 2 ? GK_ROCK : GK_ROCK_D, x + Math.cos(a) * d, y + 0.1, z + Math.sin(a) * d, 1, 0.7, 1, { seg: 5 }); }
+};
+// A temple: steps, a row of columns front and back and down the sides, a blue and gold band and a pointed roof. It faces +z.
+const templeInto = (b, w = 7, d = 5, n = 6) => {
+  for (let i = 0; i < 3; i++) b.box(w + 1.2 - i * 0.5, 0.3, d + 1.2 - i * 0.5, i % 2 ? GRK.marble : GRK.marbleD, 0, 0.15 + i * 0.3, 0);
+  const H = 4.2, y = 0.9;
+  for (let i = 0; i < n; i++) { const x = -w / 2 + 0.45 + i * (w - 0.9) / (n - 1); greekColInto(b, x, y, d / 2 - 0.45, 0.32, H, { flutes: 8, seg: 8 }); greekColInto(b, x, y, -d / 2 + 0.45, 0.32, H, { seg: 6 }); }
+  for (const sx of [-1, 1]) for (let j = 1; j < 3; j++) greekColInto(b, sx * (w / 2 - 0.45), y, d / 2 - 0.45 - j * (d - 0.9) / 3, 0.32, H, { seg: 6 });
+  b.box(w - 2.2, H, d - 2.2, GRK.marbleD, 0, y + H / 2, 0, 0, 0, 0, { grad: 0.85 }).box(1.2, 2.6, 0.1, GRK.blueD, 0, y + 1.3, d / 2 - 1.08).box(1.5, 0.16, 0.14, GRK.gold, 0, y + 2.68, d / 2 - 1.06);
+  b.box(w + 0.2, 0.5, d + 0.2, GRK.marble, 0, y + H + 0.25, 0);
+  for (let i = 0; i < n * 2 - 1; i++) b.box(0.3, 0.36, 0.04, i % 2 ? GRK.gold : GRK.blue, -w / 2 + 0.45 + i * (w - 0.9) / (n * 2 - 2), y + H + 0.25, d / 2 + 0.12);
+  b.prism(w + 0.5, 1.5, d + 0.4, GRK.marble, 0, y + H + 0.5, 0, 0).prism(w - 0.8, 1.05, 0.1, GRK.blue, 0, y + H + 0.62, d / 2 + 0.18, 0).cyl(0.36, 0.36, 0.08, GRK.gold, 0, y + H + 1.0, d / 2 + 0.26, PI / 2, 0, 0, { seg: 10 });
+  for (const sx of [-1, 0, 1]) b.sph(0.22, GRK.gold, sx * (w / 2 + 0.2), y + H + (sx ? 0.62 : 2.12), d / 2 + 0.1, 1, 1.4, 1, { seg: 6 });
+};
+// A theatre cut into a hillside: rings of stone seats round a blue stage, an owl giving a speech and owls listening. It opens to +z.
+const theatreInto = (b) => {
+  b.cyl(2.0, 2.0, 0.1, GRK.blue, 0, 0.05, 0.4, 0, 0, 0, { seg: 14 }).cyl(1.3, 1.3, 0.12, GRK.marble, 0, 0.06, 0.4, 0, 0, 0, { seg: 12 });
+  for (let i = 0; i < 5; i++) {
+    const R = 2.5 + i * 0.9, h = 0.4 + i * 0.45, n = 9 + i;
+    for (let q = 0; q < n; q++) { const a = PI + (q + 0.5) * PI / n; b.box(R * PI / n + 0.12, h, 0.92, (q + i) % 2 ? GRK.marble : GRK.marbleD, Math.cos(a) * R, h / 2, Math.sin(a) * R + 0.4, 0, -a + PI / 2, 0); }
+  }
+  greekColInto(b, 0, 0.1, 0.4, 0.2, 0.9, { seg: 8 }); owlInto(b, 0, 1.0, 0.4, 0.6);
+  for (const [i, f] of [[1, 0.2], [2, 0.5], [2, 0.82], [3, 0.35], [4, 0.66]]) { const R = 2.5 + i * 0.9, a = PI + f * PI; owlInto(b, Math.cos(a) * R, 0.4 + i * 0.45, Math.sin(a) * R + 0.4, 0.55, Math.atan2(-Math.cos(a), -Math.sin(a))); }
+  for (const sx of [-1, 1]) greekColInto(b, sx * 6.6, 0, 0.9, 0.3, 3.2, { flutes: 8, seg: 8 });
+};
+// A snowy mountain with its head in the clouds and a golden temple on the very top, where the gods live. It stands a long way off.
+const olympusInto = (b, x, z) => {
+  b.cyl(4, 17, 22, 0x9aa0c0, x, WATER_Y + 10, z, 0, 0, 0, { seg: 11, grad: 0.7 }).cyl(4.2, 8, 7, 0xffffff, x, WATER_Y + 17.6, z, 0, 0, 0, { seg: 11, grad: 0.9 });
+  for (let i = 0; i < 11; i++) { const a = i * 0.571; b.sph(2.6 + (i % 3) * 0.6, 0xffffff, x + Math.cos(a) * 9.5, WATER_Y + 13 + (i % 2) * 0.8, z + Math.sin(a) * 9.5, 1.3, 0.6, 1.3, { seg: 7 }); }
+  b.at(x, WATER_Y + 21, z, -PI / 2, () => {
+    b.box(5.4, 0.5, 4, GRK.gold, 0, 0.25, 0);
+    for (let i = 0; i < 4; i++) b.cyl(0.3, 0.3, 2.6, 0xfff3a0, -2.1 + i * 1.4, 1.8, 1.5, 0, 0, 0, { seg: 6, glow: true, grad: 0.9 });
+    b.box(4.2, 2.6, 2.6, GRK.gold, 0, 1.8, -0.1).box(5.6, 0.4, 4.2, GRK.gold, 0, 3.3, 0).prism(5.8, 1.3, 4.3, 0xfff3a0, 0, 3.5, 0, 0, { glow: true, grad: 0.9 });
+  });
+};
+// Everything that stands still in one stretch of Ancient Greece, as one model.
+const greekSet = (k) => prefab('greekSet' + k, () => {
+  const b = new Builder(0.86), rng = makeRng(2710 + k);
+  if (k === 0) {
+    gkIsleInto(b, 16, -22, 7.2, rng); b.at(16.4, -0.45, -22, -PI / 2, () => templeInto(b));
+    oliveInto(b, 12.6, -0.45, -16.6, 1.0, 1); oliveInto(b, 13, -0.45, -27.6, 0.85, 2.4);
+  } else if (k === 1) {
+    gkIsleInto(b, -15.5, -20, 8, rng); b.at(-16, -0.45, -20, PI / 2, () => theatreInto(b));
+    gkIsleInto(b, 15, -26, 5.6, rng); b.at(15, -0.45, -26, PI, () => { woodHorseInto(b); b.box(0.12, 0.74, 0.03, GRK.woodD, -0.1, 0.4, 0.26, 0.2, 0, 0); for (let i = 0; i < 6; i++) b.box(0.03, 0.02, 0.12, GRK.woodD, -0.1, 0.1 + i * 0.11, 0.33 - i * 0.022); }, 7);
+    owlInto(b, 15.4, 5.05, -26, 1.1, -PI / 2); oliveInto(b, 18.6, -0.45, -23.2, 0.9, 0.7);
+  } else {
+    gkIsleInto(b, -14, -22, 5, rng);     // the windmill stands here (populate adds it)
+    oliveInto(b, -16.6, -0.45, -24.6, 0.9, 2); for (let i = 0; i < 3; i++) amphoraInto(b, -11.4 - i * 0.7, -0.45, -19.6 + i * 0.5, 1.2 - i * 0.2, i % 2 ? GRK.black : GRK.terra, i % 2 ? GRK.terra : GRK.black);
+    olympusInto(b, 48, -20);
+    gkIsleInto(b, 13.5, -30, 3.6, rng); greekColInto(b, 13.5, -0.45, -30, 0.5, 5, { flutes: 10 }); greekColInto(b, 15.2, -0.45, -29, 0.5, 3, { flutes: 10 }); owlInto(b, 15.2, 2.55, -29, 0.9, -PI / 2);
+  }
+  // rocky islands far off, with white houses, blue domes and a cypress tree
+  for (const sd of [-1, 1]) for (let i = 0; i < 3; i++) {
+    if (k === 2 && sd > 0 && i === 1) continue;
+    const x = sd * (34 + rng() * 10), z = -4 - i * 13 - rng() * 4, r = 8 + rng() * 5, sy = 0.5 + rng() * 0.2, top = WATER_Y - 1 + r * sy;
+    b.sph(r, i % 2 ? GK_ROCK : GK_ROCK_D, x, WATER_Y - 1, z, 1.3, sy, 1, { seg: 10, grad: 0.75 });
+    for (let q = 0; q < 3; q++) {
+      const hx = x - sd * (0.5 + q * 2.4), hz = z + (q - 1) * 2.4, hy = top - 0.5 - q * q * 0.5;
+      b.box(2.2, 2.2, 2.2, 0xffffff, hx, hy + 0.5, hz).box(0.1, 0.9, 0.5, GRK.blue, hx - sd * 1.1, hy + 0.3, hz);
+      if (q % 2 === 0) b.sph(0.95, GRK.blue, hx, hy + 1.6, hz, 1, 0.85, 1, { seg: 8 });
+    }
+    b.cone(0.7, 3.6, 0x3a6a4a, x + sd * 2, top + 1.2, z - 2.5, 0, 0, 0, { seg: 6 });
+  }
+  return b.build({ cast: true, receive: false });
+});
+// A galley with a striped sail, a row of oars and shields, a painted eye on the bow and an owl for a captain. The bow is at -z.
+const trireme = () => prefab('trireme', () => {
+  const b = new Builder(0.88);
+  b.sph(1, GRK.wood, 0, 0.1, 0, 1.3, 0.9, 5.0, { seg: 10 }).box(2.0, 0.12, 8.0, GRK.woodD, 0, 0.72, 0).box(2.44, 0.2, 7.0, 0xe5383b, 0, 0.5, 0);
+  b.tor(0.9, 0.16, GRK.wood, 0, 1.3, 4.5, 0, PI / 2, 0, { arc: PI * 1.2, seg: 10, tseg: 5 }).cone(0.42, 1.8, GRK.gold, 0, 0.1, -5.5, -PI / 2, 0, 0, { seg: 6 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.34, 0xffffff, sx * 0.86, 0.5, -3.8, 0.3, 1, 1.3, { seg: 7 }).sph(0.16, GRK.blueD, sx * 0.93, 0.5, -3.86, 0.3, 1, 1, { seg: 6 });
+    for (let i = 0; i < 6; i++) b.cyl(0.035, 0.035, 2.4, 0xe8d8a0, sx * 1.95, 0.0, -2.4 + i * 1.0, 0, 0, sx * 1.0, { seg: 4 }).sph(0.12, 0xe8d8a0, sx * 2.9, -0.62, -2.4 + i * 1.0, 0.6, 1.6, 1, { seg: 4 });
+    for (let i = 0; i < 5; i++) b.cyl(0.3, 0.3, 0.06, [GRK.blue, GRK.gold, 0xffffff][i % 3], sx * 1.2, 0.86, -1.9 + i * 1.0, 0, 0, PI / 2, { seg: 8 });
+  }
+  b.cyl(0.1, 0.13, 5.6, GRK.woodD, 0, 3.5, -0.3, 0, 0, 0, { seg: 6 }).cyl(0.06, 0.06, 4.6, GRK.woodD, 0, 5.8, -0.3, 0, 0, PI / 2, { seg: 5 });
+  for (let i = 0; i < 5; i++) b.box(0.86, 3.4, 0.08, i % 2 ? GRK.blue : 0xffffff, -1.72 + i * 0.86, 4.0, -0.4 - (1 - Math.abs(i - 2) / 2.5) * 0.35, 0, (i - 2) * 0.12, 0);
+  owlInto(b, 0, 0.78, 3.1, 0.9);
+  return b.build({ cast: false, receive: false });
+});
+// An island windmill: a round white tower, a thatched cap and a wheel of small white sails (the part named 'whirl'). It faces +z.
+const windmill = () => prefab('windmill', () => {
+  const g = new THREE.Group(), b = new Builder(0.88);
+  b.cyl(1.7, 2.0, 5.0, 0xffffff, 0, 2.5, 0, 0, 0, 0, { seg: 12, grad: 0.9 }).cone(2.1, 1.8, 0xc8a060, 0, 5.9, 0, 0, 0, 0, { seg: 12 }).box(0.9, 1.7, 0.1, GRK.blue, 0, 0.85, 1.98).box(0.6, 0.7, 0.1, GRK.blue, 0, 3.4, 1.82);
+  b.cyl(0.12, 0.12, 1.0, GRK.woodD, 0, 4.7, 2.0, PI / 2, 0, 0, { seg: 6 });
+  g.add(b.build({ cast: true, receive: false }));
+  const w = new Builder(0.9);
+  for (let i = 0; i < 8; i++) { const a = i * PI / 4; w.cyl(0.04, 0.04, 2.9, GRK.woodD, Math.cos(a) * 1.45, Math.sin(a) * 1.45, 0, 0, 0, a - PI / 2, { seg: 4 }); w.at(0, 0, 0, 0, () => w.box(1.5, 0.9, 0.03, 0xffffff, Math.cos(a + 0.2) * 1.9, Math.sin(a + 0.2) * 1.9, 0.02, 0, 0, a + 0.2)); }
+  w.tor(2.85, 0.03, GRK.woodD, 0, 0, 0, 0, 0, 0, { seg: 16, tseg: 3 }).sph(0.2, GRK.gold, 0, 0, 0.05, 1, 1, 1, { seg: 6 });
+  const m = w.build({ cast: true, receive: false }); m.name = 'whirl'; m.position.set(0, 4.7, 2.5); g.add(m);
+  return g;
+});
+// A dolphin who keeps leaping out of the sea (the part named 'leap'); it faces +x.
+const dolphinLeap = () => prefab('dolphinLeap', () => {
+  const g = new THREE.Group(), b = new Builder(0.6);
+  b.sph(0.5, 0x6f9fd0, 0, 0, 0, 2.2, 0.9, 0.85, { seg: 10 }).sph(0.4, 0xeaf4ff, 0.1, -0.12, 0, 2.0, 0.7, 0.75, { seg: 8 }).sph(0.2, 0x6f9fd0, 1.15, -0.02, 0, 1.6, 0.6, 0.7, { seg: 7 });
+  b.cone(0.22, 0.5, 0x5a8ac0, -0.1, 0.52, 0, 0, 0, 0.5, { seg: 5 }).cone(0.2, 0.5, 0x5a8ac0, -1.05, 0.0, 0, 0, 0, 1.2, { seg: 5 });
+  for (const sz of [-1, 1]) b.sph(0.26, 0x5a8ac0, -1.3, 0.05, sz * 0.26, 1.2, 0.25, 0.8, { seg: 5 }).sph(0.05, 0x1b1f24, 0.78, 0.1, sz * 0.3, 1, 1, 0.5, { seg: 5 }).sph(0.2, 0x5a8ac0, 0.3, -0.3, sz * 0.36, 1.2, 0.25, 0.6, { seg: 5 });
+  const m = b.build({ cast: false, receive: false }); m.name = 'leap'; g.add(m);
+  return g;
+});
+// The way in: tall columns holding up a blue and gold band and a pointed roof with an owl in it.
+const greekGate = () => prefab('greekGate', () => {
+  const b = new Builder(0.88);
+  for (const sx of [-1, 1]) { b.box(1.6, 0.4, 1.6, GRK.marbleD, sx * 5.4, 0.2, 0); greekColInto(b, sx * 5.4, 0.4, 0, 0.46, 6.2, { flutes: 10 }); }
+  b.box(12.4, 0.7, 1.3, GRK.marble, 0, 6.95, 0);
+  for (let i = 0; i < 21; i++) b.box(0.4, 0.44, 0.06, i % 2 ? GRK.gold : GRK.blue, -5.6 + i * 0.56, 6.95, 0.66);
+  b.prism(12.8, 1.9, 1.4, GRK.marble, 0, 7.3, 0, 0).prism(10.6, 1.4, 0.1, GRK.blue, 0, 7.42, 0.7, 0);
+  owlInto(b, 0, 7.5, 0.72, 0.9);
+  for (const sx of [-1, 0, 1]) b.sph(0.26, GRK.gold, sx * 6.5, sx ? 7.5 : 9.35, 0, 1, 1.4, 1, { seg: 6 });
+  return b.build({ cast: true, receive: false });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD', 'ANCIENT GREECE'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8, 0x2f6fd8][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -3201,7 +3320,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280', '#1f4fa8'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); if (zone === 23) s.rotation.z = PI;   // (the sign for the Upside-Down World is upside down, of course)
   g.add(s);
   return g;
@@ -3215,7 +3334,7 @@ export function populate(group, rawIndex, zone, anim) {
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
   if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19 && zone !== 25) place(group, rail40(), L, 0, 0); }
-  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && zone !== 23 && zone !== 24 && zone !== 26 && !coast);   // the right-hand side opens onto ground at deck level
+  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && zone !== 23 && zone !== 24 && zone !== 26 && zone !== 27 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
@@ -3472,6 +3591,13 @@ export function populate(group, rawIndex, zone, anim) {
       anim.push({ o: place(group, bigGhost(), 17.5, -12.8, -22, -PI / 2), kind: 'peek', p: rng(), rise: 10.4 });
       anim.push({ o: place(group, ghostBoat(), -10, WATER_Y + 0.2, -14, PI / 2), kind: 'bob', p: rng() * 6 });
     }
+  } else if (zone === 27) {
+    const k = index % 3;
+    place(group, greekSet(k), 0, 0, 0);
+    if (index % 2 === 1) place(group, greekGate(), 0, 0, -20);
+    if (k === 0) anim.push({ o: place(group, trireme(), -12.5, WATER_Y + 0.5, -18), kind: 'bob', p: rng() * 6 });
+    else if (k === 1) anim.push({ o: place(group, dolphinLeap(), 8.5, WATER_Y - 0.4, -6, PI / 2), kind: 'leap', p: rng() });
+    else anim.push({ o: place(group, windmill(), -14, -0.45, -22), kind: 'whirl', v: 0.8 });
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }

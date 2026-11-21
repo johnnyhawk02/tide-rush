@@ -40,6 +40,8 @@ const PAL = [
   { top: 0x4fa8f0, hor: 0xe8f6ff, sun: 0xfffbe8, sunI: 3.0, hemiS: 0xeaf6ff, hemiG: 0xb8e090, hemiI: 1.25, deep: 0x3f90c8, shal: 0x8fd0e8, foam: 0xffffff, cloud: 0xffffff, el: 0.75, az: -0.4, stars: 0, storm: 0, snow: 0.22 },
   // 26 the Friendly Ghost World: a soft, minty evening with the first stars out, bright enough to see every smile
   { top: 0x16265a, hor: 0x62c8c4, sun: 0xeafff6, sunI: 2.1, hemiS: 0xd0f6ec, hemiG: 0x7a9ab0, hemiI: 1.6, deep: 0x1f4f7a, shal: 0x5fd0c0, foam: 0xe2fff4, cloud: 0x4a6a9a, el: 0.6, az: 0.35, stars: 0.8, storm: 0 },
+  // 27 Ancient Greece: a blazing blue day over a very blue sea
+  { top: 0x1670e0, hor: 0xd0ecff, sun: 0xfff8e0, sunI: 3.1, hemiS: 0xe6f2ff, hemiG: 0xe8dcc0, hemiI: 1.4, deep: 0x0f5cc0, shal: 0x38b0e8, foam: 0xffffff, cloud: 0xffffff, el: 0.9, az: -0.3, stars: 0, storm: 0 },
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 

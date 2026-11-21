@@ -2573,6 +2573,162 @@ def('booFlyer', 'deco', 2.0, 1.2, 1.3, (b) => {
   wings: (b, sx) => { b.sph(0.3, 0xffffff, sx * 0.3, 0, 0, 1.3, 0.3, 0.6, { seg: 8 }).sph(0.13, BOO.hem, sx * 0.64, -0.02, 0, 1, 0.5, 0.8, { seg: 6 }); }, wingAt: [0.28, -0.05, 0],
 });
 
+// ---------- Ancient Greece ----------
+export const GRK = { marble: 0xf6f2e8, marbleD: 0xdcd6c8, blue: 0x2f6fd8, blueD: 0x1f4fa8, terra: 0xd8703a, terraD: 0xb85a2a, black: 0x2a2420, gold: 0xf2c230, olive: 0x9ab878, oliveD: 0x7a9a5a, bark: 0x8a7a5a, wood: 0xb5814f, woodD: 0x8a5a3c };
+// A marble column with its foot at (x, y, z): r is its radius and h its height. flutes: n draws n grooves down the shaft.
+export function greekColInto(b, x, y, z, r, h, o = {}) {
+  const c = o.c ?? GRK.marble, seg = o.seg || 10;
+  b.cyl(r * 1.3, r * 1.4, h * 0.05, GRK.marbleD, x, y + h * 0.025, z, 0, 0, 0, { seg }).cyl(r * 0.88, r * 0.96, h * 0.86, c, x, y + h * 0.48, z, 0, 0, 0, { seg, grad: 0.9 });
+  b.cyl(r * 1.25, r * 0.9, h * 0.05, c, x, y + h * 0.935, z, 0, 0, 0, { seg }).box(r * 2.7, h * 0.04, r * 2.7, GRK.marbleD, x, y + h * 0.98, z);
+  if (o.flutes) for (let i = 0; i < o.flutes; i++) { const a = i * 6.283 / o.flutes; b.box(r * 0.1, h * 0.84, r * 0.1, GRK.marbleD, x + Math.cos(a) * r * 0.94, y + h * 0.48, z + Math.sin(a) * r * 0.94, 0, -a, 0); }
+}
+// A painted jar with two handles, about h high: one colour for the clay and another for the band round its middle.
+export function amphoraInto(b, x, y, z, h = 1, c = GRK.terra, band = GRK.black) {
+  b.at(x, y, z, 0, () => {
+    b.cyl(0.12, 0.16, 0.06, c, 0, 0.03, 0, 0, 0, 0, { seg: 8 }).sph(0.3, c, 0, 0.42, 0, 1, 1.25, 1, { seg: 10 }).cyl(0.312, 0.312, 0.13, band, 0, 0.46, 0, 0, 0, 0, { seg: 10 });
+    b.cyl(0.1, 0.16, 0.26, c, 0, 0.84, 0, 0, 0, 0, { seg: 8 }).cyl(0.16, 0.11, 0.06, band, 0, 0.98, 0, 0, 0, 0, { seg: 8 });
+    for (const sx of [-1, 1]) b.tor(0.13, 0.025, c, sx * 0.2, 0.8, 0, 0, 0, 0, { seg: 7, tseg: 3 });
+    for (let i = 0; i < 8; i++) b.sph(0.03, c, Math.cos(i * 0.785) * 0.315, 0.46, Math.sin(i * 0.785) * 0.315, 1, 1, 1, { seg: 4 });
+  }, h);
+}
+// An olive tree, about 3 s high: a twisted trunk and a cloud of silvery leaves.
+export function oliveInto(b, x, y, z, s = 1, a0 = 0) {
+  b.at(x, y, z, a0, () => {
+    b.cyl(0.14, 0.24, 0.9, GRK.bark, 0.05, 0.45, 0, 0, 0, -0.14, { seg: 6 }).cyl(0.1, 0.15, 0.8, GRK.bark, 0.02, 1.2, 0, 0, 0, 0.3, { seg: 6 }).cyl(0.07, 0.1, 0.7, GRK.bark, 0.2, 1.4, 0.1, 0.3, 0, -0.6, { seg: 5 });
+    for (const [px, py, pz, r] of [[0, 2.2, 0, 0.85], [-0.6, 1.9, 0.2, 0.6], [0.65, 1.95, -0.1, 0.62], [0.1, 2.75, -0.1, 0.5]]) b.add(new THREE.IcosahedronGeometry(1, 1), py > 2.1 ? GRK.olive : GRK.oliveD, px, py, pz, 0, px * 3, 0, r, r * 0.72, r, { grad: 0.75 });
+    for (let i = 0; i < 7; i++) b.sph(0.045, i % 2 ? 0x3a3a2a : 0x6a7a3a, Math.cos(i * 2.4) * 0.75, 1.75 + (i % 3) * 0.2, Math.sin(i * 2.4) * 0.7, 1, 1.3, 1, { seg: 4 });
+  }, s);
+}
+// A wise little owl, about s high, facing +z.
+export function owlInto(b, x, y, z, s = 1, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    b.sph(0.36, 0x9a7a5a, 0, 0.4, 0, 1, 1.1, 0.9, { seg: 9 }).sph(0.26, 0xe8d8b8, 0, 0.34, 0.14, 1, 1.1, 0.7, { seg: 8 }).sph(0.3, 0x9a7a5a, 0, 0.78, 0, 1.05, 0.85, 0.9, { seg: 9 });
+    for (const sx of [-1, 1]) {
+      b.sph(0.11, 0xffffff, sx * 0.12, 0.8, 0.22, 1, 1, 0.5, { seg: 7 }).sph(0.06, GRK.gold, sx * 0.12, 0.8, 0.26, 1, 1, 0.5, { seg: 6 }).sph(0.032, 0x1b1f24, sx * 0.12, 0.8, 0.285, 1, 1, 0.5, { seg: 5 });
+      b.cone(0.07, 0.16, 0x7a5a3c, sx * 0.2, 1.02, 0, 0, 0, sx * -0.3, { seg: 5 }).sph(0.14, 0x7a5a3c, sx * 0.34, 0.42, 0, 0.5, 1.5, 1, { seg: 6 }).sph(0.06, 0xffb347, sx * 0.12, 0.03, 0.1, 1, 0.5, 1.4, { seg: 5 });
+    }
+    b.cone(0.045, 0.1, 0xffb347, 0, 0.71, 0.28, PI, 0, 0, { seg: 5 });
+  }, s);
+}
+def('amphorae', 'low', 1.4, 0.95, 1.0, (b) => {
+  // painted jars, and a bowl of olives
+  amphoraInto(b, -0.36, 0, 0, 0.9); amphoraInto(b, 0.28, 0, -0.08, 0.72, GRK.black, GRK.terra);
+  b.cyl(0.2, 0.12, 0.12, GRK.blue, 0.42, 0.06, 0.4, 0, 0, 0, { seg: 9 });
+  for (let i = 0; i < 6; i++) b.sph(0.045, i % 2 ? 0x3a3a2a : 0x7a9a3a, 0.42 + Math.cos(i * 1.05) * 0.09, 0.14, 0.4 + Math.sin(i * 1.05) * 0.09, 1, 1.2, 1, { seg: 5 });
+});
+def('laurelPrize', 'low', 1.3, 0.92, 1.0, (b) => {
+  // first prize: a crown of golden leaves on a cushion, and a medal
+  b.box(1.1, 0.14, 0.86, GRK.marbleD, 0, 0.07, 0).box(0.9, 0.34, 0.7, GRK.marble, 0, 0.31, 0, 0, 0, 0, { grad: 0.92 });
+  for (let i = 0; i < 5; i++) b.box(0.09, 0.09, 0.02, i % 2 ? GRK.blue : GRK.blueD, -0.36 + i * 0.18, 0.31, 0.36);
+  b.sph(0.36, GRK.blue, 0, 0.56, 0, 1, 0.3, 0.8, { seg: 9 });
+  b.tor(0.22, 0.03, GRK.gold, 0, 0.72, 0, PI / 2 - 0.45, 0, 0, { seg: 12, tseg: 4 });
+  for (let i = 0; i < 12; i++) { const a = i * 0.524; b.sph(0.06, GRK.gold, Math.cos(a) * 0.23, 0.72 - Math.sin(a) * 0.1, Math.sin(a) * 0.2, 1.4, 0.5, 0.7, { seg: 5 }); }
+  b.box(0.1, 0.24, 0.02, 0xe5383b, 0.3, 0.3, 0.37, 0, 0, 0.2).cyl(0.09, 0.09, 0.03, GRK.gold, 0.33, 0.17, 0.38, PI / 2, 0, 0, { seg: 9 });
+});
+def('lyreScrolls', 'low', 1.3, 0.95, 1.0, (b) => {
+  // a lyre, and the songs to play on it
+  b.box(0.7, 0.1, 0.5, GRK.marbleD, -0.2, 0.05, 0).sph(0.2, GRK.woodD, -0.2, 0.3, 0, 1, 0.8, 0.5, { seg: 8 });
+  b.tor(0.26, 0.04, GRK.gold, -0.2, 0.44, 0, 0, 0, PI, { arc: PI, seg: 10, tseg: 4 });
+  for (const sx of [-1, 1]) b.cyl(0.035, 0.04, 0.36, GRK.gold, -0.2 + sx * 0.26, 0.62, 0, 0, 0, 0, { seg: 5 }).sph(0.05, GRK.gold, -0.2 + sx * 0.26, 0.82, 0, 1, 1, 1, { seg: 5 });
+  b.cyl(0.03, 0.03, 0.64, GRK.wood, -0.2, 0.76, 0, 0, 0, PI / 2, { seg: 5 });
+  for (let i = 0; i < 5; i++) b.cyl(0.008, 0.008, 0.52, 0xffffff, -0.36 + i * 0.08, 0.5, 0.03, 0, 0, 0, { seg: 3 });
+  for (let i = 0; i < 3; i++) b.cyl(0.07, 0.07, 0.5, 0xfff3d6, 0.38 + (i % 2) * 0.1, 0.07 + i * 0.12, 0.1 - i * 0.03, PI / 2, 0.3 * (i - 1), 0, { seg: 7 }).cyl(0.073, 0.073, 0.06, 0xe5383b, 0.38 + (i % 2) * 0.1, 0.07 + i * 0.12, 0.1 - i * 0.03, PI / 2, 0.3 * (i - 1), 0, { seg: 7 });
+});
+def('oliveBaskets', 'low', 1.4, 0.9, 1.0, (b) => {
+  // baskets of green and black olives, and a little jug of oil
+  for (const sx of [-1, 1]) {
+    b.cyl(0.36, 0.28, 0.4, GRK.wood, sx * 0.36, 0.2, 0, 0, 0, 0, { seg: 10, grad: 0.85 }).tor(0.36, 0.03, GRK.woodD, sx * 0.36, 0.4, 0, PI / 2, 0, 0, { seg: 10, tseg: 4 });
+    for (let i = 0; i < 9; i++) b.sph(0.085, sx > 0 ? 0x3a3a2a : 0x8aa83a, sx * 0.36 + Math.cos(i * 0.9) * (i < 7 ? 0.2 : 0.05), 0.43 + (i > 6 ? 0.1 : 0), Math.sin(i * 0.9) * (i < 7 ? 0.2 : 0.05), 1, 1.25, 1, { seg: 5 });
+  }
+  b.sph(0.14, GRK.terra, 0.02, 0.16, 0.4, 1, 1.1, 1, { seg: 7 }).cyl(0.05, 0.07, 0.14, GRK.terra, 0.02, 0.34, 0.4, 0, 0, 0, { seg: 6 }).tor(0.07, 0.016, GRK.terra, 0.13, 0.28, 0.4, 0, 0, 0, { seg: 6, tseg: 3 });
+});
+def('colDrums', 'low', 1.5, 0.92, 1.1, (b) => {
+  // a column that fell over long ago, and the tortoise who sunbathes on it
+  b.cyl(0.36, 0.36, 0.6, GRK.marble, -0.36, 0.36, 0, 0, 0.12, PI / 2, { seg: 12 }).cyl(0.36, 0.36, 0.5, GRK.marble, 0.3, 0.36, 0.1, 0, -0.2, PI / 2, { seg: 12 });
+  for (const x of [-0.62, -0.1, 0.08, 0.52]) b.tor(0.36, 0.02, GRK.marbleD, x, 0.36, x > 0 ? 0.1 : 0, 0, PI / 2 + (x > 0 ? -0.2 : 0.12), 0, { seg: 12, tseg: 3 });
+  b.box(0.5, 0.12, 0.5, GRK.marbleD, 0.45, 0.06, 0.52, 0, 0.5, 0);
+  b.sph(0.17, 0x6a8a4a, -0.3, 0.74, 0, 1.15, 0.7, 1, { seg: 8 }).sph(0.07, 0x9ab868, -0.08, 0.76, 0, 1, 1, 1, { seg: 6 }).sph(0.018, 0x1b1f24, -0.03, 0.78, 0.04, 1, 1, 1, { seg: 4 });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.sph(0.05, 0x9ab868, -0.3 + sx * 0.13, 0.7, sz * 0.14, 1, 0.7, 1, { seg: 4 });
+});
+def('owlColumn', 'tall', 1.3, 2.75, 1.0, (b) => {
+  // a column with a wise owl on top
+  b.box(1.0, 0.14, 1.0, GRK.marbleD, 0, 0.07, 0);
+  greekColInto(b, 0, 0.14, 0, 0.32, 1.95, { flutes: 10 });
+  owlInto(b, 0, 2.09, 0, 0.62);
+});
+def('heroStatue', 'tall', 1.4, 2.8, 1.0, (b) => {
+  // a marble champion holding up a torch
+  const M = GRK.marble;
+  b.box(0.95, 0.5, 0.8, GRK.marbleD, 0, 0.25, 0, 0, 0, 0, { grad: 0.9 }).box(1.05, 0.08, 0.9, M, 0, 0.54, 0);
+  b.cyl(0.22, 0.34, 1.0, M, 0, 1.08, 0, 0, 0, 0, { seg: 10, grad: 0.9 }).sph(0.27, M, 0, 1.66, 0, 1.1, 0.9, 0.85, { seg: 9 }).box(0.5, 0.1, 0.36, GRK.gold, 0, 1.36, 0.02);
+  for (let i = 0; i < 6; i++) b.box(0.03, 0.9, 0.03, GRK.marbleD, -0.2 + i * 0.08, 1.05, 0.26 + (i % 2) * 0.01, -0.12, 0, 0);
+  b.sph(0.2, M, 0, 2.04, 0, 1, 1.05, 1, { seg: 10 }).tor(0.19, 0.035, GRK.gold, 0, 2.12, 0, PI / 2 - 0.2, 0, 0, { seg: 10, tseg: 4 });
+  for (const sx of [-1, 1]) b.sph(0.028, 0x3a4252, sx * 0.07, 2.06, 0.18, 1, 1.2, 0.5, { seg: 5 });
+  b.tor(0.045, 0.011, 0x3a4252, 0, 1.98, 0.19, 0, 0, PI, { arc: PI, seg: 6, tseg: 3 });
+  b.cap(0.07, 0.5, M, 0.42, 1.95, 0, 0, 0, -0.5, { seg: 6 }).cone(0.08, 0.3, GRK.gold, 0.6, 2.36, 0, PI, 0, 0, { seg: 6 }).sph(0.1, 0xffb347, 0.6, 2.56, 0, 1, 1.5, 1, { seg: 6, glow: true, grad: 0.9 });
+  b.cap(0.07, 0.4, M, -0.36, 1.45, 0.08, 0.3, 0, 0.3, { seg: 6 }).cyl(0.26, 0.26, 0.05, GRK.blue, -0.42, 1.25, 0.26, PI / 2, 0, 0, { seg: 10 }).cyl(0.1, 0.1, 0.06, GRK.gold, -0.42, 1.25, 0.27, PI / 2, 0, 0, { seg: 8 });
+});
+def('templeFront', 'tall', 1.6, 2.8, 1.0, (b) => {
+  // a little temple, with a jar of something precious inside
+  b.box(1.6, 0.12, 0.9, GRK.marbleD, 0, 0.06, 0).box(1.4, 0.12, 0.75, GRK.marble, 0, 0.18, 0);
+  for (const sx of [-1, 1]) greekColInto(b, sx * 0.55, 0.24, 0, 0.14, 1.8, { flutes: 8, seg: 8 });
+  b.box(1.5, 0.22, 0.5, GRK.marble, 0, 2.15, 0);
+  for (let i = 0; i < 6; i++) b.box(0.1, 0.16, 0.02, GRK.blue, -0.6 + i * 0.24, 2.15, 0.26);
+  b.prism(1.6, 0.45, 0.5, GRK.marble, 0, 2.26, 0, 0).cyl(0.11, 0.11, 0.03, GRK.gold, 0, 2.42, 0.26, PI / 2, 0, 0, { seg: 9 });
+  for (const sx of [-1, 0, 1]) b.sph(0.07, GRK.gold, sx * 0.78, sx ? 2.33 : 2.76, 0, 1, 1.3, 1, { seg: 5 });
+  b.box(0.5, 0.3, 0.4, GRK.marbleD, 0, 0.39, 0); amphoraInto(b, 0, 0.54, 0, 1.15, GRK.terra, GRK.black);
+});
+def('oliveTree', 'tall', 1.6, 2.9, 1.6, (b) => {
+  // an old olive tree in a ring of white stones
+  oliveInto(b, 0, 0, 0, 0.95, 0.4);
+  for (let i = 0; i < 7; i++) b.sph(0.12, i % 2 ? GRK.marble : GRK.marbleD, Math.cos(i * 0.9) * 0.55, 0.06, Math.sin(i * 0.9) * 0.55, 1, 0.7, 1, { seg: 5 });
+});
+def('bigVase', 'tall', 1.4, 2.75, 1.2, (b) => {
+  // an enormous painted vase on a stand
+  b.box(0.9, 0.3, 0.9, GRK.marbleD, 0, 0.15, 0).box(0.75, 0.1, 0.75, GRK.marble, 0, 0.35, 0);
+  amphoraInto(b, 0, 0.4, 0, 2.3, GRK.terra, GRK.black);
+  for (let i = 0; i < 10; i++) { const a = i * 0.628; b.box(0.12, 0.12, 0.03, GRK.gold, Math.cos(a) * 0.73, 1.46, Math.sin(a) * 0.73, 0, -a + PI / 2, PI / 4); }
+});
+def('rollDrum', 'low', 1.2, 1.0, 1.0, (b) => {
+  // a piece of marble column rolling down the lane
+  b.cyl(0.5, 0.5, 1.0, GRK.marble, 0, 0, 0, 0, 0, PI / 2, { seg: 14, grad: 0.95 });
+  for (const x of [-0.46, 0.46]) b.tor(0.5, 0.03, GRK.marbleD, x, 0, 0, 0, PI / 2, 0, { seg: 14, tseg: 3 });
+  for (let i = 0; i < 10; i++) { const a = i * 0.628; b.box(0.86, 0.04, 0.05, GRK.marbleD, 0, Math.cos(a) * 0.49, Math.sin(a) * 0.49, a, 0, 0); }
+  for (const sx of [-1, 1]) b.cyl(0.2, 0.2, 0.02, GRK.blue, sx * 0.505, 0, 0, 0, 0, PI / 2, { seg: 8 });
+}, { center: true });
+def('goldApple', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the flying horse drops: a golden apple, rolling
+  b.sph(0.44, GRK.gold, 0, 0, 0, 1, 0.94, 1, { seg: 12 }).sph(0.13, 0xffe680, 0.16, 0.18, 0.33, 1, 1, 0.4, { seg: 6 });
+  b.cyl(0.03, 0.03, 0.18, GRK.woodD, 0, 0.46, 0, 0, 0, 0.3, { seg: 5 }).sph(0.14, 0x6fae3c, 0.14, 0.5, 0, 1.5, 0.3, 0.8, { seg: 6 });
+}, { center: true });
+// A wooden horse on wheels, facing +x: about 1.1 high and 1.3 long.
+export function woodHorseInto(b) {
+  const W = GRK.wood, D = GRK.woodD;
+  b.box(1.1, 0.07, 0.5, D, 0, 0.17, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.13, 0.13, 0.06, D, sx * 0.4, 0.13, sz * 0.28, PI / 2, 0, 0, { seg: 10 }).cyl(0.04, 0.04, 0.07, GRK.gold, sx * 0.4, 0.13, sz * 0.28, PI / 2, 0, 0, { seg: 6 }).box(0.1, 0.3, 0.1, W, sx * 0.3, 0.35, sz * 0.13);
+  b.box(0.78, 0.3, 0.36, W, -0.02, 0.62, 0, 0, 0, 0, { grad: 0.9 }).box(0.2, 0.42, 0.26, W, 0.36, 0.84, 0, 0, 0, -0.5).box(0.34, 0.18, 0.24, W, 0.56, 0.93, 0, 0, 0, -0.15);
+  for (let i = 0; i < 4; i++) b.box(0.06, 0.12, 0.05, D, 0.22 + i * 0.07, 0.84 + i * 0.07, 0, 0, 0, -0.5);
+  for (const sz of [-1, 1]) b.sph(0.03, 0x1b1f24, 0.58, 0.97, sz * 0.125, 1, 1, 0.5, { seg: 5 }).cone(0.04, 0.1, W, 0.44, 1.07, sz * 0.08, 0, 0, 0, { seg: 4 }).box(0.16, 0.16, 0.01, D, -0.05, 0.62, sz * 0.185);
+  b.box(0.06, 0.3, 0.06, D, -0.44, 0.6, 0, 0, 0, 0.5);
+  for (let i = 0; i < 5; i++) b.box(0.01, 0.3, 0.37, D, -0.34 + i * 0.17, 0.62, 0);
+}
+def('woodHorse', 'low', 1.3, 0.95, 0.9, (b) => {
+  // a wooden horse on wheels, trundling across; it faces +x
+  b.at(0, 0, 0, 0, () => woodHorseInto(b), 0.86);
+});
+def('pegasus', 'deco', 2.2, 1.2, 1.5, (b) => {
+  // a little white horse with wings, carrying a golden apple
+  const W = 0xffffff;
+  b.sph(0.34, W, 0, 0, -0.05, 0.9, 0.85, 1.4, { seg: 10 }).cap(0.15, 0.3, W, 0, 0.26, 0.4, 0.7, 0, 0, { seg: 7 }).sph(0.2, W, 0, 0.46, 0.6, 0.9, 0.95, 1, { seg: 9 }).sph(0.13, 0xfff0f4, 0, 0.4, 0.78, 0.9, 0.8, 1, { seg: 7 });
+  for (const sx of [-1, 1]) b.sph(0.045, 0x1b1f24, sx * 0.13, 0.5, 0.72, 0.6, 1.2, 1, { seg: 5 }).cone(0.05, 0.13, W, sx * 0.1, 0.68, 0.56, 0, 0, sx * -0.2, { seg: 4 }).sph(0.04, 0xffa8c0, sx * 0.14, 0.4, 0.74, 0.6, 0.7, 1, { seg: 4 }).sph(0.02, 0x3a4252, sx * 0.05, 0.38, 0.9, 1, 1, 0.5, { seg: 4 });
+  for (let i = 0; i < 5; i++) b.sph(0.09, GRK.gold, 0, 0.62 - i * 0.09, 0.5 - i * 0.1, 0.7, 1, 1, { seg: 5 });
+  for (let i = 0; i < 4; i++) b.sph(0.1 - i * 0.012, GRK.gold, 0, 0.02 - i * 0.07, -0.52 - i * 0.1, 0.8, 1, 1, { seg: 5 });
+  for (const sx of [-1, 1]) for (const z of [0.26, -0.3]) b.cap(0.06, 0.2, W, sx * 0.16, -0.3, z, z > 0 ? -0.5 : 0.5, 0, 0, { seg: 5 }).sph(0.065, GRK.gold, sx * 0.16, -0.44, z + (z > 0 ? 0.09 : -0.09), 1, 0.8, 1, { seg: 5 });
+  b.sph(0.17, GRK.gold, 0, -0.56, 0, 1, 0.94, 1, { seg: 8 }).cyl(0.01, 0.01, 0.2, GRK.woodD, 0, -0.36, 0, 0, 0, 0, { seg: 3 });
+}, {
+  wings: (b, sx) => { for (let i = 0; i < 4; i++) b.sph(0.3 - i * 0.03, i % 2 ? 0xeaf6ff : 0xffffff, sx * (0.22 + i * 0.2), 0.02 - i * 0.01, -0.02 - i * 0.07, 1.1, 0.1, 0.62, { seg: 7 }); }, wingAt: [0.18, 0.16, -0.05],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -3177,6 +3333,7 @@ export const TALL_TYPES = {
   24: ['youngGiraffe', 'acaciaTree', 'tallDoor', 'topiary', 'heightChart', 'youngGiraffe'],
   25: ['stepLadder', 'sapling', 'beeHives', 'scareFriend', 'juiceBarrels', 'sapling'],
   26: ['tallGhost', 'ghostStack', 'grandClock', 'ghostLamp', 'sheetLine', 'ghostStack'],
+  27: ['owlColumn', 'heroStatue', 'templeFront', 'oliveTree', 'bigVase', 'owlColumn'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
 export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'],
@@ -3185,4 +3342,5 @@ export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'b
   23: ['upCone', 'upBoat', 'upTable', 'upBucket', 'upHat', 'upCone'],
   24: ['calfNap', 'leafBasket', 'hoofBoots', 'scarfPile', 'antHill', 'calfNap'],
   25: ['fruitCrate', 'fruitBaskets', 'wheelbarrow', 'wormApple', 'wateringCan', 'fruitCrate'],
-  26: ['ghostNap', 'pumpkinPals', 'ghostTea', 'sheetBasket', 'booBooks', 'pumpkinPals'] };
+  26: ['ghostNap', 'pumpkinPals', 'ghostTea', 'sheetBasket', 'booBooks', 'pumpkinPals'],
+  27: ['amphorae', 'laurelPrize', 'lyreScrolls', 'oliveBaskets', 'colDrums', 'amphorae'] };
