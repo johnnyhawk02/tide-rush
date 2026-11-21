@@ -44,6 +44,8 @@ const PAL = [
   { top: 0x1670e0, hor: 0xd0ecff, sun: 0xfff8e0, sunI: 3.1, hemiS: 0xe6f2ff, hemiG: 0xe8dcc0, hemiI: 1.4, deep: 0x0f5cc0, shal: 0x38b0e8, foam: 0xffffff, cloud: 0xffffff, el: 0.9, az: -0.3, stars: 0, storm: 0 },
   // 28 Ancient Time: a warm, hazy morning long, long ago
   { top: 0x3f9ae0, hor: 0xffe8b8, sun: 0xfff2d0, sunI: 3.0, hemiS: 0xf0f6e0, hemiG: 0xa8c878, hemiI: 1.3, deep: 0x2f8f9a, shal: 0x7fd0c0, foam: 0xffffff, cloud: 0xfff6e8, el: 0.7, az: 0.4, stars: 0, storm: 0 },
+  // 29 Ancient Egypt: a hot blue sky over golden sand and a green river
+  { top: 0x2f8fe0, hor: 0xffe6b0, sun: 0xfff0c0, sunI: 3.1, hemiS: 0xfff0d0, hemiG: 0xd8b880, hemiI: 1.35, deep: 0x1f7a6a, shal: 0x5fc8a8, foam: 0xf4ffe8, cloud: 0xfff4dc, el: 0.75, az: -0.35, stars: 0, storm: 0 },
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 

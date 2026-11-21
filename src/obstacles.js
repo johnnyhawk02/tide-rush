@@ -2926,6 +2926,162 @@ def('ptero', 'deco', 2.4, 1.1, 1.4, (b) => {
   wings: (b, sx) => { b.sph(0.5, DINO.orange, sx * 0.48, 0, 0, 1.2, 0.07, 0.72, { seg: 7 }).sph(0.3, 0xffb878, sx * 0.86, 0, -0.14, 1.2, 0.07, 0.6, { seg: 6 }).cyl(0.03, 0.03, 1.2, 0xe07a2a, sx * 0.6, 0.03, 0.3, 0, 0, PI / 2, { seg: 4 }); }, wingAt: [0.14, 0.05, 0],
 });
 
+// ---------- Ancient Egypt ----------
+export const EGY = { sand: 0xe8c88a, sandD: 0xd0a868, stone: 0xe6cfa0, stoneD: 0xc8a870, gold: 0xf2c230, blue: 0x2f5fd0, teal: 0x2fb8a8, red: 0xd8503a, black: 0x2a2630, palm: 0x4f9a48, palmD: 0x3a7a3a, bark: 0x9a7a4a, white: 0xfff8e8, camel: 0xd8a860, camelD: 0xb88848, eye: 0x1b1f24, cheek: 0xff9ab0 };
+// A pyramid with a golden tip: its base is 2 r square at (x, y, z) and it is h high.
+export function pyramidInto(b, x, y, z, r, h, c = EGY.stone) {
+  b.cone(r * 1.414, h, c, x, y + h / 2, z, 0, PI / 4, 0, { seg: 4, grad: 0.8 }).cone(r * 1.414 * 0.16, h * 0.16, EGY.gold, x, y + h * 0.923, z, 0, PI / 4, 0, { seg: 4 });
+}
+// A date palm about 3.6 s high, leaning a little, with bunches of dates.
+export function datePalmInto(b, x, y, z, s = 1, a0 = 0) {
+  b.at(x, y, z, a0, () => {
+    for (let i = 0; i < 4; i++) b.cyl(0.13 - i * 0.012, 0.16 - i * 0.012, 0.74, i % 2 ? EGY.bark : 0x8a6a40, i * i * 0.035, 0.35 + i * 0.68, 0, 0, 0, -0.05 - i * 0.07, { seg: 6 });
+    const tx = 0.42, ty = 2.74;
+    for (let i = 0; i < 9; i++) { const a = i * 0.698, lean = i % 3 === 0 ? 0.7 : 1.35, l = 1.5; b.cone(0.2, l, i % 2 ? EGY.palm : EGY.palmD, tx + Math.cos(a) * Math.sin(lean) * l * 0.5, ty + Math.cos(lean) * l * 0.5, Math.sin(a) * Math.sin(lean) * l * 0.5, Math.sin(a) * lean, 0, -Math.cos(a) * lean, { seg: 4 }); }
+    for (const sz of [-1, 1]) for (let q = 0; q < 5; q++) b.sph(0.07, 0xd8843a, tx + (q % 2) * 0.08 - 0.04, ty - 0.14 - q * 0.07, sz * 0.2 + (q % 3) * 0.03, 1, 1.2, 1, { seg: 4 });
+  }, s);
+}
+// A cat sitting up very straight, like a statue, facing +z: about 1.15 s high, with a golden collar and an earring.
+export function sitCatInto(b, x, y, z, s = 1, col = EGY.black, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    b.sph(0.3, col, 0, 0.36, -0.04, 0.85, 1.2, 1, { seg: 9 }).sph(0.2, col, 0, 0.56, 0.1, 0.9, 1.3, 0.8, { seg: 8 }).sph(0.2, col, 0, 0.9, 0.08, 1, 0.9, 0.9, { seg: 9 });
+    for (const sx of [-1, 1]) {
+      b.cyl(0.055, 0.06, 0.44, col, sx * 0.1, 0.22, 0.22, 0, 0, 0, { seg: 6 }).sph(0.07, col, sx * 0.1, 0.04, 0.26, 1, 0.6, 1.3, { seg: 5 }).cone(0.07, 0.2, col, sx * 0.11, 1.12, 0.06, 0, 0, sx * -0.15, { seg: 4 });
+      b.sph(0.04, EGY.gold, sx * 0.08, 0.93, 0.25, 1, 1.2, 0.5, { seg: 5 }).sph(0.018, EGY.eye, sx * 0.08, 0.93, 0.27, 0.6, 1.3, 0.5, { seg: 4 });
+    }
+    b.sph(0.03, EGY.cheek, 0, 0.86, 0.26, 1, 0.7, 0.6, { seg: 4 }).tor(0.165, 0.035, EGY.gold, 0, 0.72, 0.08, PI / 2, 0, 0, { seg: 9, tseg: 4 }).sph(0.04, EGY.teal, 0, 0.7, 0.25, 1, 1, 0.6, { seg: 5 }).tor(0.035, 0.01, EGY.gold, 0.18, 1.04, 0.06, 0, 0, 0, { seg: 6, tseg: 3 });
+    b.tor(0.24, 0.045, col, 0.02, 0.06, 0.02, PI / 2, 0, 0.3, { arc: PI * 1.1, seg: 8, tseg: 4 });
+  }, s);
+}
+// A camel with one hump and a striped saddle blanket, facing +x: about 2.3 s high.
+export function camelInto(b, x, y, z, s = 1, ry = 0) {
+  const c = EGY.camel, d = EGY.camelD;
+  b.at(x, y, z, ry, () => {
+    b.sph(0.5, c, 0, 1.3, 0, 1.5, 0.85, 0.9, { seg: 10 }).sph(0.36, c, -0.05, 1.72, 0, 1.1, 0.9, 0.85, { seg: 8 });
+    for (const sx of [-0.5, 0.5]) for (const sz of [-0.22, 0.22]) b.cyl(0.11, 0.1, 0.95, c, sx, 0.52, sz, 0, 0, 0, { seg: 6 }).sph(0.13, d, sx + 0.02, 0.05, sz, 1.2, 0.5, 1, { seg: 5 });
+    for (let i = 0; i < 5; i++) b.sph(0.17 - i * 0.012, c, 0.72 + i * 0.1, 1.42 + i * 0.17, 0, 1, 1.1, 0.9, { seg: 6 });
+    b.sph(0.18, c, 1.24, 2.16, 0, 1.3, 0.85, 0.9, { seg: 8 }).sph(0.12, c, 1.44, 2.1, 0, 1.2, 0.8, 0.9, { seg: 6 }).cyl(0.02, 0.03, 0.5, d, -0.8, 1.15, 0, 0, 0, -0.3, { seg: 4 }).sph(0.05, d, -0.88, 0.9, 0, 1, 1.4, 1, { seg: 4 });
+    for (const sz of [-1, 1]) b.sph(0.05, 0xffffff, 1.3, 2.22, sz * 0.14, 1, 1, 0.6, { seg: 5 }).sph(0.028, EGY.eye, 1.32, 2.21, sz * 0.165, 1, 1, 0.6, { seg: 4 }).sph(0.04, EGY.cheek, 1.4, 2.1, sz * 0.1, 1, 0.7, 0.5, { seg: 4 }).sph(0.06, c, 1.14, 2.3, sz * 0.12, 0.6, 1.2, 0.5, { seg: 4 });
+    b.sph(0.4, EGY.red, -0.05, 1.72, 0, 1.04, 0.92, 0.9, { seg: 9 }).sph(0.41, EGY.gold, -0.05, 1.72, 0, 0.26, 0.92, 0.9, { seg: 9 });
+    for (const sz of [-1, 1]) for (let i = 0; i < 3; i++) b.sph(0.05, i % 2 ? EGY.gold : EGY.teal, -0.25 + i * 0.2, 1.5, sz * 0.36, 1, 1.5, 1, { seg: 4 });
+  }, s);
+}
+// An obelisk h high with a golden tip and a few painted signs down the front (+z).
+export function obeliskInto(b, x, y, z, h, w = 0.36) {
+  b.cyl(w * 0.78, w * 1.1, h * 0.88, EGY.stone, x, y + h * 0.44, z, 0, PI / 4, 0, { seg: 4, grad: 0.85 }).cone(w * 0.78, h * 0.12, EGY.gold, x, y + h * 0.94, z, 0, PI / 4, 0, { seg: 4 });
+  const cols = [EGY.blue, EGY.red, EGY.teal, EGY.black];
+  for (let i = 0; i < 5; i++) { const yy = y + h * (0.2 + i * 0.13), zz = z + w * (0.76 - i * 0.03); if (i % 2) b.cyl(w * 0.2, w * 0.2, 0.03, cols[i % 4], x, yy, zz, PI / 2, 0, 0, { seg: 7 }); else b.box(w * 0.5, w * 0.16, 0.03, cols[i % 4], x, yy, zz); }
+}
+def('miniPyramid', 'low', 1.5, 0.95, 1.3, (b) => {
+  // a little step pyramid of sandstone blocks, with a golden top and a beetle climbing it
+  for (let i = 0; i < 3; i++) b.box(1.3 - i * 0.4, 0.27, 1.1 - i * 0.34, i % 2 ? EGY.stoneD : EGY.stone, 0, 0.135 + i * 0.27, 0, 0, 0, 0, { grad: 0.92 });
+  b.cone(0.16, 0.14, EGY.gold, 0, 0.88, 0, 0, PI / 4, 0, { seg: 4 });
+  for (let i = 0; i < 3; i++) for (let q = 0; q < 3 - i; q++) b.box(0.01, 0.27, 0.02, EGY.sandD, -0.4 + i * 0.2 + q * 0.42, 0.135 + i * 0.27, 0.56 - i * 0.17);
+  b.sph(0.08, EGY.teal, 0.36, 0.33, 0.44, 1, 0.6, 1.3, { seg: 6 }).sph(0.045, EGY.gold, 0.36, 0.33, 0.54, 1, 0.7, 1, { seg: 5 });
+});
+def('catStatue', 'low', 1.4, 0.98, 1.0, (b) => {
+  // a black cat who sits so still she might be a statue, between two pots of lotus flowers
+  b.box(0.6, 0.08, 0.6, EGY.stone, 0, 0.04, 0);
+  sitCatInto(b, 0, 0.08, -0.02, 0.76);
+  for (const sx of [-1, 1]) {
+    b.cyl(0.16, 0.11, 0.26, EGY.blue, sx * 0.5, 0.13, 0.1, 0, 0, 0, { seg: 8 }).tor(0.16, 0.02, EGY.gold, sx * 0.5, 0.26, 0.1, PI / 2, 0, 0, { seg: 8, tseg: 3 }).cyl(0.012, 0.012, 0.26, EGY.palmD, sx * 0.5, 0.39, 0.1, 0, 0, 0, { seg: 3 });
+    for (let i = 0; i < 5; i++) b.cone(0.045, 0.16, i % 2 ? 0xffc0d8 : 0xffffff, sx * 0.5 + Math.cos(i * 1.257) * 0.05, 0.58, 0.1 + Math.sin(i * 1.257) * 0.05, Math.sin(i * 1.257) * 0.5, 0, -Math.cos(i * 1.257) * 0.5, { seg: 4 });
+  }
+});
+def('scarabChest', 'low', 1.4, 0.9, 1.0, (b) => {
+  // a chest of treasure with its lid up
+  b.box(1.0, 0.5, 0.66, EGY.blue, 0, 0.25, 0, 0, 0, 0, { grad: 0.85 });
+  for (const x of [-0.5, -0.17, 0.17, 0.5]) b.box(0.06, 0.52, 0.68, EGY.gold, x, 0.25, 0);
+  b.box(1.0, 0.07, 0.66, EGY.blue, 0, 0.72, -0.4, -1.1, 0, 0).box(1.04, 0.08, 0.08, EGY.gold, 0, 0.5, -0.33);
+  for (let i = 0; i < 12; i++) b.cyl(0.085, 0.085, 0.025, EGY.gold, -0.36 + (i % 5) * 0.18, 0.52 + (i % 3) * 0.03, -0.18 + Math.floor(i / 5) * 0.16, 0.3 * (i % 3), i, 0.2, { seg: 7 });
+  b.sph(0.1, EGY.teal, 0.05, 0.63, 0.05, 1, 0.6, 1.3, { seg: 6 }).sph(0.05, EGY.gold, 0.05, 0.63, 0.17, 1, 0.7, 1, { seg: 5 }).tor(0.13, 0.025, EGY.red, -0.3, 0.6, 0.02, PI / 2 - 0.3, 0, 0, { seg: 9, tseg: 3 }).sph(0.07, EGY.red, 0.34, 0.6, 0.1, 1, 1, 1, { seg: 5 });
+  b.cyl(0.09, 0.09, 0.025, EGY.gold, 0.6, 0.02, 0.36, 0, 0, 0, { seg: 7 }).cyl(0.09, 0.09, 0.025, EGY.gold, -0.62, 0.02, 0.3, 0, 0, 0, { seg: 7 });
+});
+def('lotusPond', 'low', 1.4, 0.8, 1.2, (b) => {
+  // a stone pool of lotus flowers, with a frog on a lily pad
+  b.cyl(0.62, 0.66, 0.34, EGY.stone, 0, 0.17, 0, 0, 0, 0, { seg: 12, grad: 0.9 }).cyl(0.54, 0.54, 0.02, 0x5ab8e0, 0, 0.34, 0, 0, 0, 0, { seg: 12 }).tor(0.6, 0.05, EGY.stoneD, 0, 0.34, 0, PI / 2, 0, 0, { seg: 12, tseg: 4 });
+  for (let i = 0; i < 6; i++) b.box(0.1, 0.1, 0.02, [EGY.blue, EGY.red, EGY.teal][i % 3], Math.cos(i * 1.047 + 0.5) * 0.65, 0.17, Math.sin(i * 1.047 + 0.5) * 0.65, 0, -(i * 1.047 + 0.5) + PI / 2, 0);
+  for (const [x, z, h] of [[-0.24, -0.1, 0.34], [0.26, -0.18, 0.24], [0.1, 0.24, 0.0]]) {
+    b.cyl(0.16, 0.16, 0.015, EGY.palm, x + 0.14, 0.36, z + 0.1, 0, 0, 0, { seg: 7 });
+    if (h) { b.cyl(0.012, 0.012, h, EGY.palmD, x, 0.35 + h / 2, z, 0, 0, 0, { seg: 3 }); for (let i = 0; i < 6; i++) b.cone(0.05, 0.18, i % 2 ? 0xffc0d8 : 0xffffff, x + Math.cos(i * 1.047) * 0.06, 0.4 + h, z + Math.sin(i * 1.047) * 0.06, Math.sin(i * 1.047) * 0.55, 0, -Math.cos(i * 1.047) * 0.55, { seg: 4 }); b.sph(0.04, EGY.gold, x, 0.38 + h, z, 1, 1, 1, { seg: 4 }); }
+  }
+  b.sph(0.09, 0x6fbf5a, 0.24, 0.44, 0.34, 1.1, 0.8, 1.2, { seg: 7 });
+  for (const sx of [-1, 1]) b.sph(0.04, 0x6fbf5a, 0.24 + sx * 0.06, 0.52, 0.4, 1, 1, 1, { seg: 5 }).sph(0.02, EGY.eye, 0.24 + sx * 0.06, 0.53, 0.435, 1, 1, 0.5, { seg: 4 });
+});
+def('scribeDesk', 'low', 1.4, 0.92, 1.0, (b) => {
+  // a scribe's things: a stone tablet of picture writing, scrolls, and ink with a reed pen
+  b.box(0.8, 0.84, 0.12, EGY.stone, -0.22, 0.44, -0.1, -0.18, 0.1, 0, { grad: 0.9 });
+  const z = 0.02, cols = [EGY.blue, EGY.red, EGY.black, EGY.teal];
+  b.sph(0.1, 0xffffff, -0.36, 0.66, z + 0.03, 1.5, 0.8, 0.2, { seg: 6 }).sph(0.05, EGY.blue, -0.36, 0.66, z + 0.045, 1, 1, 0.3, { seg: 5 }).box(0.3, 0.025, 0.02, EGY.black, -0.36, 0.74, z + 0.04);
+  b.sph(0.08, EGY.gold, -0.04, 0.68, z + 0.03, 1, 1, 0.3, { seg: 6 }).cone(0.05, 0.1, cols[1], 0.06, 0.66, z + 0.03, 0, 0, -PI / 2, { seg: 3 });
+  for (let i = 0; i < 4; i++) b.box(0.1, 0.04, 0.02, cols[i], -0.46 + i * 0.16, 0.48 - (i % 2) * 0.03, z + 0.07, 0, 0, (i % 2 ? 0.5 : -0.5));
+  for (let i = 0; i < 3; i++) b.sph(0.045, cols[(i + 1) % 4], -0.4 + i * 0.18, 0.3, z + 0.1, 1, 1, 0.3, { seg: 5 });
+  for (let i = 0; i < 3; i++) b.cyl(0.07, 0.07, 0.5, EGY.white, 0.42 + (i % 2) * 0.08, 0.07 + i * 0.12, 0.1, PI / 2, 0.3 * (i - 1), 0, { seg: 7 }).cyl(0.074, 0.074, 0.06, EGY.red, 0.42 + (i % 2) * 0.08, 0.07 + i * 0.12, 0.1, PI / 2, 0.3 * (i - 1), 0, { seg: 7 });
+  b.cyl(0.08, 0.06, 0.1, EGY.black, 0.1, 0.05, 0.4, 0, 0, 0, { seg: 7 }).cyl(0.012, 0.012, 0.34, EGY.palmD, 0.14, 0.22, 0.4, 0, 0, -0.35, { seg: 3 });
+});
+def('obelisk', 'tall', 1.4, 2.85, 1.0, (b) => {
+  // a pointed stone with a golden tip, and a cat keeping it company
+  b.box(0.9, 0.2, 0.9, EGY.stoneD, 0, 0.1, 0);
+  obeliskInto(b, 0, 0.2, 0, 2.6, 0.34);
+  sitCatInto(b, 0.5, 0, 0.3, 0.5, 0xe8a040, -0.3);
+});
+def('camelCalf', 'tall', 1.6, 2.7, 1.6, (b) => {
+  // a young camel in her best blanket
+  camelInto(b, -0.05, 0, -0.25, 1.12, -PI / 2 + 0.4);
+});
+def('potPalm', 'tall', 1.6, 2.9, 1.6, (b) => {
+  // a date palm in a painted pot
+  b.cyl(0.36, 0.26, 0.44, EGY.blue, 0, 0.22, 0, 0, 0, 0, { seg: 10 }).tor(0.36, 0.035, EGY.gold, 0, 0.44, 0, PI / 2, 0, 0, { seg: 10, tseg: 4 }).tor(0.315, 0.03, EGY.gold, 0, 0.22, 0, PI / 2, 0, 0, { seg: 10, tseg: 3 });
+  datePalmInto(b, -0.08, 0.3, 0, 0.72, 0.5);
+});
+def('falconStatue', 'tall', 1.4, 2.8, 1.0, (b) => {
+  // a golden falcon in a crown, on a painted stand
+  b.box(0.9, 1.0, 0.8, EGY.stone, 0, 0.5, 0, 0, 0, 0, { grad: 0.88 }).box(1.0, 0.1, 0.9, EGY.gold, 0, 1.05, 0);
+  for (let i = 0; i < 4; i++) b.box(0.14, 0.5, 0.02, [EGY.blue, EGY.red, EGY.teal, EGY.blue][i], -0.3 + i * 0.2, 0.5, 0.41);
+  b.sph(0.36, EGY.gold, 0, 1.56, 0, 1, 1.25, 0.95, { seg: 10 }).sph(0.26, EGY.white, 0, 1.5, 0.16, 1, 1.2, 0.7, { seg: 8 }).sph(0.26, EGY.gold, 0, 2.14, 0.02, 1, 0.95, 0.95, { seg: 9 });
+  for (const sx of [-1, 1]) b.sph(0.16, EGY.blue, sx * 0.34, 1.54, -0.02, 0.5, 1.6, 1, { seg: 6 }).sph(0.06, 0xffffff, sx * 0.1, 2.18, 0.22, 1, 1, 0.6, { seg: 5 }).sph(0.034, EGY.eye, sx * 0.1, 2.18, 0.25, 1, 1, 0.6, { seg: 4 }).sph(0.07, 0xffb347, sx * 0.12, 1.12, 0.14, 1, 0.5, 1.5, { seg: 5 });
+  b.cone(0.06, 0.16, 0xffb347, 0, 2.1, 0.3, PI * 0.65, 0, 0, { seg: 5 });
+  b.cyl(0.2, 0.24, 0.22, EGY.red, 0, 2.44, 0, 0, 0, 0, { seg: 9 }).cyl(0.13, 0.19, 0.24, EGY.white, 0, 2.62, -0.02, 0, 0, 0, { seg: 8 }).sph(0.05, EGY.gold, 0, 2.5, 0.22, 1, 1.4, 1, { seg: 5 });
+});
+def('lotusColumn', 'tall', 1.4, 2.8, 1.0, (b) => {
+  // a painted pillar that opens at the top like a flower
+  b.cyl(0.42, 0.46, 0.16, EGY.stoneD, 0, 0.08, 0, 0, 0, 0, { seg: 12 }).cyl(0.3, 0.34, 2.0, EGY.stone, 0, 1.16, 0, 0, 0, 0, { seg: 12, grad: 0.9 });
+  [[0.4, EGY.red], [0.56, EGY.gold], [0.72, EGY.blue], [1.3, EGY.teal], [1.46, EGY.gold], [1.9, EGY.red], [2.04, EGY.blue]].forEach(([y, c]) => b.cyl(0.345 - y * 0.02, 0.345 - y * 0.02, 0.12, c, 0, y, 0, 0, 0, 0, { seg: 12 }));
+  b.cyl(0.58, 0.3, 0.42, EGY.teal, 0, 2.37, 0, 0, 0, 0, { seg: 12 }).box(1.0, 0.16, 1.0, EGY.stoneD, 0, 2.66, 0);
+  for (let i = 0; i < 8; i++) b.cone(0.1, 0.4, i % 2 ? EGY.gold : EGY.red, Math.cos(i * 0.785) * 0.47, 2.36, Math.sin(i * 0.785) * 0.47, Math.sin(i * 0.785) * 0.6, 0, -Math.cos(i * 0.785) * 0.6, { seg: 4 });
+  b.sph(0.1, EGY.blue, 0, 1.02, 0.33, 1.5, 0.9, 0.3, { seg: 6 }).sph(0.05, EGY.black, 0, 1.02, 0.35, 1, 1, 0.3, { seg: 5 });
+});
+def('scarabBall', 'low', 1.1, 1.0, 1.0, (b) => {
+  // a beetle's great big ball rolling down the lane, with the beetle still holding on
+  b.sph(0.5, EGY.sandD, 0, 0, 0, 1, 1, 1, { seg: 12 });
+  for (let i = 0; i < 7; i++) { const u = (i + 0.5) / 7, ph = Math.acos(1 - 2 * u), th = i * 2.4; b.sph(0.1, EGY.sand, Math.sin(ph) * Math.cos(th) * 0.46, Math.cos(ph) * 0.46, Math.sin(ph) * Math.sin(th) * 0.46, 1, 1, 1, { seg: 4 }); }
+  b.sph(0.17, EGY.teal, 0, 0.5, 0.1, 1, 0.6, 1.3, { seg: 7 }).sph(0.09, EGY.gold, 0, 0.47, 0.32, 1, 0.7, 1, { seg: 5 }).box(0.01, 0.06, 0.4, EGY.gold, 0, 0.6, 0.08);
+  for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) b.cyl(0.015, 0.015, 0.2, EGY.black, sx * 0.2, 0.44, -0.06 + i * 0.14, 0, 0, sx * 1.0, { seg: 3 });
+}, { center: true });
+def('sunBall', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the falcon drops: a little golden sun, rolling
+  b.sph(0.38, EGY.gold, 0, 0, 0, 1, 1, 1, { seg: 12, glow: true, grad: 0.85 });
+  for (let i = 0; i < 10; i++) { const a = i * 0.628; b.sph(0.1, 0xffb347, 0, Math.cos(a) * 0.43, Math.sin(a) * 0.43, 1, 1, 1, { seg: 5 }); }
+  for (const sx of [-1, 1]) b.sph(0.1, 0xffb347, sx * 0.4, 0, 0, 1, 1, 1, { seg: 5 });
+}, { center: true });
+def('babyCamel', 'low', 1.3, 0.98, 0.9, (b) => {
+  // a baby camel trotting across in a tiny blanket; it faces +x
+  camelInto(b, -0.12, 0, 0, 0.42);
+});
+def('falcon', 'deco', 2.2, 1.1, 1.4, (b) => {
+  // a falcon in a striped headcloth, carrying a little sun
+  const c = 0xc89850;
+  b.sph(0.3, c, 0, 0, -0.05, 0.95, 0.85, 1.3, { seg: 9 }).sph(0.24, EGY.white, 0, -0.08, 0.06, 0.85, 0.7, 1.1, { seg: 7 }).sph(0.21, c, 0, 0.2, 0.4, 1, 0.95, 1, { seg: 8 });
+  b.sph(0.225, EGY.blue, 0, 0.26, 0.34, 1.05, 0.9, 0.95, { seg: 8 });
+  for (let i = 0; i < 3; i++) b.tor(0.2 - i * 0.02, 0.022, EGY.gold, 0, 0.22 + i * 0.09, 0.34, PI / 2, 0, 0, { seg: 8, tseg: 3 });
+  for (const sx of [-1, 1]) b.sph(0.06, 0xffffff, sx * 0.1, 0.22, 0.56, 1, 1, 0.6, { seg: 5 }).sph(0.034, EGY.eye, sx * 0.1, 0.22, 0.59, 1, 1, 0.6, { seg: 4 }).box(0.09, 0.3, 0.05, EGY.blue, sx * 0.2, 0.06, 0.36).cyl(0.018, 0.018, 0.24, 0xffb347, sx * 0.1, -0.32, 0, 0, 0, sx * 0.25, { seg: 4 });
+  b.cone(0.055, 0.15, 0xffb347, 0, 0.14, 0.62, PI * 0.65, 0, 0, { seg: 5 });
+  for (let i = 0; i < 3; i++) b.box(0.12, 0.03, 0.34, i % 2 ? EGY.blue : c, (i - 1) * 0.12, -0.04, -0.52, 0.1, (i - 1) * -0.25, 0);
+  b.sph(0.16, EGY.gold, 0, -0.56, 0, 1, 1, 1, { seg: 8, glow: true, grad: 0.85 });
+}, {
+  wings: (b, sx) => { for (let i = 0; i < 4; i++) b.sph(0.3 - i * 0.03, [0xc89850, EGY.blue, 0xc89850, EGY.gold][i], sx * (0.24 + i * 0.2), 0.02 - i * 0.01, -0.02 - i * 0.07, 1.1, 0.1, 0.62, { seg: 7 }); }, wingAt: [0.18, 0.08, -0.05],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -3532,6 +3688,7 @@ export const TALL_TYPES = {
   26: ['tallGhost', 'ghostStack', 'grandClock', 'ghostLamp', 'sheetLine', 'ghostStack'],
   27: ['owlColumn', 'heroStatue', 'templeFront', 'oliveTree', 'bigVase', 'owlColumn'],
   28: ['paintRock', 'longNeckCalf', 'stoneTotem', 'cycadTree', 'rexHello', 'stoneTotem'],
+  29: ['obelisk', 'camelCalf', 'potPalm', 'falconStatue', 'lotusColumn', 'obelisk'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
 export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'],
@@ -3542,4 +3699,5 @@ export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'b
   25: ['fruitCrate', 'fruitBaskets', 'wheelbarrow', 'wormApple', 'wateringCan', 'fruitCrate'],
   26: ['ghostNap', 'pumpkinPals', 'ghostTea', 'sheetBasket', 'booBooks', 'pumpkinPals'],
   27: ['amphorae', 'laurelPrize', 'lyreScrolls', 'oliveBaskets', 'colDrums', 'amphorae'],
-  28: ['eggNest', 'babyTrike', 'boneXylo', 'stewPot', 'shellFossils', 'eggNest'] };
+  28: ['eggNest', 'babyTrike', 'boneXylo', 'stewPot', 'shellFossils', 'eggNest'],
+  29: ['miniPyramid', 'catStatue', 'scarabChest', 'lotusPond', 'scribeDesk', 'miniPyramid'] };

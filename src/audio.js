@@ -307,6 +307,7 @@ export class GameAudio {
     else if (kind === 'booFlyer') this.woo();
     else if (kind === 'pegasus') this.whinny();
     else if (kind === 'ptero') this.pteroCall();
+    else if (kind === 'falcon') this.falconCry();
     else if (kind === 'flipGull') for (let i = 0; i < 3; i++) this.tone('sawtooth', 820, t + i * 0.17, 0.14, 0.07, null, { slide: 1350, lp: 2800, att: 0.02 });   // a gull's cry, backwards
     else if (kind === 'pteroBones') { this.rattle(); this.tone('sawtooth', 900, t + 0.1, 0.25, 0.03, null, { slide: 1300, lp: 2600, att: 0.03 }); }
     else if (kind === 'flashMirror') { this.twinkle(); this.tone('sine', 1320, t, 0.6, 0.04, null, { slide: 1980, att: 0.1 }); }
@@ -432,6 +433,11 @@ export class GameAudio {
   dinoCall() { if (this.ok) { const t = this.ctx.currentTime; this.tone('sawtooth', 130, t, 0.9, 0.09, null, { slide: 210, lp: 700, att: 0.12, vib: 0.03, vibHz: 7 }); this.tone('sine', 260, t + 0.1, 0.8, 0.06, null, { slide: 400, att: 0.15, vib: 0.03, vibHz: 7 }); this.tone('sawtooth', 210, t + 0.9, 0.5, 0.07, null, { slide: 120, lp: 600, att: 0.03 }); } }
   stomp() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 2; i++) { this.tone('sine', 90, t + i * 0.5, 0.3, 0.2, null, { slide: 45, att: 0.004 }); this.noise(t + i * 0.5, 0.12, 0.08, { type: 'lowpass', f: 300 }); } } }
   pteroCall() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 2; i++) this.tone('sawtooth', 900, t + i * 0.26, 0.2, 0.05, null, { slide: 1500 - i * 500, lp: 3200, att: 0.01, vib: 0.05, vibHz: 22 }); } }
+  // Ancient Egypt: a rattle of little bells, a reed pipe, a camel having a grumble, and a falcon
+  sistrum() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 5; i++) { this.noise(t + i * 0.11, 0.05, 0.07, { type: 'highpass', f: 5200 }); this.tone('triangle', 3100 + (i % 2) * 500, t + i * 0.11, 0.05, 0.02, null, { att: 0.004 }); } } }
+  reedCall() { if (this.ok) { const t = this.ctx.currentTime; [[69, 0, 0.2], [70, 0.2, 0.2], [73, 0.4, 0.2], [74, 0.6, 0.36], [73, 0.98, 0.14], [70, 1.12, 0.14], [69, 1.26, 0.5]].forEach(([n, d, l]) => { this.tone('square', midi(n), t + d, l, 0.028, null, { lp: 1500, att: 0.03, vib: 0.012, vibHz: 6 }); this.tone('sine', midi(n), t + d, l, 0.03, null, { att: 0.03 }); }); } }
+  camelGrunt() { if (this.ok) { const t = this.ctx.currentTime; this.tone('sawtooth', 150, t, 0.7, 0.08, null, { slide: 95, lp: 620, att: 0.08, vib: 0.08, vibHz: 16 }); this.tone('sine', 300, t, 0.6, 0.03, null, { slide: 190, att: 0.08, vib: 0.08, vibHz: 16 }); } }
+  falconCry() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 3; i++) this.tone('sawtooth', 2100, t + i * 0.17, 0.13, 0.04, null, { slide: 1500, lp: 4200, att: 0.01 }); } }
   birdsong() { if (this.ok) { const t = this.ctx.currentTime + 0.2; [[88, 0, 0.12], [91, 0.14, 0.1], [95, 0.26, 0.2], [91, 0.52, 0.08], [93, 0.62, 0.08], [96, 0.72, 0.26]].forEach(([n, d, l]) => this.tone('sine', midi(n), t + d, l, 0.05, null, { slide: midi(n + 1), att: 0.015, vib: 0.01, vibHz: 9 })); } }
   appleBite() { if (this.ok) { const t = this.ctx.currentTime; this.noise(t, 0.07, 0.16, { type: 'highpass', f: 1800 }); this.noise(t + 0.05, 0.12, 0.1, { type: 'bandpass', f: 900, q: 1 }); for (let i = 0; i < 3; i++) this.noise(t + 0.3 + i * 0.16, 0.07, 0.06, { type: 'bandpass', f: 800 + i * 150, q: 1.5 }); } }
   // Giraffe World: somebody munching leaves, a little bird, and the low hum that giraffes make to each other
@@ -494,6 +500,7 @@ export class GameAudio {
     else if (zone === 7) run([87, 91, 94, 99, 103], 'sine', 0.06, 0.06);
     else if (zone === 20) { run([79, 76, 72, 67, 72, 76, 84], 'sine', 0.11, 0.09); this.hoot(); }
     else if (zone === 25) { run([74, 78, 81, 86, 81, 86, 90], 'triangle', 0.09, 0.09); this.birdsong(); }
+    else if (zone === 29) { run([62, 63, 66, 69, 70, 69, 74], 'triangle', 0.1, 0.1); this.sistrum(); }
     else if (zone === 28) { run([48, 48, 55, 52, 55, 60, 64], 'triangle', 0.12, 0.12); this.dinoCall(); }
     else if (zone === 27) { run([74, 78, 81, 86, 90, 86, 93], 'triangle', 0.08, 0.09); this.lyre(); }
     else if (zone === 26) { run([76, 79, 83, 88, 83, 91, 88], 'sine', 0.1, 0.1); this.woo(); }

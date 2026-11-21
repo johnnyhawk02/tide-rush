@@ -637,4 +637,23 @@ THEMES[28] = theme('Stomp Along', {
   drums: { thump: 'x...x...x...x.x.', tick: '..x...x...x...x.', rim: '....x.......x...' },
 });
 
+// ---- 29. Ancient Egypt: "Down the Nile", a reed pipe winding along over a slow drum (D, with a flattened second) ----
+THEMES[29] = theme('Down the Nile', {
+  key: 2, scale: 'min', base: 74, gain: 1.16, tempo: 0.98, voice: 'reed', bassVoice: 'pizz', stab: 'pluck',
+  chords: 'I I bII I iv iv bII I',
+  tune: [
+    "1:2 b2:2 #3:4 b2:2 1:2 b2:4",
+    "#3:2 4:2 5:4 4:2 #3:2 b2:4",
+    "b2:2 #3:2 4:4 #3:2 b2:2 1:4",
+    "1:2 7,:2 1:4 -:4 5,:2 7,:2",
+    "4:2 5:2 6:4 5:2 4:2 #3:4",
+    "4:2 6:2 1':4 7:2 6:2 5:4",
+    "6:2 5:2 4:2 #3:2 b2:4 4:4",
+    "#3:2 b2:2 1:8 -:4",
+  ],
+  bass: [0, _, _, 0, _, _, 7, _, 0, _, _, 0, _, _, 7, _],
+  stabs: '...x..x....x..x.',
+  drums: { thump: 'x..x..x.x..x..x.', shake: '..x..x.x..x..x.x', rim: '......x.......x.' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));
