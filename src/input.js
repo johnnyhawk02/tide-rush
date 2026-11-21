@@ -11,6 +11,7 @@ export class Input {
         case 'Escape': case 'KeyP': on.pause(); break;
         case 'Enter': on.confirm(); break;
         case 'KeyM': on.mute(); break;
+        case 'KeyC': on.view && on.view(); break;
         default: return;
       }
       e.preventDefault();

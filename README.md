@@ -27,6 +27,7 @@ npm run build      # production build in dist/ (index.html + game.js, runs from 
 | Change lane | Left / Right arrows, or A / D | Swipe left or right |
 | Jump | Up arrow, W or Space | Swipe up, or tap |
 | Pause | Esc or P | Pause button |
+| Change the camera view | C | Camera button under the hearts, or the choice in the pause menu |
 | Sound on or off | M | Speaker button |
 
 On a touch screen one swipe is one move: however long or fast the swipe is, Robyn changes lane once, and the finger has to lift before the next move (`src/input.js`).
@@ -85,6 +86,7 @@ Jumps are buffered and you can change lane in mid-air.
 | File | What it does |
 |---|---|
 | `src/main.js` | Game loop, player physics, collisions, scoring, rocket mode, the Star Tunnel, weather, camera, quality scaling |
+| `src/camera.js` | The camera views, the survey of what hangs over the pier, and the flight planner that keeps a high view clear of it |
 | `src/track.js` | Endless track: scenery chunks, the deck, the fair pattern generator (obstacles, pads, portals, letters) |
 | `src/obstacles.js` | Obstacle, platform, pad, portal, shell, pearl, letter and power-up models, with pooling |
 | `src/scenery.js` | Scenery for the thirty-one levels |
@@ -114,6 +116,14 @@ Robyn, Izzi and Pixel are chunky cartoon figures sculpted in code, with no model
 - Her ponytail, the long end of her scarf and both tails are each a single piece that bends smoothly at a few joints (`Bendy`), instead of a chain of stiff lengths.
 - Everything they do is procedural: Robyn's coat swishes and lifts with her knees, her hood bobs and her ponytail swings; Izzi bounds along with her tongue out, ears and plume of a tail streaming; Pixel carries her tail like a question mark and flicks an ear now and then.
 - The app icon is a portrait of the Robyn model (`scripts/make-icons.cjs`), so redraw it after changing how she looks.
+
+## The camera views
+
+There are three views, and the camera button (or the C key) steps through them: Classic, the view the game has always had and the one it starts with; Sky view, high up and looking down the pier, so more of what is coming can be seen; and Close-up, low and near, just behind Robyn. The same three are in the pause menu, where picking one shows it straight away behind the menu. The choice is remembered. The lanes, swipes and the fair path are exactly the same in every view, because a view only moves the camera.
+
+A view is a set of numbers (`VIEWS` in `src/camera.js`): how far back and how high the camera sits, where it looks, how much it follows a lane change, a jump and the rocket, how far it pulls back when the tide is close, and how wide the lens is. Changing view glides from one set to the next. To add a view, add a set there and a button in `index.html`.
+
+Sky view flies higher than the roofs and arches, so it has to keep clear of them. When a chunk of scenery is built, `surveyOverhead` notes, metre by metre, the underside and top of everything that hangs over the lanes (light beams and see-through things do not count). Each frame the planner (`Headroom`) looks about two seconds ahead and picks the smoothest flight that stays near the height the view asks for without passing through any of it: over a low arch, under a long roof such as the Glass Tunnel's or the Museum's, and back up afterwards. Heights are measured from the road under the camera, so hills need no special care, and in the Star Tunnel the camera stays inside the tunnel and is already at the right height for whatever waits at the far end. Classic and Close-up sit below everything, so they do not use the planner and Classic is exactly as it was.
 
 ## The tide and the sea
 
@@ -185,4 +195,4 @@ __game.simulate(420);   // seven minutes of play without drawing
 
 If the auto-player ever stumbles, a pattern is unfair. Set `__game.botWarp = true` as well to make it take every portal. `__game.startAt(distance, ['pad', 'portal'])` begins a run part-way along the coast, optionally forcing the first row types, which is handy for looking at a level (each level is 280 m long, so level N of the first lap starts at (N - 1) x 280 m: the Glass Tunnel at 280 m, Chocolate Coast at 560 m, Moo Town at 840 m, the Museum at 1,120 m, Dream Time at 1,400 m, Pixel Land at 1,680 m, Disco Land at 1,960 m, the Upside-Down World at 2,240 m, Giraffe World at 2,520 m, Orchard Land at 2,800 m, the Friendly Ghost World at 3,080 m, Ancient Greece at 3,360 m, Ancient Time at 3,640 m, Ancient Egypt at 3,920 m, Ancient Rome at 4,200 m, Spiral Bay at 4,480 m, the Sewers at 4,760 m, the Land of Mirrors at 5,040 m, Sky-High Mountain at 5,320 m, Christmas Pier at 5,600 m, Rollercoaster World at 5,880 m, Marshmallow Shore at 6,160 m and Space Pier at 6,720 m).
 
-Saved in the browser (localStorage): best score, sound on or off, shells banked, chosen outfit.
+Saved in the browser (localStorage): best score, sound on or off, shells banked, chosen outfit, chosen camera view.

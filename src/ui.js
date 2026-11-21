@@ -12,7 +12,7 @@ export class UI {
     this.on = on; this.last = {}; this.chips = {};
     const tap = (id, fn) => $(id).addEventListener('click', (e) => { e.preventDefault(); fn(); });
     tap('startBtn', on.start); tap('pauseBtn', on.pause); tap('resumeBtn', on.resume); tap('restartBtn', on.restart);
-    tap('againBtn', on.restart); tap('homeBtn', on.home); tap('soundBtn', on.mute); tap('soundBtn2', on.mute);
+    tap('againBtn', on.restart); tap('homeBtn', on.home); tap('soundBtn', on.mute); tap('soundBtn2', on.mute); tap('camBtn', on.view);
     const coarse = window.matchMedia('(pointer: coarse)').matches;
     $('hints').innerHTML = coarse
       ? '<span>Swipe left or right to change lane</span><span>Swipe up or tap to jump</span><span>Spell ROBYN for a bonus</span>'
@@ -36,6 +36,21 @@ export class UI {
     });
     const next = list.find((o) => o.need > bank);
     $('outfitNote').textContent = `${list[selected].name} outfit · ${fmt(bank)} shells collected` + (next ? ` · next at ${fmt(next.need)}` : '');
+  }
+  // The camera views: one button for each in the pause menu, with the one in use marked. With `announce`, the view's name
+  // also shows for a moment beside the camera button, so that a tap on it says what it did.
+  views(list, selected, announce) {
+    const row = $('views');
+    if (!row.children.length) list.forEach((v, i) => {
+      const b = document.createElement('button'); b.className = 'view'; b.textContent = v.name;
+      b.addEventListener('click', (e) => { e.preventDefault(); this.on.pickView(i); });
+      row.appendChild(b);
+    });
+    [...row.children].forEach((b, i) => { b.classList.toggle('sel', i === selected); b.setAttribute('aria-pressed', i === selected ? 'true' : 'false'); });
+    $('camBtn').setAttribute('aria-label', `Camera: ${list[selected].name}. Tap to change the view`);
+    if (!announce) return;
+    const note = $('camNote'); note.textContent = list[selected].name; note.classList.add('show');
+    clearTimeout(this.camTimer); this.camTimer = setTimeout(() => note.classList.remove('show'), 1500);
   }
   loaded() { $('loading').classList.add('done'); setTimeout(() => { $('loading').hidden = true; }, 700); }
   fatal(msg) { $('loading').classList.remove('done'); $('loading').hidden = false; $('loading').innerHTML = `<span style="animation:none;max-width:80vw;text-align:center">${msg}</span>`; }

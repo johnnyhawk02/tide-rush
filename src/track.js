@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { Builder, C, makeRng, pick, plankTexture, sliceZ } from './kit.js';
 import { CHUNK, DECK_HALF, LANE_W, laneX, PLAT_H, ZONE_CHUNKS, ZONE_LEN, zoneOfLevel, JUMP_H, speedAt, diffAt, jumpTimeAt, lerp, clamp, ROOFED, GAPS } from './config.js';
+import { surveyOverhead } from './camera.js';
 import { obtain, release, obstacleDef, portalMat, LOW_TYPES, LOW_BY_ZONE, TALL_TYPES } from './obstacles.js';
 import { populate, animate } from './scenery.js';
 
@@ -408,7 +409,8 @@ export class Track {
     const tm = new THREE.Mesh(top, this.deckMat); tm.receiveShadow = true; group.add(tm);
     group.add(new THREE.Mesh(under, this.underMat));
     this.world.add(group);
-    this.chunks.set(i, { group, anim, own });
+    // (what hangs over the lanes in this chunk is noted once, here, for the camera: see camera.js)
+    this.chunks.set(i, { group, anim, own, over: surveyOverhead(group, CHUNK) });
   }
 
   update(dist, dt, budget = 1) {
@@ -489,6 +491,19 @@ export class Track {
     for (const l of this.letters) { l.mesh.rotation.y = Math.sin(t * 2.2 + l.s) * 0.6; l.mesh.position.y = l.y + Math.sin(t * 2.6 + l.s) * 0.12; }
     portalMat.uniforms.uT.value = t;
     if (this.world.visible) for (const [, c] of this.chunks) animate(c.anim, t, dt);
+  }
+
+  // Everything that hangs over the lanes between s0 and s1 metres along the coast, added to `out` as [underside, top, where]
+  // triples (heights above the road, where in metres along the coast; a top of Infinity is a roof). The high camera asks.
+  overhead(s0, s1, out) {
+    for (const [i, c] of this.chunks) {
+      const base = i * CHUNK + c.over.from, rows = c.over.rows;
+      for (let k = Math.max(0, Math.floor(s0 - base)), k1 = Math.min(rows.length - 1, Math.floor(s1 - base)); k <= k1; k++) {
+        const r = rows[k];
+        if (r) for (let j = 0; j < r.length; j += 2) out.push(r[j], r[j + 1], base + k + 0.5);
+      }
+    }
+    return out;
   }
 
   // ---------- queries used by the player physics ----------
