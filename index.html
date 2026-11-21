@@ -80,6 +80,9 @@ button:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
 .icon-btn { width: clamp(48px, 8vmin, 58px); aspect-ratio: 1; display: grid; place-items: center; background: var(--glass); border: 1.5px solid var(--glass-line); border-radius: 50%; }
 .icon-btn svg { width: 46%; height: 46%; fill: var(--foam); }
 .icon-btn:active { transform: scale(0.94); }
+.cam-row { display: flex; align-items: center; gap: 8px; }
+.cam-note { padding: 6px 13px 7px; font-family: var(--display); font-size: clamp(14px, 2.5vmin, 18px); letter-spacing: 0.5px; white-space: nowrap; opacity: 0; transform: translateX(8px); transition: opacity .2s, transform .2s; }
+.cam-note.show { opacity: 1; transform: none; }
 .powers { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; align-items: flex-start; }
 .chip { display: flex; align-items: center; gap: 9px; padding: 6px 12px 6px 7px; font-weight: 800; font-size: clamp(12px, 2.1vmin, 15px); }
 .chip.hot { border-color: var(--c); }
@@ -156,6 +159,11 @@ kbd { font: inherit; font-family: var(--display); background: var(--foam); color
 .stats b { display: block; font-family: var(--display); font-weight: 400; font-size: clamp(18px, 3.6vmin, 26px); font-variant-numeric: tabular-nums; }
 .stats small { font-size: clamp(10px, 1.8vmin, 12.5px); font-weight: 800; letter-spacing: .8px; text-transform: uppercase; opacity: .8; }
 .row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; }
+.views-box { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+.views-box small { font-size: clamp(10px, 1.8vmin, 12.5px); font-weight: 800; letter-spacing: .8px; text-transform: uppercase; opacity: .8; }
+.views { display: flex; gap: 6px; padding: 5px; border-radius: 999px; background: rgba(255,250,240,.1); }
+.view { font-family: var(--display); font-size: clamp(14px, 2.6vmin, 18px); letter-spacing: .5px; padding: .5em .95em .58em; border-radius: 999px; background: transparent; color: var(--foam); min-height: 44px; white-space: nowrap; transition: background .15s, color .15s; }
+.view.sel { background: var(--sun); color: var(--ink); box-shadow: 0 3px 0 #c98f00; }
 #loading { position: absolute; inset: 0; display: grid; place-items: center; background: linear-gradient(#2c5f9a, #f2b98a); font-family: var(--display); font-size: clamp(22px, 5vmin, 34px); letter-spacing: 1px; transition: opacity .5s; }
 #loading.done { opacity: 0; pointer-events: none; }
 #loading span { animation: bob 1.2s ease-in-out infinite; text-shadow: 0 3px 0 var(--coral-deep); }
@@ -209,6 +217,7 @@ kbd { font: inherit; font-family: var(--display); background: var(--foam); color
       </div>
       <div id="letters" class="letters pill" aria-label="Letters collected"><b>R</b><b>O</b><b>B</b><b>Y</b><b>N</b></div>
       <div id="lives" class="lives pill" aria-label="Stumbles left"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.500-4.600-9.600-9.300C.900 8 3 4.500 6.500 4.500c2.200 0 3.900 1.200 5.500 3.200 1.600-2 3.300-3.200 5.500-3.200 3.500 0 5.600 3.500 4.100 7.200C19.500 16.400 12 21 12 21Z"/></svg></i><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.500-4.600-9.600-9.300C.900 8 3 4.500 6.500 4.500c2.200 0 3.900 1.200 5.500 3.200 1.600-2 3.300-3.200 5.500-3.200 3.500 0 5.600 3.500 4.100 7.200C19.500 16.400 12 21 12 21Z"/></svg></i><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.500-4.600-9.600-9.300C.900 8 3 4.500 6.500 4.500c2.200 0 3.900 1.200 5.500 3.200 1.600-2 3.300-3.200 5.500-3.200 3.500 0 5.600 3.500 4.100 7.200C19.500 16.400 12 21 12 21Z"/></svg></i><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.500-4.600-9.600-9.300C.900 8 3 4.500 6.500 4.500c2.200 0 3.900 1.200 5.500 3.200 1.600-2 3.300-3.200 5.500-3.200 3.500 0 5.600 3.500 4.100 7.200C19.500 16.400 12 21 12 21Z"/></svg></i><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.500-4.600-9.600-9.300C.900 8 3 4.500 6.500 4.500c2.200 0 3.900 1.200 5.500 3.200 1.600-2 3.300-3.200 5.500-3.200 3.500 0 5.600 3.500 4.100 7.200C19.500 16.400 12 21 12 21Z"/></svg></i></div>
+      <div class="cam-row"><span id="camNote" class="cam-note pill" aria-live="polite"></span><button id="camBtn" class="icon-btn" aria-label="Change the camera view"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6.5" width="13.5" height="11" rx="2.8"/><path d="M16.8 10.3 21.1 7.4c.4-.3.9 0 .9.5v8.2c0 .5-.5.8-.9.5l-4.3-2.9Z"/></svg></button></div>
       </div>
     </div>
     <div id="tide" class="tide pill"><span>The tide is right behind you!</span><div class="bar"><i id="tidebar"></i></div></div>
@@ -235,6 +244,7 @@ kbd { font: inherit; font-family: var(--display); background: var(--foam); color
     <div class="card">
       <h2>Paused</h2>
       <p class="sub">The tide is waiting. Just this once.</p>
+      <div class="views-box"><small>Camera</small><div class="views" id="views" role="group" aria-label="Camera view"></div></div>
       <button id="resumeBtn" class="btn">Keep running</button>
       <div class="row">
         <button id="restartBtn" class="btn alt">Start again</button>

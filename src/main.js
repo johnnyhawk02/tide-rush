@@ -17,6 +17,7 @@ import { SkyLife } from './skylife.js';
 import { Pets } from './pets.js';
 import { Invaders } from './invaders.js';
 import { Santa } from './santa.js';
+import { VIEWS, VIEW_KEYS, viewIndex, Headroom } from './camera.js';
 
 const POWER_TIME = { magnet: 9, shield: 22, boots: 10, gem: 10, rocket: 6.5, board: 12, laser: 13 };
 const POWER_KEYS = Object.keys(POWER_TIME);
@@ -70,6 +71,7 @@ class Game {
     this.ui = new UI({
       start: () => this.start(), pause: () => this.pause(), resume: () => this.resume(), restart: () => this.restart(),
       home: () => this.home(), mute: () => this.toggleMute(), outfit: (i) => this.setOutfit(i),
+      view: () => this.nextView(), pickView: (i) => this.setView(i),
     });
     this.ui.setSound(this.audio.muted);
 
@@ -83,6 +85,12 @@ class Game {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1200);
     this.camPos = new THREE.Vector3(2, 2, -4); this.camLook = new THREE.Vector3(0, 1.1, 0);
+    // the camera view the player last chose (camera.js): `view` is which one, and `cv` holds the numbers in use, which glide to a new view's
+    this.view = 0;
+    try { this.view = viewIndex(localStorage.getItem('tiderush.view')); } catch (e) { /* storage may be blocked */ }
+    this.cv = { ...VIEWS[this.view] }; this.headroom = new Headroom();
+    // (what hangs over the lanes between s0 and s1; in the Star Tunnel, only what she will meet once she is out of it)
+    this.overheadFn = (s0, s1, out) => this.track.overhead(this.warp ? Math.max(s0, this.warp.end - this.camPos.z - 3) : s0, s1, out);
     this.sky = new Sky(this.scene, this.quality);
     this.track = new Track(this.scene);
     // saved progress: best score, shells collected over all runs (they unlock outfits) and the chosen outfit
@@ -142,7 +150,7 @@ class Game {
       left: () => this.move(-1), right: () => this.move(1), jump: () => this.jump(),
       pause: () => (this.mode === 'pause' ? this.resume() : this.pause()),
       confirm: () => { if (this.mode === 'title') this.start(); else if (this.mode === 'over' && this.time - this.overAt > 0.5) this.restart(); else if (this.mode === 'pause') this.resume(); },
-      mute: () => this.toggleMute(), touch: () => this.audio.unlock(),
+      mute: () => this.toggleMute(), touch: () => this.audio.unlock(), view: () => this.nextView(),
     });
     window.addEventListener('pointerdown', () => this.audio.unlock(), { passive: true });
     window.addEventListener('keydown', () => this.audio.unlock());
@@ -156,7 +164,7 @@ class Game {
     new ResizeObserver(() => this.resize()).observe(this.app);
     window.addEventListener('orientationchange', () => setTimeout(() => this.resize(), 250));
 
-    this.ui.show('title', this.best); this.ui.outfits(OUTFITS, this.outfit, this.bank);
+    this.ui.show('title', this.best); this.ui.outfits(OUTFITS, this.outfit, this.bank); this.ui.views(VIEWS, this.view);
     this.ui.loaded();
     this.last = performance.now(); this.acc = 0; this.frames = 0;
     this.renderer.setAnimationLoop((now) => this.frame(now));
@@ -179,6 +187,7 @@ class Game {
     this.got = [0, 0, 0, 0, 0]; this.wordT = 0; this.track.wantLetter = 0;
     this.warp = null; this.setWorld(true); this.flyK = 0;
     this.fwT = 1; this.boltT = 2.5; this.sprayT = 1;
+    this.headroom.reset();
   }
   // Show the normal world, or hide it and show the warp tunnel instead.
   setWorld(on) { this.track.world.visible = on; this.sky.setVisible(on); this.tunnel.show(!on, this.warp ? this.warp.turn : 1); }
@@ -256,6 +265,13 @@ class Game {
     this.canvas.focus({ preventScroll: true });
   }
   toggleMute() { this.audio.unlock(); this.audio.setMuted(!this.audio.muted); this.audio.click(); this.ui.setSound(this.audio.muted); }
+  // The camera button (and the C key) steps on to the next view; the pause menu picks one by name. The choice is remembered.
+  nextView() { if (this.mode === 'run' || this.mode === 'pause') this.setView((this.view + 1) % VIEWS.length); }
+  setView(i) {
+    if (!VIEWS[i]) return;
+    if (i !== this.view) { this.view = i; try { localStorage.setItem('tiderush.view', VIEWS[i].id); } catch (e) { /* ignore */ } }
+    this.audio.unlock(); this.audio.click(); this.ui.views(VIEWS, i, true);
+  }
 
   // ---------- player actions ----------
   move(dir) {
@@ -345,7 +361,7 @@ class Game {
   // ---------- simulation ----------
   frame(now) {
     const dt = Math.min(0.05, Math.max(0, (now - this.last) / 1000)); this.last = now;
-    if (this.mode !== 'pause') this.update(dt);
+    if (this.mode !== 'pause') this.update(dt); else this.updateCamera(dt);      // (while paused only the camera moves, so that a view picked from the pause menu can be seen straight away)
     this.setChunky(zoneAtS(this.dist) === PIXEL);
     this.renderer.render(this.scene, this.camera);
     // adapt resolution if the device is struggling
@@ -1013,35 +1029,57 @@ class Game {
     if (d.t > 1.75) this.finish();
   }
 
+  // How much higher the road is at z (metres behind Robyn, or ahead of her if negative) than it is under her: zero except on the hills.
+  roadAt(z) { return HILL.value.x === 0 ? 0 : hillHeight(HILL.value.y - z) - HILL.value.w; }
+
   updateCamera(dt) {
     const P = this.p, cam = this.camera, t = this.time;
+    const live = this.mode === 'run' || this.mode === 'pause';
     const run = this.dist - this.track.runStart, diff = this.mode === 'title' ? 0 : diffAt(run);
     const back = this.camBack || 1;
+    // the view the player has chosen (camera.js): its numbers glide from the last view's to the new one's
+    const v = this.cv, to = VIEWS[this.view];
+    for (const key of VIEW_KEYS) if (v[key] !== to[key]) v[key] = Math.abs(to[key] - v[key]) < 1e-3 ? to[key] : damp(v[key], to[key], 5.5, dt);
     // title: a slow orbit in front of Robyn. In play: a chase camera that swings round behind her.
     const k = smooth(this.camT);
     const ang = lerp(0.62 + Math.sin(t * 0.35) * 0.22, Math.PI, k);
-    const tideK = this.mode === 'run' || this.mode === 'dying' || this.mode === 'over' ? smooth(this.tide) : 0;
-    const rad = lerp(4.9 * Math.pow(60 / this.baseFov, 1.1), (6.3 + tideK * 2.3) * back, k), hgt = lerp(1.7, (3.45 + tideK * 1.0) * (0.75 + back * 0.25) + P.y * 0.42 + this.flyK * 3.0, k);
-    const tx = P.x * lerp(1, 0.58, k);
+    const tideK = live || this.mode === 'dying' || this.mode === 'over' ? smooth(this.tide) : 0;
+    const rad = lerp(4.9 * Math.pow(60 / this.baseFov, 1.1), (v.back + tideK * v.tideBack) * back, k), hgt = lerp(1.7, (v.up + tideK * v.tideUp) * (0.75 + back * 0.25) + P.y * v.hop + this.flyK * v.fly, k);
+    const tx = P.x * lerp(1, v.side, k);
     const want = this._v || (this._v = new THREE.Vector3());
     want.set(tx + Math.sin(ang) * rad, hgt, -Math.cos(ang) * rad);
     if (this.mode === 'over') { const a = Math.PI - 0.5 + Math.sin(t * 0.25) * 0.25; want.set(P.x * 0.5 + Math.sin(a) * 7.5 * back, 4.4, -Math.cos(a) * 7.5 * back); }
     const slope = (this.slope || 0) * k;      // on a hill the camera rides the slope: it sits lower going up, higher coming down, and looks along the road
     want.y -= slope * rad * 0.55;
-    if (k > 0.5 && (zoneAtS(this.dist + 10) === DEEP || zoneAtS(this.dist - 8) === DEEP)) want.y = Math.min(want.y, 5.5);     // stay under the roof of the Glass Tunnel
+    if (v.clear > 0 && k > 0.5 && this.mode !== 'over') {
+      // a high view keeps clear of whatever hangs over the pier: it passes over a low arch and ducks under a roof (camera.js).
+      // Heights there are measured from the road under the camera, which on a hill is not level with the road under Robyn.
+      // (In the Star Tunnel it stays inside the tunnel's wall, and gets ready for whatever is waiting at its far end.)
+      const road = this.roadAt(this.camPos.z), cap = this.warp ? 8.2 : Infinity;
+      if (Math.abs(road - (this.roadWas || 0)) > 0.6) this.camPos.y += road - (this.roadWas || 0);      // (the land is flat in the Star Tunnel, so leaving it on a hill moves the road in one go: the camera goes with it)
+      this.roadWas = road;
+      want.y = Math.min(cap, road + this.headroom.fit(want.y - road, this.camPos.y - road, dt, this.dist - this.camPos.z, this.speed, this.mode === 'pause', this.overheadFn, cap - road));
+    } else {
+      this.headroom.reset();
+      this.roadWas = 0;
+      if (k > 0.5 && (zoneAtS(this.dist + 10) === DEEP || zoneAtS(this.dist - 8) === DEEP)) want.y = Math.min(want.y, 5.5);     // stay under the roof of the Glass Tunnel
+    }
     this.camPos.lerp(want, 1 - Math.exp(-(this.mode === 'over' ? 1.5 : 9) * dt));
     const look = this._l || (this._l = new THREE.Vector3());
-    look.set(P.x * lerp(1, 0.78, k), lerp(1.32, 1.25 + P.y * 0.5 + this.flyK * 1.6, k), lerp(0, -7.5, k));
-    look.y += slope * 7.5 * 0.8;
+    look.set(P.x * lerp(1, v.sideAim, k), lerp(1.32, v.aim + P.y * v.hopAim + this.flyK * v.flyAim, k), lerp(0, -v.ahead, k));
+    look.y += slope * v.ahead * 0.8;
     this.camLook.lerp(look, 1 - Math.exp(-10 * dt));
-    this.shake = Math.max(0, this.shake - dt * 2.2);
-    const sh = this.shake * this.shake * 0.35;
+    if (this.mode !== 'pause') this.shake = Math.max(0, this.shake - dt * 2.2);
+    const sh = this.mode === 'pause' ? 0 : this.shake * this.shake * 0.35;
     cam.position.set(this.camPos.x + (Math.random() - 0.5) * sh, this.camPos.y + (Math.random() - 0.5) * sh, this.camPos.z);
     cam.lookAt(this.camLook);
     if (this.warp) this.tunnel.face(cam);
     if (this.lean) cam.rotateZ(this.lean);
     if (this.debugCam) { cam.position.fromArray(this.debugCam.pos); cam.lookAt(new THREE.Vector3().fromArray(this.debugCam.look)); }
-    const fov = this.baseFov + (this.mode === 'run' ? diff * 9 + (this.pw.gem > 0 ? 1 : 0) + (this.warp || this.pw.rocket > 0 ? 7 : 0) + Math.max(0, -(this.slope || 0)) * 22 : 0) * (this.baseFov > 75 ? 0.4 : 1);
+    // the lens: the view's own zoom in play (the title screen and the wipe-out always use the normal one), wider at speed
+    const zoom = lerp(1, v.zoom, this.mode === 'over' ? 0 : k);
+    const base = zoom === 1 ? this.baseFov : THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(this.baseFov / 2)) * zoom));
+    const fov = base + (live ? diff * 9 + (this.pw.gem > 0 ? 1 : 0) + (this.warp || this.pw.rocket > 0 ? 7 : 0) + Math.max(0, -(this.slope || 0)) * 22 : 0) * (this.baseFov > 75 ? 0.4 : 1);
     if (Math.abs(fov - cam.fov) > 0.05) { cam.fov = lerp(cam.fov, fov, 1 - Math.exp(-3 * dt)); cam.updateProjectionMatrix(); }
   }
 

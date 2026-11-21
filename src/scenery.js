@@ -2689,10 +2689,12 @@ const discoRig = () => prefab('discoRig', () => {
   for (let i = 0; i < 10; i++) b.box(1.5, 0.06, 0.06, DCHROME, -5.6 + i * 1.25, H - 0.4, 0.4, 0, 0, (i % 2 ? 1 : -1) * 0.6);
   b.cyl(0.03, 0.03, 0.9, DCHROME, 0, H - 1.25, 0, 0, 0, 0, { seg: 4 });
   g.add(b.build({ cast: false, receive: false }));
-  const s = new Builder(1);
+  const s = new Builder(1), r = new Builder(1), spin = new THREE.Group();
   discoBallInto(s, 1.5, 0, 0, 0);
-  for (let i = 0; i < 8; i++) { const a = i * PI / 4, tilt = 0.32 + (i % 3) * 0.1, L = 7.5; s.box(L, 0.07, 0.07, NEONS[i % 6], Math.cos(a) * Math.cos(tilt) * (1.5 + L / 2), -Math.sin(tilt) * (1.5 + L / 2), -Math.sin(a) * Math.cos(tilt) * (1.5 + L / 2), 0, a, -tilt, DGLOW); }
-  const m = s.build({ cast: false, receive: false }); m.name = 'spin'; m.position.set(0, H - 3.2, 0); g.add(m);
+  for (let i = 0; i < 8; i++) { const a = i * PI / 4, tilt = 0.32 + (i % 3) * 0.1, L = 7.5; r.box(L, 0.07, 0.07, NEONS[i % 6], Math.cos(a) * Math.cos(tilt) * (1.5 + L / 2), -Math.sin(tilt) * (1.5 + L / 2), -Math.sin(a) * Math.cos(tilt) * (1.5 + L / 2), 0, a, -tilt, DGLOW); }
+  // (the beams are their own model, marked as light, so that a high camera knows it may fly through them: see camera.js)
+  const beams = r.build({ cast: false, receive: false }); beams.userData.light = true;
+  spin.add(s.build({ cast: false, receive: false }), beams); spin.name = 'spin'; spin.position.set(0, H - 3.2, 0); g.add(spin);
   return g;
 });
 // Hoops of neon over the pier, three colours one inside the other.
