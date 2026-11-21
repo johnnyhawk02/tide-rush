@@ -1,3 +1,7 @@
 node_modules/
 dist/
 .DS_Store
+blender/renders/
+blender/*.blend
+blender/*.blend1
+blender/robyn.glb
