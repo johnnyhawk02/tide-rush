@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -2611,10 +2611,139 @@ const pixelHop = () => prefab('pixelHop', () => {
   return g;
 });
 
+// ---------- Disco Land ----------
+const DGLOW = { glow: true, grad: 1 }, DDARK = 0x24202c, DCHROME = 0xc8c0d8;
+// A stage standing in the sea with its top at deck level: dark, with a strip of light round the edge.
+const discoStageInto = (b, x, z, w, d, col = NEON.pink) => {
+  const y0 = WATER_Y - 1.2;
+  b.box(w, -0.3 - y0, d, 0x2c2440, x, (-0.3 + y0) / 2, z, 0, 0, 0, { grad: 0.7 }).box(w + 0.3, 0.3, d + 0.3, 0x3a2f58, x, -0.15, z, 0, 0, 0, { grad: 1 });
+  for (const s of [-1, 1]) b.box(w + 0.34, 0.1, 0.08, col, x, -0.12, z + s * (d / 2 + 0.16), 0, 0, 0, DGLOW).box(0.08, 0.1, d + 0.34, col, x + s * (w / 2 + 0.16), -0.12, z, 0, 0, 0, DGLOW);
+};
+// A dance floor of lit squares (6 by 6). Its two sets of colours, the parts named 'a' and 'b', take turns to light up.
+const danceFloor = () => prefab('danceFloor', () => {
+  const g = new THREE.Group(), base = new Builder(0.9);
+  discoStageInto(base, 0, 0, 9.6, 9.6, NEON.cyan); base.box(9.2, 0.06, 9.2, 0x15121a, 0, 0.03, 0);
+  g.add(base.build({ cast: false, receive: false }));
+  for (const [name, off] of [['a', 0], ['b', 3]]) {
+    const b = new Builder(1);
+    for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) b.box(1.36, 0.06, 1.36, NEONS[(i * 2 + j * 3 + ((i * j) % 2) + off) % 6], (i - 2.5) * 1.5, 0.08, (j - 2.5) * 1.5, 0, 0, 0, DGLOW);
+    const m = b.build({ cast: false, receive: false }); m.name = name; g.add(m);
+  }
+  return g;
+});
+// Three dancers doing the same dance in a row (they bounce in time; two sets).
+const discoDancers = (v) => prefab('discoDancers' + v, () => {
+  const b = new Builder(0.9), T = v ? [NEON.cyan, NEON.yellow, NEON.pink] : [NEON.pink, NEON.green, NEON.orange], S = [0xc98a5a, 0x8a5a3c, 0xf0c8a0], H = [0x2a1c16, 0x1b1820, 0xb5651d];
+  for (let i = 0; i < 3; i++) dancerInto(b, (i - 1) * 2.2, 0, i === 1 ? 0.8 : 0, 1.5, { top: T[i], legs: i === 1 ? 0xffe23f : 0xffffff, skin: S[(i + v) % 3], hair: H[(i + v * 2) % 3], left: (i + v) % 2 === 0 });
+  return b.build({ cast: true, receive: false });
+});
+// The DJ: a bear in headphones and sunglasses behind the decks, with a wall of loudspeakers either side. It faces +z.
+const djBooth = () => prefab('djBooth', () => {
+  const b = new Builder(0.9), g = new THREE.Group();
+  discoStageInto(b, 0, 0, 12, 8);
+  b.box(5.2, 1.5, 1.6, 0x3a2f58, 0, 0.75, 1.4, 0, 0, 0, { grad: 0.85 }).box(5.4, 0.12, 1.8, DCHROME, 0, 1.56, 1.4);
+  for (let i = 0; i < 9; i++) b.box(0.4, 0.2 + ((i * 7) % 5) * 0.22, 0.06, NEONS[i % 6], -2.0 + i * 0.5, 0.3 + (0.2 + ((i * 7) % 5) * 0.22) / 2, 2.22, 0, 0, 0, DGLOW);
+  for (const sx of [-1, 1]) { recordInto(b, 0.62, sx * 1.4, 1.66, 1.4, 0, 0, 0, sx > 0 ? NEON.pink : NEON.cyan); b.box(0.06, 0.06, 0.7, DCHROME, sx * 1.4 + 0.6, 1.72, 1.2, 0, 0.4, 0); }
+  b.box(0.9, 0.1, 0.6, DDARK, 0, 1.66, 1.4); for (let i = 0; i < 4; i++) b.cyl(0.06, 0.06, 0.1, NEONS[i], -0.3 + i * 0.2, 1.76, 1.4, 0, 0, 0, { seg: 6, ...DGLOW });
+  // the DJ
+  teddyInto(b, 0, 0, -0.3, 2.6, { stand: true, pj: NEON.purple, col: 0xb5814f });
+  const hy = 1.22 * 2.6;
+  b.tor(0.66, 0.07, DDARK, 0, hy + 0.05, -0.35, 0, 0, 0, { arc: PI, seg: 12, tseg: 5 });
+  for (const sx of [-1, 1]) b.cyl(0.26, 0.26, 0.2, NEON.pink, sx * 0.68, hy, -0.35, 0, 0, PI / 2, { seg: 10 }).box(0.5, 0.26, 0.06, 0x15121a, sx * 0.28, hy + 0.12, 0.26);
+  b.box(0.2, 0.06, 0.06, 0x15121a, 0, hy + 0.2, 0.26);
+  // loudspeakers
+  for (const sx of [-1, 1]) { speakerInto(b, sx * 4.6, 0, 0, 2.2, 2.6, 1.6, NEON.pink); speakerInto(b, sx * 4.6, 2.6, 0, 2.0, 2.2, 1.4, NEON.cyan); speakerInto(b, sx * 4.6, 4.8, 0, 1.6, 1.6, 1.2, NEON.yellow); }
+  // a frame of lights with the sign on it
+  for (const sx of [-1, 1]) b.cyl(0.1, 0.1, 8.4, DCHROME, sx * 3.2, 4.2, -2.4, 0, 0, 0, { seg: 6 });
+  b.box(7.4, 1.9, 0.2, 0x1a0a3a, 0, 7.5, -2.4);
+  for (let i = 0; i < 12; i++) b.sph(0.12, NEONS[i % 6], -3.5 + i * 0.636, 8.55, -2.3, 1, 1, 1, { seg: 6, ...DGLOW }).sph(0.12, NEONS[(i + 3) % 6], -3.5 + i * 0.636, 6.45, -2.3, 1, 1, 1, { seg: 6, ...DGLOW });
+  g.add(b.build({ cast: true, receive: false }));
+  const s = signMesh('DISCO', 6.6, 1.5, '#1a0a3a', '#ff7fd0', '#2fe0ff'); s.position.set(0, 7.5, -2.28); g.add(s);
+  return g;
+});
+// A record player the size of a bandstand: the record (the part named 'spin') goes round and round.
+const bigDeck = () => prefab('bigDeck', () => {
+  const b = new Builder(0.9), g = new THREE.Group();
+  discoStageInto(b, 0, 0, 10, 10, NEON.yellow);
+  b.box(8.4, 1.0, 8.4, 0x7a2a5a, 0, 0.5, 0, 0, 0, 0, { grad: 0.85 }).cyl(3.5, 3.5, 0.2, DCHROME, -0.4, 1.1, 0.2, 0, 0, 0, { seg: 24 });
+  b.cyl(0.3, 0.4, 0.6, DCHROME, 3.3, 1.3, -3.2, 0, 0, 0, { seg: 8 }).box(0.24, 0.24, 5.0, DCHROME, 2.6, 1.7, -0.9, 0, 0.3, 0).box(0.6, 0.3, 0.9, DDARK, 1.9, 1.56, 1.4, 0, 0.3, 0);
+  for (let i = 0; i < 3; i++) b.cyl(0.3, 0.3, 0.2, NEONS[i], 3.3, 1.1, 1.6 + i * 0.9, 0, 0, 0, { seg: 8, ...DGLOW });
+  g.add(b.build({ cast: true, receive: false }));
+  const r = new Builder(0.9);
+  r.cyl(3.3, 3.3, 0.1, 0x1b1820, 0, 0, 0, 0, 0, 0, { seg: 28 }).cyl(2.5, 2.5, 0.11, 0x2c2834, 0, 0, 0, 0, 0, 0, { seg: 28 }).cyl(1.2, 1.2, 0.13, NEON.pink, 0, 0, 0, 0, 0, 0, { seg: 16 }).cyl(0.14, 0.14, 0.3, DCHROME, 0, 0.1, 0, 0, 0, 0, { seg: 6 });
+  r.box(0.7, 0.14, 0.3, NEON.yellow, 0.55, 0, 0).box(2.2, 0.105, 0.08, 0x4a4456, 2.2, 0, 0.5, 0, 0.2, 0);
+  const m = r.build({ cast: false, receive: false }); m.name = 'spin'; m.position.set(-0.4, 1.28, 0.2); g.add(m);
+  return g;
+});
+// A truss right over the pier with a great glitter ball hanging from it, far too high to bump into. The ball and its beams of
+// coloured light (the part named 'spin') turn slowly.
+const discoRig = () => prefab('discoRig', () => {
+  const b = new Builder(0.9), g = new THREE.Group(), H = 14.4;
+  for (const sx of [-1, 1]) {
+    for (const dz of [-0.4, 0.4]) b.cyl(0.07, 0.07, H, DCHROME, sx * 6.2, H / 2, dz, 0, 0, 0, { seg: 5 });
+    for (let i = 0; i < 9; i++) b.box(0.06, 0.06, 1.75, DCHROME, sx * 6.2, 0.8 + i * 1.6, 0, (i % 2 ? 1 : -1) * 1.1, 0, 0);
+    b.box(1.6, 0.5, 1.6, DDARK, sx * 6.2, 0.25, 0);
+    for (let i = 0; i < 3; i++) b.cyl(0.22, 0.16, 0.4, DDARK, sx * 5.4, H - 0.5, (i - 1) * 0.5, 0, 0, sx * 0.9, { seg: 8 }).cyl(0.2, 0.2, 0.05, NEONS[i + (sx > 0 ? 3 : 0)], sx * 5.24, H - 0.63, (i - 1) * 0.5, 0, 0, sx * 0.9, { seg: 8, ...DGLOW });
+  }
+  for (const dz of [-0.4, 0.4]) b.box(12.6, 0.12, 0.12, DCHROME, 0, H, dz).box(12.6, 0.12, 0.12, DCHROME, 0, H - 0.8, dz);
+  for (let i = 0; i < 10; i++) b.box(1.5, 0.06, 0.06, DCHROME, -5.6 + i * 1.25, H - 0.4, 0.4, 0, 0, (i % 2 ? 1 : -1) * 0.6);
+  b.cyl(0.03, 0.03, 0.9, DCHROME, 0, H - 1.25, 0, 0, 0, 0, { seg: 4 });
+  g.add(b.build({ cast: false, receive: false }));
+  const s = new Builder(1);
+  discoBallInto(s, 1.5, 0, 0, 0);
+  for (let i = 0; i < 8; i++) { const a = i * PI / 4, tilt = 0.32 + (i % 3) * 0.1, L = 7.5; s.box(L, 0.07, 0.07, NEONS[i % 6], Math.cos(a) * Math.cos(tilt) * (1.5 + L / 2), -Math.sin(tilt) * (1.5 + L / 2), -Math.sin(a) * Math.cos(tilt) * (1.5 + L / 2), 0, a, -tilt, DGLOW); }
+  const m = s.build({ cast: false, receive: false }); m.name = 'spin'; m.position.set(0, H - 3.2, 0); g.add(m);
+  return g;
+});
+// Hoops of neon over the pier, three colours one inside the other.
+const neonHoop = (v) => prefab('neonHoop' + v, () => {
+  const b = new Builder(1), c = v ? [NEON.cyan, NEON.yellow, NEON.pink] : [NEON.pink, NEON.purple, NEON.cyan];
+  for (let i = 0; i < 3; i++) b.tor(7.6 - i * 0.5, 0.11, c[i], 0, 0.2, 0, 0, 0, 0, { arc: PI, seg: 30, tseg: 5, ...DGLOW });
+  for (const sx of [-1, 1]) b.box(2.0, 0.5, 1.2, DDARK, sx * 7.1, 0.1, 0);
+  noteInto(b, -0.4, 8.0, 0, 1.3, c[2], true);
+  return b.build({ cast: false, receive: false });
+});
+// A thing that floats about over the sea, glowing (it bobs): 0 a pair of notes, 1 a star, 2 a single note.
+const neonFloat = (v) => prefab('neonFloat' + v, () => {
+  const b = new Builder(1);
+  if (v === 0) noteInto(b, -0.8, -1, 0, 2.2, NEON.yellow, true); else if (v === 2) noteInto(b, -0.4, -1, 0, 2.2, NEON.green);
+  else starInto(b, 0, 0, 0, 2.2, NEON.pink, DGLOW);
+  return b.build({ cast: false, receive: false });
+});
+// Everything that stands still in one stretch of Disco Land, as one model: the town all lit up for the night, and a few big things nearer by.
+const discoSet = (k) => prefab('discoSet' + k, () => {
+  const b = new Builder(0.86), rng = makeRng(2210 + k);
+  for (const sd of [-1, 1]) for (let i = 0; i < 5; i++) {
+    const w = 4 + rng() * 3, h = 9 + rng() * 16, x = sd * (30 + rng() * 16), z = -2 - i * 8 - rng() * 3, c = NEONS[(i + k * 2 + (sd > 0 ? 3 : 0)) % 6];
+    b.box(w, h, w, [0x2c2050, 0x3a2468, 0x241a44][i % 3], x, WATER_Y + h / 2 - 1, z, 0, 0, 0, { grad: 0.7 });
+    // lit windows on the side that faces the pier
+    for (let r = 0; r < Math.floor(h / 2.2) - 1; r++) for (let q = 0; q < 2; q++) if (rng() < 0.7) b.box(0.08, 0.9, w * 0.3, rng() < 0.6 ? c : 0xfff0a0, x - sd * (w / 2 + 0.03), WATER_Y + 1.6 + r * 2.2, z + (q - 0.5) * w * 0.46, 0, 0, 0, DGLOW);
+    b.box(w + 0.2, 0.2, w + 0.2, c, x, WATER_Y + h - 1, z, 0, 0, 0, DGLOW);
+  }
+  if (k === 2) {
+    // a giant roller boot, and two lava lamps as tall as houses
+    discoStageInto(b, 12.5, -20, 10, 12, NEON.green);
+    b.at(12.5, 0, -20, -PI / 2, () => {
+      b.box(6.4, 0.5, 2.6, DCHROME, 0, 1.9, 0).sph(1.5, 0xffffff, 1.9, 3.0, 0, 1.5, 0.75, 0.85, { seg: 12 }).cyl(1.25, 1.4, 3.6, 0xffffff, -1.5, 4.2, 0, 0, 0, 0.06, { seg: 12 }).cyl(1.5, 1.4, 0.6, NEON.pink, -1.62, 6.2, 0, 0, 0, 0.06, { seg: 12 });
+      b.box(5.2, 0.5, 2.7, NEON.cyan, 0.3, 2.4, 0).box(2.2, 0.36, 2.8, NEON.pink, 0.8, 3.7, 0, 0, 0, -0.5);
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.95, 0.95, 0.7, NEON.yellow, sx * 2.1, 0.95, sz * 1.4, PI / 2, 0, 0, { seg: 14 }).cyl(0.36, 0.36, 0.76, 0xffffff, sx * 2.1, 0.95, sz * 1.4, PI / 2, 0, 0, { seg: 8 });
+      b.cyl(0.5, 0.65, 0.9, NEON.orange, 3.6, 1.0, 0, 0, 0, -0.5, { seg: 8 });
+      for (let i = 0; i < 4; i++) b.box(0.2, 0.2, 1.5, NEON.pink, -0.3 + i * 0.5, 4.0 + i * 0.5 - i * i * 0.2, 0);
+    });
+    for (const dz of [-5, 5]) {
+      b.cyl(0.6, 1.0, 1.2, DCHROME, 15.5, 0.6, -20 + dz, 0, 0, 0, { seg: 12 }).cyl(0.5, 0.9, 4.0, dz > 0 ? NEON.purple : NEON.orange, 15.5, 3.2, -20 + dz, 0, 0, 0, { seg: 12, ...DGLOW }).cyl(0.34, 0.5, 0.8, DCHROME, 15.5, 5.6, -20 + dz, 0, 0, 0, { seg: 12 });
+      for (const [y, r] of [[2.0, 0.5], [3.3, 0.36], [4.3, 0.26]]) b.sph(r, dz > 0 ? NEON.pink : NEON.yellow, 15.5 - 0.52 + (y - 1.2) * 0.1, y, -20 + dz + (y > 3 ? 0.1 : -0.1), 0.5, 1.3, 1, { seg: 8, ...DGLOW });
+    }
+  }
+  // glitter balls bobbing in the sea like buoys
+  for (const sd of [-1, 1]) for (let i = 0; i < 2; i++) { const x = sd * (17 + rng() * 9), z = -rng() * CHUNK; discoBallInto(b, 0.9, x, WATER_Y + 0.5, z); }
+  return b.build({ cast: true, receive: false });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -2622,7 +2751,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -2635,7 +2764,7 @@ export function populate(group, rawIndex, zone, anim) {
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
   if (!coast) { place(group, under40(), 0, 0, 0); if (zone !== 19) place(group, rail40(), L, 0, 0); }
-  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && !coast);   // the right-hand side opens onto ground at deck level
+  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
@@ -2837,6 +2966,17 @@ export function populate(group, rawIndex, zone, anim) {
     if (index % 3 === 0) anim.push({ o: place(group, pixelDuck(), -9.5, WATER_Y - 0.1, -10, 0.4), kind: 'bob', p: rng() * 6, amp: 1.2 });
     else if (index % 3 === 1) anim.push({ o: place(group, pixelGem(), 11.5, 0, -10), kind: 'spin', v: 0.9 });
     else { anim.push({ o: place(group, pixelHop(), 10.5, 0, -8, -PI / 2), kind: 'leap', p: rng() }); anim.push({ o: place(group, pixelDuck(), 9, WATER_Y - 0.1, -36, 2.6), kind: 'bob', p: rng() * 6, amp: 1.2 }); }
+  } else if (zone === 22) {
+    // Disco Land: a night out. Dance floors that flash, dancers in a row, a bear on the decks and a great glitter ball over the pier
+    const k = index % 3;
+    place(group, discoSet(k), 0, 0, 0);
+    if (index % 2 === 0) anim.push({ o: place(group, discoRig(), 0, 0, -20), kind: 'spin', v: 0.5 });
+    else for (const z of [-8, -32]) place(group, neonHoop(z < -20 ? 1 : 0), 0, 0, z);
+    const floor = (x, z, ry, v) => { anim.push({ o: place(group, danceFloor(), x, 0, z), kind: 'flash', p: 0 }); anim.push({ o: place(group, discoDancers(v), x, 0.12, z, ry), kind: 'groove', p: 0 }); };
+    if (k === 0) { floor(10.2, -11, -PI / 2, 0); place(group, djBooth(), -12, 0, -29, PI / 2); }
+    else if (k === 1) { floor(-10.2, -13, PI / 2, 1); anim.push({ o: place(group, bigDeck(), 11, 0, -29), kind: 'spin', v: 1.6 }); }
+    else floor(-10.2, -30, PI / 2, 0);
+    for (let i = 0; i < 2; i++) { const sd = (index + i) % 2 ? 1 : -1; anim.push({ o: place(group, neonFloat((index + i) % 3), sd * (17 + rng() * 6), 6 + rng() * 4, -6 - i * 20 - rng() * 6, sd > 0 ? -0.9 : 0.9), kind: 'bob', p: rng() * 6, amp: 2 }); }
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }
@@ -2977,6 +3117,13 @@ export function animate(anim, t, dt) {
       const amp = a.amp || 1;
       a.o.position.y = (a.baseY ?? (a.baseY = a.o.position.y)) + Math.sin(t * 1.3 + a.p) * 0.18 * amp;
       a.o.rotation.z = Math.sin(t * 1.1 + a.p * 1.7) * 0.07 * amp; a.o.rotation.x = Math.sin(t * 0.9 + a.p) * 0.04 * amp;
+    } else if (a.kind === 'flash') {
+      // a dance floor: its two sets of lit squares take turns
+      const A = a.a || (a.a = a.o.getObjectByName('a')), B = a.b || (a.b = a.o.getObjectByName('b')), on = Math.floor(t * 2.1 + a.p) % 2 === 0;
+      if (A && B) { A.visible = on; B.visible = !on; }
+    } else if (a.kind === 'groove') {
+      // dancers: a bounce on every beat and a lean from side to side
+      const u = t * 6.6 + a.p; a.o.position.y = (a.baseY ?? (a.baseY = a.o.position.y)) + Math.abs(Math.sin(u)) * 0.24; a.o.rotation.z = Math.sin(u) * 0.06;
     } else if (a.kind === 'leap') {
       // over the fence, then round again
       const c = a.c || (a.c = a.o.getObjectByName('leap')), u = (t * 0.32 + a.p) % 1, by = a.by ?? (a.by = c.position.y);

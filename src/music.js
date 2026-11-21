@@ -503,4 +503,23 @@ THEMES[21] = theme('Eight Little Bits', {
   drums: { thump: 'x.......x.......', tick: '..x...x...x...x.', snap: '....x.......x...' },
 });
 
+// ---- 22. Disco Land: "Glitter Ball Boogie", four on the floor with an octave bass (A minor) ----
+THEMES[22] = theme('Glitter Ball Boogie', {
+  key: 9, scale: 'min', base: 69, gain: 1.2, tempo: 1.04, voice: 'brass', bassVoice: 'synth', stab: 'saw',
+  chords: 'i i iv iv bVI bVII i V',
+  tune: [
+    "1:2 -:2 3:2 5:2 -:2 5:2 7:2 5:2",
+    "1':4 7:2 5:2 -:2 3:2 5:4",
+    "4:2 -:2 6:2 1':2 -:2 1':2 2':2 1':2",
+    "4':4 3':2 1':2 -:2 6:2 1':4",
+    "6:2 1':2 3':2 6:2 1':2 3':2 4':4",
+    "7:2 2':2 4':2 7:2 2':2 4':2 5':4",
+    "1':2 -:2 3':2 5':2 -:2 3':2 1':4",
+    "7:2 7:2 2':2 5':2 4':2 2':2 7:4",
+  ],
+  bass: [0, _, 12, _, 0, _, 12, _, 0, _, 12, _, 7, _, 12, _],
+  stabs: '..x...x...x...x.',
+  drums: { thump: 'x...x...x...x...', tick: '..x...x...x...x.', snap: '....x.......x...' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

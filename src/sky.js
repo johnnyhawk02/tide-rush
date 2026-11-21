@@ -30,6 +30,8 @@ const PAL = [
   { top: 0x1c1a5a, hor: 0xa88ae0, sun: 0xfff0d0, sunI: 2.0, hemiS: 0xd8ccff, hemiG: 0x9a88d8, hemiI: 1.55, deep: 0x8a78d8, shal: 0xe6dcff, foam: 0xffffff, cloud: 0xd8c8ff, el: 0.55, az: -0.3, stars: 0.8, storm: 0 },   // Dream Time: a starry lilac dusk over a sea of cloud
   // 21 Pixel Land: a bright games-machine day; the sea is drawn in square tiles (pixel)
   { top: 0x2f86e8, hor: 0xbfe6ff, sun: 0xfff6d8, sunI: 2.9, hemiS: 0xd8f0ff, hemiG: 0x8fc070, hemiI: 1.25, deep: 0x2f6fd8, shal: 0x5ad0e0, foam: 0xffffff, cloud: 0xffffff, el: 0.8, az: 0.4, stars: 0, storm: 0, pixel: 1 },
+  // 22 Disco Land: a warm purple night, bright enough to see by
+  { top: 0x140a3a, hor: 0x9a3aa8, sun: 0xffd0f4, sunI: 2.1, hemiS: 0xe0b8ff, hemiG: 0x7a4a9a, hemiI: 1.6, deep: 0x2a0f5a, shal: 0x8a3ac0, foam: 0xff9fe0, cloud: 0x7a4aa8, el: 0.6, az: -0.35, stars: 0.9, storm: 0 },
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 

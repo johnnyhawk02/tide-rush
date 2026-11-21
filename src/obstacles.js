@@ -1901,6 +1901,135 @@ def('blockBird', 'deco', 2.2, 1.2, 1.4, (b) => {
   wings: (b, sx) => { b.box(0.7, 0.1, 0.6, 0x4f8fe0, sx * 0.4, 0, 0).box(0.4, 0.1, 0.44, 0x3a6ac0, sx * 0.9, 0, -0.06).box(0.2, 0.1, 0.26, 0x3a6ac0, sx * 1.16, 0, -0.14); }, wingAt: [0.3, 0.1, 0],
 });
 
+// ---------- Disco Land ----------
+export const NEON = { pink: 0xff3fa4, cyan: 0x2fe0ff, yellow: 0xffe23f, purple: 0x9a4fff, green: 0x5fff8f, orange: 0xff8a3c };
+export const NEONS = [NEON.pink, NEON.cyan, NEON.yellow, NEON.purple, NEON.green, NEON.orange];
+const GLITTER = [0xffffff, 0xff9fd8, 0x9fe8ff, 0xfff0a0, 0xd0b0ff, 0xe8e8f0];
+const GLOW = { glow: true, grad: 1 };
+// A glitter ball: every little mirror a different colour.
+export function discoBallInto(b, r, x, y, z) {
+  b.add(new THREE.IcosahedronGeometry(r, 2), (px, py, pz, i) => GLITTER[(Math.floor(i / 3) * 5 + Math.floor(i / 12)) % 6], x, y, z, 0, 0, 0, 1, 1, 1, GLOW);
+}
+// A loudspeaker, w wide, h high and d deep, standing on (x, y, z) and facing +z.
+export function speakerInto(b, x, y, z, w, h, d, col = NEON.pink) {
+  b.box(w, h, d, 0x24202c, x, y + h / 2, z, 0, 0, 0, { grad: 0.85 }).box(w * 0.9, h * 0.94, 0.04, 0x3a3444, x, y + h / 2, z + d / 2);
+  const R = Math.min(w, h * 0.6) * 0.36, f = z + d / 2 + 0.03;
+  b.cyl(R, R, 0.05, 0x15121a, x, y + h * 0.36, f, PI / 2, 0, 0, { seg: 14 }).tor(R, 0.035, col, x, y + h * 0.36, f + 0.02, 0, 0, 0, { seg: 16, tseg: 4, ...GLOW }).sph(R * 0.4, 0x4a4456, x, y + h * 0.36, f, 1, 1, 0.5, { seg: 8 });
+  b.cyl(R * 0.45, R * 0.45, 0.05, 0x15121a, x, y + h * 0.8, f, PI / 2, 0, 0, { seg: 10 }).sph(R * 0.2, 0xd8d0e8, x, y + h * 0.8, f, 1, 1, 0.5, { seg: 6 });
+}
+// A record: a black disc with a bright label. It lies flat unless it is turned.
+export function recordInto(b, r, x, y, z, rx = 0, ry = 0, rz = 0, col = NEON.pink) {
+  b.at(x, y, z, ry, () => { b.cyl(r, r, 0.04, 0x1b1820, 0, 0, 0, rx, 0, rz, { seg: 18 }).cyl(r * 0.72, r * 0.72, 0.046, 0x2c2834, 0, 0, 0, rx, 0, rz, { seg: 18 }).cyl(r * 0.38, r * 0.38, 0.056, col, 0, 0, 0, rx, 0, rz, { seg: 12 }).cyl(r * 0.06, r * 0.06, 0.066, 0xffffff, 0, 0, 0, rx, 0, rz, { seg: 6 }); });
+}
+// A music note, about 1.1 s high, flat in x and y.
+export function noteInto(b, x, y, z, s = 1, col = NEON.cyan, two = false, o = GLOW) {
+  b.at(x, y, z, 0, () => {
+    b.sph(0.2, col, 0, 0.15, 0, 1.25, 0.85, 0.6, { seg: 9, ...o }).box(0.07, 0.85, 0.07, col, 0.2, 0.6, 0, 0, 0, 0, o);
+    if (two) b.sph(0.2, col, 0.62, 0.27, 0, 1.25, 0.85, 0.6, { seg: 9, ...o }).box(0.07, 0.85, 0.07, col, 0.82, 0.72, 0, 0, 0, 0, o).box(0.7, 0.16, 0.07, col, 0.51, 1.04, 0, 0, 0, 0.19, o);
+    else b.box(0.34, 0.14, 0.07, col, 0.36, 0.92, 0, 0, 0, -0.5, o);
+  }, s);
+}
+// A dancer, about 1.75 s tall, facing +z: flared trousers, a big round hairdo and one arm pointing at the sky.
+export function dancerInto(b, x, y, z, s = 1, o = {}) {
+  const top = o.top ?? NEON.pink, legs = o.legs ?? 0xffffff, skin = o.skin ?? 0xc98a5a, hair = o.hair ?? 0x2a1c16, left = o.left ? -1 : 1;
+  b.at(x, y, z, o.ry || 0, () => {
+    for (const sx of [-1, 1]) b.cyl(0.09, 0.2, 0.8, legs, sx * (0.14 + 0.06), 0.42, 0, 0, 0, sx * -0.12, { seg: 8 }).box(0.2, 0.08, 0.3, 0xffe23f, sx * 0.25, 0.04, 0.05);
+    b.cap(0.2, 0.36, top, 0, 1.08, 0, 0, 0, 0, { seg: 9 }).cyl(0.21, 0.21, 0.07, 0xffe23f, 0, 0.84, 0, 0, 0, 0, { seg: 9 });
+    b.sph(0.2, skin, 0, 1.56, 0, 1, 1.05, 1, { seg: 10 }).sph(0.3, hair, 0, 1.68, -0.06, 1.1, 0.95, 1, { seg: 10 });
+    for (const sx of [-1, 1]) b.sph(0.03, 0x1b1f24, sx * 0.08, 1.57, 0.18, 1, 1.2, 0.6, { seg: 5 });
+    b.tor(0.07, 0.014, 0x7a2a2a, 0, 1.5, 0.17, 0.3, 0, PI, { arc: PI, seg: 7, tseg: 3 });
+    // one arm up, pointing; the other on the hip
+    b.cap(0.065, 0.5, top, left * 0.36, 1.5, 0, 0, 0, left * -0.6, { seg: 6 }).sph(0.08, skin, left * 0.54, 1.8, 0, 1, 1, 1, { seg: 6 });
+    b.cap(0.065, 0.3, top, -left * 0.3, 1.12, 0, 0, 0, -left * 0.9, { seg: 6 }).sph(0.075, skin, -left * 0.24, 0.94, 0.06, 1, 1, 1, { seg: 6 });
+  }, s);
+}
+def('recordStack', 'low', 1.3, 0.7, 1.1, (b) => {
+  // a pile of records, with two leaning against it
+  for (let i = 0; i < 7; i++) recordInto(b, 0.42, Math.sin(i * 2.3) * 0.05, 0.03 + i * 0.07, Math.cos(i * 1.7) * 0.05, 0, i, 0, NEONS[i % 6]);
+  recordInto(b, 0.38, 0.5, 0.36, 0.1, 0, 0, PI / 2 - 0.3, NEON.cyan); recordInto(b, 0.36, -0.52, 0.34, 0.12, 0, 0, PI / 2 + 0.3, NEON.yellow);
+});
+def('boomBox', 'low', 1.5, 0.95, 0.8, (b) => {
+  // a big portable stereo
+  b.box(1.4, 0.7, 0.5, 0x3a3444, 0, 0.35, 0, 0, 0, 0, { grad: 0.85 }).box(1.4, 0.08, 0.5, 0xc8c0d8, 0, 0.72, 0).box(0.5, 0.22, 0.03, 0x15121a, 0, 0.5, 0.26).box(0.42, 0.14, 0.04, NEON.cyan, 0, 0.5, 0.265, 0, 0, 0, GLOW);
+  for (const sx of [-1, 1]) { b.cyl(0.24, 0.24, 0.05, 0x15121a, sx * 0.44, 0.34, 0.26, PI / 2, 0, 0, { seg: 14 }).tor(0.24, 0.03, sx > 0 ? NEON.pink : NEON.yellow, sx * 0.44, 0.34, 0.28, 0, 0, 0, { seg: 14, tseg: 4, ...GLOW }).sph(0.1, 0x4a4456, sx * 0.44, 0.34, 0.27, 1, 1, 0.5, { seg: 7 }); b.box(0.05, 0.2, 0.05, 0xc8c0d8, sx * 0.5, 0.84, 0); }
+  b.box(1.05, 0.05, 0.05, 0xc8c0d8, 0, 0.93, 0);
+  for (let i = 0; i < 4; i++) b.box(0.07, 0.05, 0.04, NEONS[i], -0.15 + i * 0.1, 0.24, 0.26, 0, 0, 0, GLOW);
+});
+def('platformShoes', 'low', 1.3, 0.75, 1.0, (b) => {
+  // a pair of glittery platform shoes
+  for (const sx of [-1, 1]) {
+    const c = sx > 0 ? NEON.purple : NEON.pink, x = sx * 0.3;
+    b.box(0.34, 0.26, 0.8, 0xffe23f, x, 0.13, 0, 0, sx * 0.14, 0, { grad: 0.9 }).box(0.34, 0.2, 0.26, 0xffe23f, x - sx * 0.04, 0.34, -0.26, 0, sx * 0.14, 0);
+    b.sph(0.2, c, x + sx * 0.03, 0.36, 0.22, 0.9, 0.7, 1.3, { seg: 9 }).cyl(0.17, 0.19, 0.3, c, x - sx * 0.04, 0.56, -0.24, 0, 0, 0, { seg: 9 });
+    b.add(new THREE.OctahedronGeometry(0.07), 0xffffff, x + sx * 0.03, 0.5, 0.26, 0, 0.6, 0, 1, 1, 1, GLOW);
+  }
+});
+def('floorLights', 'low', 1.5, 0.8, 0.8, (b) => {
+  // three stage lights on a bar, pointing up
+  b.box(1.4, 0.1, 0.4, 0x24202c, 0, 0.05, 0).box(1.3, 0.06, 0.06, 0x4a4456, 0, 0.3, 0);
+  for (let i = -1; i <= 1; i++) { const c = [NEON.pink, NEON.yellow, NEON.cyan][i + 1]; b.box(0.05, 0.3, 0.05, 0x4a4456, i * 0.46, 0.2, 0).cyl(0.2, 0.15, 0.34, 0x24202c, i * 0.46, 0.52, 0, 0.25, 0, i * -0.2, { seg: 10 }).cyl(0.17, 0.17, 0.04, c, i * 0.46 + i * 0.035, 0.7, 0.045, 0.25, 0, i * -0.2, { seg: 10, ...GLOW }); }
+});
+def('speakerStack', 'tall', 1.4, 2.7, 1.1, (b) => {
+  // two great loudspeakers, one on top of the other
+  speakerInto(b, 0, 0, 0, 1.3, 1.4, 1.0, NEON.pink); speakerInto(b, 0, 1.4, 0, 1.15, 1.2, 0.9, NEON.cyan);
+  noteInto(b, 0.36, 2.55, 0.1, 0.4, NEON.yellow);
+});
+def('lavaLamp', 'tall', 1.1, 2.8, 1.1, (b) => {
+  // a lava lamp as tall as a lamp-post
+  b.cyl(0.3, 0.5, 0.6, 0xc8c0d8, 0, 0.3, 0, 0, 0, 0, { seg: 12 }).cyl(0.42, 0.3, 0.3, 0xc8c0d8, 0, 0.75, 0, 0, 0, 0, { seg: 12 });
+  b.cyl(0.24, 0.44, 1.5, NEON.purple, 0, 1.65, 0, 0, 0, 0, { seg: 12, ...GLOW }).cyl(0.16, 0.24, 0.36, 0xc8c0d8, 0, 2.58, 0, 0, 0, 0, { seg: 12 });
+  for (const [x, y, r] of [[0.08, 1.2, 0.2], [-0.1, 1.65, 0.15], [0.06, 2.0, 0.12], [-0.04, 2.25, 0.08]]) b.sph(r, NEON.orange, x, y, 0.42 - (y - 0.9) * 0.133, 1, 1.25, 0.5, { seg: 8, ...GLOW });
+});
+def('jukebox', 'tall', 1.5, 2.6, 1.0, (b) => {
+  // a jukebox with a round top and glowing tubes
+  b.box(1.3, 1.5, 0.8, 0x7a2a5a, 0, 0.75, 0, 0, 0, 0, { grad: 0.85 }).cyl(0.65, 0.65, 0.8, 0x7a2a5a, 0, 1.5, 0, PI / 2, 0, 0, { seg: 18 });
+  b.tor(0.58, 0.07, NEON.yellow, 0, 1.5, 0.4, 0, 0, 0, { arc: PI, seg: 14, tseg: 5, ...GLOW }).tor(0.42, 0.06, NEON.cyan, 0, 1.5, 0.41, 0, 0, 0, { arc: PI, seg: 12, tseg: 5, ...GLOW });
+  for (const sx of [-1, 1]) b.box(0.13, 1.4, 0.06, NEON.yellow, sx * 0.58, 0.8, 0.4, 0, 0, 0, GLOW).box(0.11, 1.4, 0.06, NEON.cyan, sx * 0.42, 0.8, 0.41, 0, 0, 0, GLOW);
+  b.box(0.66, 0.5, 0.04, 0x15121a, 0, 1.2, 0.41).box(0.66, 0.6, 0.04, 0xe8c070, 0, 0.5, 0.41);
+  recordInto(b, 0.2, 0, 1.22, 0.44, PI / 2, 0, 0, NEON.pink);
+  for (let i = 0; i < 5; i++) b.box(0.07, 0.07, 0.03, NEONS[i], -0.22 + i * 0.11, 0.86, 0.42, 0, 0, 0, GLOW);
+  b.box(1.4, 0.12, 0.9, 0x3a1830, 0, 0.06, 0);
+});
+def('neonNote', 'tall', 1.4, 2.8, 0.9, (b) => {
+  // a giant neon note on a little stage
+  b.cyl(0.6, 0.7, 0.3, 0x24202c, 0, 0.15, 0, 0, 0, 0, { seg: 12 }).tor(0.62, 0.04, NEON.pink, 0, 0.3, 0, PI / 2, 0, 0, { seg: 16, tseg: 4, ...GLOW });
+  noteInto(b, -0.5, 0.42, 0, 2.0, NEON.cyan, true);
+});
+def('ballStand', 'tall', 1.4, 2.8, 1.2, (b) => {
+  // a glitter ball on a tripod
+  for (let i = 0; i < 3; i++) { const a = i * 2.094 + 0.5; b.cyl(0.035, 0.035, 1.5, 0xc8c0d8, Math.sin(a) * 0.3, 0.7, Math.cos(a) * 0.3, Math.cos(a) * 0.42, 0, -Math.sin(a) * 0.42, { seg: 5 }); }
+  b.cyl(0.05, 0.05, 0.5, 0xc8c0d8, 0, 1.55, 0, 0, 0, 0, { seg: 6 });
+  discoBallInto(b, 0.6, 0, 2.2, 0);
+  b.tor(0.6, 0.03, 0xc8c0d8, 0, 2.2, 0, PI / 2, 0, 0, { seg: 16, tseg: 4 });
+});
+def('glitterBall', 'low', 1.1, 1.0, 1.0, (b) => {
+  // a glitter ball rolling down the lane
+  discoBallInto(b, 0.5, 0, 0, 0);
+  b.tor(0.5, 0.025, 0xc8c0d8, 0, 0, 0, 0, PI / 2, 0, { seg: 18, tseg: 4 });
+}, { center: true });
+def('vinyl', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the flying stereo throws: a record, tumbling end over end
+  b.cyl(0.5, 0.5, 0.09, 0x1b1820, 0, 0, 0, 0, 0, 0, { seg: 18 }).cyl(0.36, 0.36, 0.1, 0x2c2834, 0, 0, 0, 0, 0, 0, { seg: 18 }).cyl(0.2, 0.2, 0.11, NEON.yellow, 0, 0, 0, 0, 0, 0, { seg: 12, ...GLOW }).cyl(0.04, 0.04, 0.12, 0xffffff, 0, 0, 0, 0, 0, 0, { seg: 6 });
+  b.tor(0.5, 0.03, NEON.pink, 0, 0, 0, PI / 2, 0, 0, { seg: 18, tseg: 4, ...GLOW });
+}, { center: true });
+def('rollerBoot', 'low', 1.4, 0.95, 0.9, (b) => {
+  // a roller boot that has skated off by itself; it faces +x
+  b.box(0.9, 0.1, 0.34, 0xc8c0d8, 0, 0.26, 0).sph(0.2, 0xffffff, 0.26, 0.42, 0, 1.5, 0.75, 0.85, { seg: 9 }).cyl(0.17, 0.19, 0.5, 0xffffff, -0.2, 0.58, 0, 0, 0, 0.06, { seg: 9 }).cyl(0.2, 0.19, 0.08, NEON.pink, -0.22, 0.86, 0, 0, 0, 0.06, { seg: 9 });
+  b.box(0.3, 0.05, 0.36, NEON.pink, 0.1, 0.5, 0, 0, 0, -0.5).box(0.7, 0.07, 0.36, NEON.cyan, 0.05, 0.34, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.13, 0.13, 0.1, NEON.yellow, sx * 0.3, 0.13, sz * 0.19, PI / 2, 0, 0, { seg: 10 }).cyl(0.05, 0.05, 0.11, 0xffffff, sx * 0.3, 0.13, sz * 0.19, PI / 2, 0, 0, { seg: 6 });
+  b.cyl(0.07, 0.09, 0.12, NEON.orange, 0.5, 0.14, 0, 0, 0, -0.5, { seg: 7 });
+  for (let i = 0; i < 3; i++) b.box(0.03, 0.03, 0.2, NEON.pink, -0.02 + i * 0.07, 0.56 + i * 0.07 - i * i * 0.03, 0);
+});
+def('flyBox', 'deco', 2.4, 1.2, 1.2, (b) => {
+  // a stereo that has grown wings, with a record ready to throw
+  b.box(1.3, 0.66, 0.6, 0x3a3444, 0, 0, 0, 0, 0, 0, { grad: 0.85 }).box(1.3, 0.07, 0.6, 0xc8c0d8, 0, 0.36, 0).box(0.36, 0.16, 0.04, NEON.cyan, 0, 0.14, 0.31, 0, 0, 0, GLOW);
+  for (const sx of [-1, 1]) { b.cyl(0.22, 0.22, 0.05, 0x15121a, sx * 0.4, -0.04, 0.31, PI / 2, 0, 0, { seg: 12 }).tor(0.22, 0.03, sx > 0 ? NEON.pink : NEON.yellow, sx * 0.4, -0.04, 0.33, 0, 0, 0, { seg: 12, tseg: 4, ...GLOW }); b.sph(0.07, 0xffffff, sx * 0.14, 0.14, 0.34, 1, 1.2, 0.5, { seg: 7 }).sph(0.035, 0x1b1f24, sx * 0.14, 0.13, 0.37, 1, 1.2, 0.5, { seg: 6 }); }
+  b.tor(0.1, 0.02, 0x15121a, 0, -0.16, 0.32, 0, 0, PI, { arc: PI, seg: 7, tseg: 3 }).box(0.9, 0.05, 0.05, 0xc8c0d8, 0, 0.56, 0).box(0.05, 0.2, 0.05, 0xc8c0d8, -0.44, 0.46, 0).box(0.05, 0.2, 0.05, 0xc8c0d8, 0.44, 0.46, 0);
+  recordInto(b, 0.3, 0, -0.5, 0.05, 0, 0, 0, NEON.yellow);
+}, {
+  wings: (b, sx) => { for (let i = 0; i < 4; i++) b.sph(0.2, i % 2 ? 0xffffff : 0xffd0ea, sx * (0.3 + i * 0.26), 0.02 - i * 0.02, -0.04 * i, 1.5, 0.3, 1.4 - i * 0.22, { seg: 8 }); }, wingAt: [0.62, 0.1, 0],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -2500,7 +2629,9 @@ export const TALL_TYPES = {
   19: ['statueBust', 'bigVase', 'armour', 'easel', 'mummyCase', 'bigVase'],
   20: ['grandClock', 'pillowTower', 'bigTeddy', 'moonLamp', 'wardrobe', 'pillowTower'],
   21: ['arcade', 'pxTree', 'blockTower', 'boxRobot', 'heartSign', 'blockTower'],
+  22: ['speakerStack', 'lavaLamp', 'jukebox', 'neonNote', 'ballStand', 'speakerStack'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
 export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'],
-  21: ['pxCrate', 'cubeJelly', 'retroTV', 'joystick', 'pxBush', 'cubeJelly'] };
+  21: ['pxCrate', 'cubeJelly', 'retroTV', 'joystick', 'pxBush', 'cubeJelly'],
+  22: ['recordStack', 'boomBox', 'platformShoes', 'floorLights', 'miniBall', 'boomBox'] };
