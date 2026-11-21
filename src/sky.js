@@ -25,6 +25,7 @@ const PAL = [
   { top: 0x1689e0, hor: 0xc8f0ff, sun: 0xfff6dc, sunI: 2.9, hemiS: 0xdff4ff, hemiG: 0xd8d0a8, hemiI: 1.4, deep: 0x0d6fa8, shal: 0x3fd0d8, cloud: 0xffffff, el: 0.9, az: 0.25, stars: 0, storm: 0 },   // the Glass Tunnel: a clear tropical day up top (under the water the dive takes over; see update)
   { top: 0xe9a85c, hor: 0xfff1d2, sun: 0xfff3dc, sunI: 2.7, hemiS: 0xfff0dc, hemiG: 0xc08a5a, hemiI: 1.45, deep: 0x3a1a0c, shal: 0x7d4420, foam: 0xb98552, cloud: 0xfff8ea, el: 0.72, az: 0.4, stars: 0, storm: 0 },   // Chocolate Coast: a caramel sky with whipped-cream clouds over a sea of melted chocolate
   { top: 0x3f9be8, hor: 0xdff5ff, sun: 0xfffbe8, sunI: 3.0, hemiS: 0xeaf6ff, hemiG: 0x9fc878, hemiI: 1.4, deep: 0x1a78b0, shal: 0x58c8d8, cloud: 0xffffff, el: 0.8, az: -0.4, stars: 0, storm: 0 },   // Moo Town: a bright spring morning over green meadows
+  { top: 0x2f7fe0, hor: 0xcbe4ff, sun: 0xfffaf0, sunI: 2.9, hemiS: 0xe6f0ff, hemiG: 0xc8d8f0, hemiI: 1.4, deep: 0x4f90d0, shal: 0xa8d4f0, cloud: 0xffffff, el: 0.6, az: 0.5, stars: 0, storm: 0, mirror: 1 },   // the Land of Mirrors: a clear pearly sky, and a sea as still as glass
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 
@@ -32,7 +33,7 @@ export class Sky {
   constructor(scene, quality) {
     this.scene = scene;
     this.group = new THREE.Group(); scene.add(this.group);
-    this.cur = { top: col(0), hor: col(0), sun: col(0), hemiS: col(0), hemiG: col(0), deep: col(0), shal: col(0), cloud: col(0), stars: 0, storm: 0, fun: 0, snow: 0, aurora: 0, under: 0, space: 0, swirl: 0 };
+    this.cur = { top: col(0), hor: col(0), sun: col(0), hemiS: col(0), hemiG: col(0), deep: col(0), shal: col(0), cloud: col(0), stars: 0, storm: 0, fun: 0, snow: 0, aurora: 0, under: 0, space: 0, swirl: 0, mirror: 0 };
     this.flash = 0; this.boltT = 0; this.hidden = false;
     this.sunDir = new THREE.Vector3(0, 1, 0);
 
@@ -162,16 +163,16 @@ export class Sky {
       side: THREE.DoubleSide,     // (seen from underneath in the Glass Tunnel)
       uniforms: {
         uTime: { value: 0 }, uScroll: { value: 0 }, uDeep: { value: col(0) }, uShal: { value: col(0) }, uFog: { value: col(0) },
-        uSun: { value: col(0) }, uSky: { value: col(0) }, uSunDir: { value: this.sunDir }, uNear: { value: 70 }, uFar: { value: 300 }, uAmp: { value: 1 }, uFoam: { value: col(0xffffff) },
+        uSun: { value: col(0) }, uSky: { value: col(0) }, uSunDir: { value: this.sunDir }, uNear: { value: 70 }, uFar: { value: 300 }, uAmp: { value: 1 }, uFoam: { value: col(0xffffff) }, uMirror: { value: 0 }, uTop: { value: col(0) }, uHor: { value: col(0) },
       },
-      vertexShader: `uniform float uTime, uScroll, uAmp; varying vec2 vW; varying float vH; varying float vDepth; varying vec3 vPos; ${BEND_GLSL}
+      vertexShader: `uniform float uTime, uScroll, uAmp, uMirror; varying vec2 vW; varying float vH; varying float vDepth; varying vec3 vPos; ${BEND_GLSL}
         void main(){ vec3 p = position; vec2 w = vec2(p.x, p.z - uScroll);
           float fade = 1.0 - smoothstep(120.0, 300.0, length(p.xz));
-          float h = (sin(w.x * 0.21 + uTime * 0.9) * 0.2 + sin(w.y * 0.33 + uTime * 1.25 + w.x * 0.12) * 0.16 + sin((w.x - w.y) * 0.5 + uTime * 1.7) * 0.07) * fade * uAmp;
+          float h = (sin(w.x * 0.21 + uTime * 0.9) * 0.2 + sin(w.y * 0.33 + uTime * 1.25 + w.x * 0.12) * 0.16 + sin((w.x - w.y) * 0.5 + uTime * 1.7) * 0.07) * fade * uAmp * (1.0 - 0.94 * uMirror);
           p.y += h; vH = h; vW = w;
           vec4 wp = modelMatrix * vec4(p, 1.0); vPos = wp.xyz; wp = bendSea(wp);
           vec4 mv = viewMatrix * wp; vDepth = -mv.z; gl_Position = projectionMatrix * mv; }`,
-      fragmentShader: `uniform float uTime, uNear, uFar, uAmp; uniform vec3 uDeep, uShal, uFog, uSun, uSky, uSunDir, uFoam;
+      fragmentShader: `uniform float uTime, uNear, uFar, uAmp, uMirror; uniform vec3 uDeep, uShal, uFog, uSun, uSky, uSunDir, uFoam, uTop, uHor;
         varying vec2 vW; varying float vH; varying float vDepth; varying vec3 vPos; ${BEND_GLSL}
         void main(){
           // where the Glass Tunnel dives through the surface, the water stands back from the glass
@@ -189,10 +190,18 @@ export class Sky {
           float th = 0.3 + (uAmp - 1.0) * 0.25;
           float foam = smoothstep(th, th + 0.1 * uAmp, vH + n1 * 0.07 + n3 * 0.05);
           c = mix(c, uFoam, foam * 0.55);
+          // the Land of Mirrors: the sea lies still and shows the sky (and, through it, the upside-down copies of the scenery)
+          float alpha = 1.0;
+          if (uMirror > 0.0) {
+            vec3 Nm = normalize(vec3(cos(vW.x * 0.9 + uTime * 0.6) * 0.03 + n3 * 0.012, 1.0, cos(vW.y * 0.7 - uTime * 0.5) * 0.03 + n3 * 0.012));
+            vec3 m = mix(mix(uHor, uTop, 0.3), uTop, pow(clamp(reflect(-V, Nm).y, 0.0, 1.0), 0.5));
+            m += uSun * pow(max(dot(reflect(-uSunDir, Nm), V), 0.0), 240.0) * 0.8 + vec3(0.06) * smoothstep(0.55, 0.9, n1 * n2);
+            c = mix(c, m, uMirror); alpha = 1.0 - 0.56 * uMirror;
+          }
           // from underneath: a bright, rippling ceiling of light
           if (!gl_FrontFacing) c = mix(uShal * 1.1 + vec3(0.08, 0.2, 0.24), vec3(0.92, 1.0, 1.0), smoothstep(0.1, 0.8, n1 * 0.55 + n3 * 0.4 + n2 * 0.3));
           c = mix(c, uFog, smoothstep(uNear, uFar, vDepth));
-          gl_FragColor = vec4(c, 1.0);
+          gl_FragColor = vec4(c, alpha);
           #include <tonemapping_fragment>
           #include <colorspace_fragment>
         }`,
@@ -315,7 +324,7 @@ export class Sky {
     const c = this.cur;
     for (const key of ['top', 'hor', 'sun', 'hemiS', 'hemiG', 'deep', 'shal', 'cloud']) c[key].copy(this._a.set(A[key])).lerp(this._b.set(B[key]), k);
     c.stars = lerp(A.stars, B.stars, k); c.storm = lerp(A.storm, B.storm, k);
-    for (const key of ['fun', 'snow', 'aurora', 'under', 'space', 'swirl']) c[key] = lerp(A[key] || 0, B[key] || 0, k);
+    for (const key of ['fun', 'snow', 'aurora', 'under', 'space', 'swirl', 'mirror']) c[key] = lerp(A[key] || 0, B[key] || 0, k);
     // under the sea everything takes on the colour of the water, and gets bluer the deeper it goes
     this.dive = dive;
     if (dive > 0) {
@@ -338,6 +347,8 @@ export class Sky {
     const su = this.seaMat.uniforms;
     su.uTime.value = t; su.uScroll.value = dist; su.uDeep.value.copy(c.deep); su.uShal.value.copy(c.shal); su.uFog.value.copy(this.scene.fog.color);
     su.uSun.value.copy(c.sun); su.uSky.value.copy(c.top).lerp(c.hor, 0.5); su.uAmp.value = 1 + 1.7 * c.storm;
+    su.uMirror.value = c.mirror; su.uTop.value.copy(c.top); su.uHor.value.copy(c.hor);
+    this.seaMat.transparent = c.mirror > 0.003; this.sea.renderOrder = this.seaMat.transparent ? -1 : 0;   // (see-through only here, so the reflections show)
     su.uFoam.value.copy(this._a.set(A.foam ?? 0xffffff)).lerp(this._b.set(B.foam ?? 0xffffff), k).lerp(c.hemiS, 0.5 * c.stars).multiplyScalar(1 - 0.5 * c.stars - 0.12 * c.storm);
     su.uNear.value = this.scene.fog.near; su.uFar.value = this.scene.fog.far;
     this.rain.visible = c.storm > 0.02 && !this.hidden;

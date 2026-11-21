@@ -1268,6 +1268,155 @@ def('crow', 'deco', 2.4, 1.0, 1.5, (b) => {
   }, wingAt: [0.2, 0.1, 0],
 });
 
+// ---------- the Land of Mirrors ----------
+export const MGOLD = 0xf2c230, MGOLD_D = 0xc9962a, MSILV = 0xe2eaf4, PEARL = 0xfbf6ff, GEMS = [0xff8fc8, 0x8fe6ff, 0xfff3a8, 0xc8a8ff, 0x9ff5c8];
+const _g1 = new THREE.Color(), _g2 = new THREE.Color(), _gw = new THREE.Color(0xffffff);
+// The colour of looking-glass: sky blue at the top fading to pearl at the foot, with streaks of light slanting across it.
+export const glassCol = (y0, h, ph = 0) => (x, y, z) => {
+  const u = Math.min(1, Math.max(0, (y - y0) / h)), t = (((x + z) * 0.33 + y * 0.3 + ph) % 1 + 1) % 1;
+  const streak = Math.max(0, 1 - Math.abs(t - 0.42) / 0.11) + 0.7 * Math.max(0, 1 - Math.abs(t - 0.66) / 0.05);
+  return _g1.set(0xdff3ff).lerp(_g2.set(0x4f9cf0), u).lerp(_gw, Math.min(1, streak) * 0.92);
+};
+// A flat pane of looking-glass, w wide and h high, standing on (x, y, z) and facing along z (turned by ry).
+export function glassInto(b, w, h, x, y, z, ry = 0, ph = 0) {
+  b.add(new THREE.BoxGeometry(w, h, 0.03, Math.min(12, Math.ceil(w * 5)), Math.min(16, Math.ceil(h * 5)), 1), glassCol(y, h, ph), x, y + h / 2, z, 0, ry, 0, 1, 1, 1, { glow: true, grad: 1 });
+}
+// A round or oval looking-glass, centred on (x, y, z).
+export function ovalGlassInto(b, rx, ryy, x, y, z, ry = 0, ph = 0) {
+  b.add(new THREE.SphereGeometry(1, 16, 12), glassCol(y - ryy, ryy * 2, ph), x, y, z, 0, ry, 0, rx, ryy, 0.035, { glow: true, grad: 1 });
+}
+// A mirror ball: every little facet catches the light differently.
+const BALL = [0xffffff, 0x8fc0f0, 0xdfe8f2, 0x5a9be0, 0xffd0ea, 0xbfe8ff];
+export function mirrorBallInto(b, r, x, y, z) {
+  b.add(new THREE.IcosahedronGeometry(r, 2), (px, py, pz, i) => BALL[(Math.floor(i / 3) * 7 + Math.floor(i / 9)) % 6], x, y, z, 0, 0, 0, 1, 1, 1, { glow: true, grad: 1 });
+}
+// A cut gem.
+export function gemInto(b, x, y, z, s, col, ry = 0, rz = 0) {
+  b.add(new THREE.OctahedronGeometry(1), col, x, y + s * 0.62, z, 0, ry, rz, s * 0.5, s * 0.62, s * 0.5, { glow: true, grad: 0.6 });
+  b.add(new THREE.OctahedronGeometry(1), 0xffffff, x, y + s * 0.9, z, 0, ry, rz, s * 0.2, s * 0.3, s * 0.2, { glow: true, grad: 1 });
+}
+// A four-pointed sparkle.
+export function sparkleInto(b, x, y, z, s, col = 0xffffff) {
+  b.add(new THREE.OctahedronGeometry(1), col, x, y, z, 0, 0, 0, s * 0.16, s, s * 0.16, { glow: true, grad: 1 });
+  b.add(new THREE.OctahedronGeometry(1), col, x, y, z, 0, 0, 0, s, s * 0.16, s * 0.16, { glow: true, grad: 1 });
+}
+def('handMirror', 'low', 1.45, 0.95, 1.0, (b) => {
+  // a giant hand mirror, propped up on a little gold easel
+  b.cyl(0.05, 0.05, 1.0, MGOLD_D, 0, 0.4, -0.3, -0.55, 0, 0, { seg: 6 });
+  for (const sx of [-1, 1]) b.cyl(0.045, 0.045, 0.9, MGOLD_D, sx * 0.36, 0.42, 0.05, 0.32, 0, sx * 0.1, { seg: 6 });
+  b.box(1.0, 0.07, 0.16, MGOLD, 0, 0.16, 0.22);
+  b.at(0.1, 0.52, 0.07, 0, () => {
+    b.cyl(0.42, 0.42, 0.07, MGOLD, 0, 0, 0, PI / 2 - 0.32, 0, 0, { seg: 18 }).tor(0.42, 0.05, MGOLD_D, 0, 0, 0.0, -0.32, 0, 0, { seg: 18 });
+    b.add(new THREE.SphereGeometry(1, 14, 10), glassCol(0.2, 0.75), 0, 0.012, 0.04, -0.32, 0, 0, 0.36, 0.36, 0.02, { glow: true, grad: 1 });
+  });
+  b.cap(0.07, 0.4, MGOLD, -0.5, 0.3, 0.2, 0, 0, 1.1, { seg: 8 }).sph(0.1, MGOLD_D, -0.74, 0.19, 0.2, 1, 1, 1, { seg: 7 });
+});
+def('gemPile', 'low', 1.45, 0.95, 1.0, (b) => {
+  // a heap of cut gems, each as big as a football
+  b.cyl(0.7, 0.76, 0.1, PEARL, 0, 0.05, 0, 0, 0, 0, { seg: 14 });
+  for (const [x, z, s, i, r] of [[-0.4, 0.1, 0.5, 0, 0.3], [0.4, 0.12, 0.52, 1, -0.2], [0, 0.2, 0.62, 2, 0], [-0.15, -0.25, 0.5, 3, 0.2], [0.25, -0.2, 0.46, 4, -0.3]]) gemInto(b, x, 0.08, z, s, GEMS[i], i * 0.7, r);
+  gemInto(b, 0.02, 0.42, 0, 0.42, 0xffffff, 0.4, 0);
+});
+def('glassBricks', 'low', 1.6, 0.92, 0.9, (b) => {
+  // a little wall of glass bricks
+  for (let j = 0; j < 2; j++) for (let i = 0; i < 3 - j; i++) {
+    const x = (i - (2 - j) / 2) * 0.5, y = 0.22 + j * 0.44, c = [0xbfeaff, 0xd8f4ff, 0xa8dcf8][(i + j) % 3];
+    b.box(0.46, 0.4, 0.46, c, x, y, 0, 0, 0, 0, { grad: 0.9 }).box(0.3, 0.26, 0.48, 0xf4fcff, x, y, 0).box(0.1, 0.05, 0.49, 0xffffff, x - 0.07, y + 0.07, 0, 0, 0, 0.6, { glow: true, grad: 1 });
+  }
+  sparkleInto(b, 0.55, 0.78, 0.2, 0.16);
+});
+def('miniBall', 'low', 1.2, 0.98, 1.0, (b) => {
+  // a little mirror ball in a gold cradle
+  b.cyl(0.4, 0.46, 0.1, MGOLD_D, 0, 0.05, 0, 0, 0, 0, { seg: 12 }).cyl(0.07, 0.1, 0.2, MGOLD, 0, 0.18, 0, 0, 0, 0, { seg: 8 }).tor(0.26, 0.04, MGOLD, 0, 0.3, 0, PI / 2, 0, 0, { seg: 14 });
+  mirrorBallInto(b, 0.36, 0, 0.6, 0);
+  sparkleInto(b, 0.3, 0.86, 0.22, 0.14); sparkleInto(b, -0.32, 0.5, 0.26, 0.1);
+});
+def('standMirror', 'tall', 1.5, 2.8, 1.0, (b) => {
+  // a tall dressing mirror in a gold frame
+  for (const sx of [-1, 1]) {
+    b.cyl(0.08, 0.08, 2.1, MGOLD, sx * 0.64, 1.15, 0, 0, 0, 0, { seg: 8 }).sph(0.11, MGOLD_D, sx * 0.64, 2.22, 0, 1, 1, 1, { seg: 7 });
+    b.box(0.14, 0.1, 0.9, MGOLD_D, sx * 0.64, 0.06, 0).sph(0.08, MGOLD, sx * 0.64, 0.08, 0.45, 1, 1, 1, { seg: 6 }).sph(0.08, MGOLD, sx * 0.64, 0.08, -0.45, 1, 1, 1, { seg: 6 });
+  }
+  b.tor(0.64, 0.08, MGOLD, 0, 2.15, 0, 0, 0, 0, { arc: PI, seg: 14 }).box(1.36, 0.12, 0.12, MGOLD, 0, 0.34, 0);
+  b.cyl(0.6, 0.6, 0.05, 0xb8c4d0, 0, 2.15, -0.03, PI / 2, 0, 0, { seg: 20 }).box(1.2, 1.8, 0.05, 0xb8c4d0, 0, 1.28, -0.03);
+  glassInto(b, 1.16, 1.78, 0, 0.4, 0.01);
+  b.add(new THREE.CylinderGeometry(0.58, 0.58, 0.03, 20, 1, false, -PI / 2, PI), glassCol(0.4, 2.33), 0, 2.17, 0.01, PI / 2, 0, 0, 1, 1, 1, { glow: true, grad: 1 });
+  b.sph(0.14, MGOLD_D, 0, 2.82, 0, 1, 1, 0.7, { seg: 8 }).cone(0.08, 0.2, MGOLD, 0, 2.98, 0, 0, 0, 0, { seg: 6 });
+});
+def('mirrorPillar', 'tall', 1.3, 2.9, 1.3, (b) => {
+  // an obelisk of looking-glass
+  b.box(1.2, 0.2, 1.2, MGOLD_D, 0, 0.1, 0).box(1.0, 0.14, 1.0, MGOLD, 0, 0.27, 0);
+  b.add(new THREE.CylinderGeometry(0.42, 0.62, 2.2, 4, 8), glassCol(0.34, 2.2), 0, 1.44, 0, 0, PI / 4, 0, 1, 1, 1, { glow: true, grad: 1 });
+  for (let i = 0; i < 4; i++) { const a = PI / 4 + i * PI / 2; b.cyl(0.03, 0.035, 2.22, MGOLD, Math.sin(a) * 0.52, 1.44, Math.cos(a) * 0.52, Math.cos(a) * -0.09, 0, Math.sin(a) * 0.09, { seg: 5 }); }
+  b.box(0.66, 0.08, 0.66, MGOLD, 0, 2.56, 0).cone(0.44, 0.36, MGOLD_D, 0, 2.78, 0, 0, PI / 4, 0, { seg: 4 });
+  sparkleInto(b, 0.38, 2.2, 0.45, 0.2);
+});
+def('wonkyMirror', 'tall', 1.6, 2.7, 1.0, (b) => {
+  // a wobbly mirror from the hall of mirrors, in a striped frame
+  for (const sx of [-1, 1]) for (let i = 0; i < 8; i++) b.cyl(0.1, 0.1, 0.3, i % 2 ? 0xfffdf6 : 0xe5383b, sx * 0.7, 0.3 + i * 0.3, 0, 0, 0, 0, { seg: 8 });
+  b.box(1.6, 0.16, 0.5, 0x3a4a8a, 0, 0.08, 0).box(1.62, 0.2, 0.3, 0x3a4a8a, 0, 2.6, 0);
+  for (let i = 0; i < 5; i++) b.sph(0.07, i % 2 ? 0xffe27a : 0xffffff, -0.6 + i * 0.3, 2.62, 0.17, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
+  b.box(1.24, 2.34, 0.05, 0xb8c4d0, 0, 1.33, -0.04);
+  // the glass bulges in and out
+  b.add(new THREE.BoxGeometry(1.2, 2.3, 0.03, 8, 16, 1), glassCol(0.18, 2.3, 0.3), 0, 1.33, 0, 0, 0, 0, 1, 1, 1, { glow: true, grad: 1 });
+  for (const [y, r, c] of [[0.75, 0.42, 0xd8f0ff], [1.5, 0.3, 0xffffff], [2.1, 0.22, 0xd8f0ff]]) b.add(new THREE.SphereGeometry(1, 12, 8), glassCol(y - r, r * 2, y), 0, y, 0.02, 0, 0, 0, r * 1.15, r, 0.05, { glow: true, grad: 1 });
+});
+def('prismTower', 'tall', 1.4, 2.8, 1.2, (b) => {
+  // crystals growing out of a pearl rock, shining in every colour
+  b.sph(0.66, PEARL, 0, 0.12, 0, 1, 0.34, 0.9, { seg: 10 });
+  for (const [x, z, s, i, rz] of [[0, 0, 2.05, 1, 0], [-0.36, 0.1, 1.3, 0, 0.22], [0.38, 0.05, 1.45, 3, -0.2], [0.1, 0.34, 0.9, 2, -0.08], [-0.12, -0.3, 1.1, 4, 0.1]]) {
+    b.add(new THREE.CylinderGeometry(0.2, 0.24, s * 0.82, 6), GEMS[i], x + Math.sin(-rz) * s * 0.4, 0.1 + s * 0.41, z, 0, i, rz, 1, 1, 1, { glow: true, grad: 0.62 });
+    b.add(new THREE.ConeGeometry(0.2, s * 0.3, 6), 0xffffff, x + Math.sin(-rz) * s * 0.96, 0.1 + s * 0.96, z, 0, i, rz, 1, 1, 1, { glow: true, grad: 0.8 });
+  }
+  sparkleInto(b, -0.45, 2.1, 0.3, 0.2); sparkleInto(b, 0.5, 1.2, 0.4, 0.13);
+});
+def('vanity', 'tall', 1.8, 2.6, 1.1, (b) => {
+  // a dressing table with a round mirror ringed with light bulbs
+  b.box(1.7, 0.1, 0.8, PEARL, 0, 0.9, 0).box(1.6, 0.3, 0.72, 0xff9fd0, 0, 0.72, 0);
+  for (const sx of [-1, 1]) { for (const sz of [-1, 1]) b.cyl(0.05, 0.035, 0.6, MGOLD, sx * 0.72, 0.3, sz * 0.3, 0, 0, 0, { seg: 6 }); b.sph(0.045, MGOLD, sx * 0.36, 0.72, 0.37, 1, 1, 1, { seg: 6 }); }
+  b.cyl(0.1, 0.16, 0.2, MGOLD, 0, 1.05, -0.2, 0, 0, 0, { seg: 8 }).cyl(0.82, 0.82, 0.08, MGOLD, 0, 1.86, -0.2, PI / 2, 0, 0, { seg: 22 });
+  ovalGlassInto(b, 0.7, 0.7, 0, 1.86, -0.15);
+  for (let i = 0; i < 12; i++) { const a = i * PI / 6; b.sph(0.075, i % 2 ? 0xfff3a8 : 0xffffff, Math.cos(a) * 0.79, 1.86 + Math.sin(a) * 0.79, -0.12, 1, 1, 1, { glow: true, seg: 6, grad: 1 }); }
+  b.cyl(0.09, 0.11, 0.24, 0x8fe6ff, -0.55, 1.07, 0.1, 0, 0, 0, { seg: 8 }).sph(0.06, MGOLD, -0.55, 1.23, 0.1, 1, 1, 1, { seg: 6 });
+  b.cyl(0.13, 0.13, 0.1, 0xc8a8ff, 0.5, 1.0, 0.12, 0, 0, 0, { seg: 10 }).box(0.34, 0.03, 0.08, MGOLD, 0.15, 0.97, 0.22, 0, 0.5, 0);
+});
+def('mirrorBall', 'low', 1.1, 1.0, 1.0, (b) => {
+  // a mirror ball that has got loose and rolls down the lane
+  mirrorBallInto(b, 0.5, 0, 0, 0);
+  b.tor(0.5, 0.025, MGOLD, 0, 0, 0, 0, PI / 2, 0, { seg: 18, tseg: 4 });
+}, { center: true });
+def('sparkle', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the flying mirror flashes down the lane: a dazzle of light
+  sparkleInto(b, 0, 0, 0, 0.5, 0xfffbe0);
+  b.add(new THREE.OctahedronGeometry(1), 0xffffff, 0, 0, 0, 0, 0, PI / 4, 0.3, 0.3, 0.12, { glow: true, grad: 1 });
+  b.sph(0.2, 0xffffff, 0, 0, 0, 1, 1, 1, { glow: true, seg: 8, grad: 1 });
+}, { center: true });
+def('mirrorCart', 'low', 1.5, 0.98, 1.1, (b) => {
+  // a runaway gold trolley carrying a looking-glass; it faces +x
+  b.box(1.4, 0.08, 0.9, MGOLD, 0, 0.26, 0).box(1.3, 0.05, 0.8, 0xc23b6a, 0, 0.32, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.12, 0.12, 0.07, 0x3a4252, sx * 0.5, 0.12, sz * 0.44, PI / 2, 0, 0, { seg: 10 }).cyl(0.05, 0.05, 0.09, MGOLD, sx * 0.5, 0.12, sz * 0.44, PI / 2, 0, 0, { seg: 6 });
+  b.cyl(0.025, 0.025, 0.5, MGOLD_D, -0.66, 0.56, 0.36, 0, 0, 0.2, { seg: 5 }).cyl(0.025, 0.025, 0.5, MGOLD_D, -0.66, 0.56, -0.36, 0, 0, 0.2, { seg: 5 }).cyl(0.03, 0.03, 0.76, MGOLD, -0.71, 0.8, 0, PI / 2, 0, 0, { seg: 6 });
+  b.box(0.95, 0.6, 0.1, MGOLD, 0.1, 0.65, 0, 0, 0.5, 0);
+  b.add(new THREE.BoxGeometry(0.8, 0.46, 0.03, 5, 4, 1), glassCol(0.4, 0.5), 0.1, 0.65, 0, 0, 0.5, 0, 1, 1, 4, { glow: true, grad: 1 });
+});
+def('flashMirror', 'deco', 2.2, 1.6, 1.3, (b) => {
+  // a cheeky flying hand mirror that dazzles the lane below
+  b.cyl(0.56, 0.56, 0.1, MGOLD, 0, 0.1, 0, PI / 2, 0, 0, { seg: 20 }).tor(0.56, 0.06, MGOLD_D, 0, 0.1, 0, 0, 0, 0, { seg: 20 });
+  ovalGlassInto(b, 0.48, 0.48, 0, 0.1, 0.05);
+  b.cap(0.08, 0.34, MGOLD, 0, -0.68, 0, 0, 0, 0, { seg: 8 }).sph(0.11, MGOLD_D, 0, -0.92, 0, 1, 1, 1, { seg: 7 }).sph(0.1, MGOLD_D, 0, -0.45, 0, 1.3, 0.8, 1, { seg: 7 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.1, 0xffffff, sx * 0.17, 0.2, 0.09, 1, 1.15, 0.4, { glow: true, seg: 8, grad: 1 }).sph(0.055, 0x1b1f24, sx * 0.16, 0.18, 0.12, 1, 1.1, 0.4, { glow: true, seg: 6, grad: 1 });
+    b.box(0.18, 0.035, 0.02, 0x3a4a8a, sx * 0.17, 0.36, 0.1, 0, 0, sx * -0.4, { glow: true, grad: 1 }).sph(0.07, 0xff9fc0, sx * 0.3, 0.02, 0.09, 1, 0.7, 0.3, { glow: true, seg: 6, grad: 1 });
+  }
+  b.tor(0.1, 0.02, 0x3a4a8a, 0, -0.02, 0.1, 0, 0, PI, { arc: PI, seg: 7, glow: true, grad: 1 });
+  b.sph(0.08, MGOLD_D, 0, 0.72, 0, 1.6, 1, 1, { seg: 6 });
+}, {
+  wings: (b, sx) => {
+    b.sph(0.4, 0xffffff, sx * 0.46, 0, 0, 1.2, 0.1, 0.55, { seg: 9 });
+    for (let i = 0; i < 3; i++) b.sph(0.16, 0xeaf6ff, sx * (0.74 + i * 0.1), 0.005, 0.2 - i * 0.2, 1.3, 0.1, 0.5, { seg: 6 });
+  }, wingAt: [0.5, 0.1, -0.05],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -1863,6 +2012,7 @@ export const TALL_TYPES = {
   15: ['tanks', 'divingSuit', 'miniSub', 'fishTank', 'tanks', 'divingSuit'],
   16: ['chocFountain', 'chocBunny', 'foilEgg', 'biscuitTower', 'cakeSlice', 'chocBunny'],
   17: ['bigBottle', 'hayStack', 'scareCow', 'milkFloat', 'butterChurn', 'bigBottle'],
+  18: ['standMirror', 'mirrorPillar', 'wonkyMirror', 'prismTower', 'vanity', 'standMirror'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
-export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'] };
+export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'] };

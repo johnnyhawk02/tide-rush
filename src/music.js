@@ -424,4 +424,23 @@ THEMES[17] = theme('Moo Town Hoedown', {
   drums: { thump: 'x.......x.......', clap: '....x.......x...', tick: 'x.x.x.x.x.x.x.x.', bell: '..............x.' },
 });
 
+// ---- 18. The Land of Mirrors: "Mirror, Mirror", a glassy tune whose second half is the first half played backwards (A major) ----
+THEMES[18] = theme('Mirror, Mirror', {
+  key: 9, scale: 'maj', base: 69, gain: 1.4, tempo: 0.98, echo: 0.4, voice: 'bell', bassVoice: 'pizz', stab: 'pad',
+  chords: 'I V vi IV IV vi V I',
+  tune: [
+    "1:2 3:2 5:2 1':2 5:4 3:4",
+    "2:2 5:2 7:2 2':2 7:4 5:4",
+    "3:2 6:2 1':2 3':2 1':4 6:4",
+    "4:2 6:2 1':2 4':2 6':4 4':4",
+    "4':4 6':4 4':2 1':2 6:2 4:2",
+    "6:4 1':4 3':2 1':2 6:2 3:2",
+    "5:4 7:4 2':2 7:2 5:2 2:2",
+    "3:4 5:4 1':2 5:2 3:2 1:2",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 12, _, _, _, 7, _, _, _],
+  stabs: 'x...............',
+  drums: { thump: 'x.......x.......', tick: '..x...x...x...x.', snap: '....x.......x...' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

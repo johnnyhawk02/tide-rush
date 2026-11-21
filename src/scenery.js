@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -2100,10 +2100,158 @@ const cowBoat = () => prefab('cowboat', () => {
   return g;
 });
 
+// ---------- the Land of Mirrors ----------
+// Adds to a builder the mirror image of everything in it: left for right (sides), and upside down in the water.
+// The upside-down copies keep their normals, so the reflection is lit exactly like the real thing.
+function reflectInto(b, sides = true, waterY = WATER_Y) {
+  for (const list of [b.solid, b.glowParts]) for (let pass = sides ? 0 : 1; pass < 2; pass++) {
+    const m = list.length;
+    for (let i = 0; i < m; i++) {
+      const g = list[i].clone(), p = g.attributes.position, nm = g.attributes.normal;
+      for (let k = 0; k < p.count; k++) { if (pass === 0) { p.setX(k, -p.getX(k)); nm.setX(k, -nm.getX(k)); } else p.setY(k, 2 * waterY - p.getY(k)); }
+      const ix = g.index.array; for (let k = 0; k < ix.length; k += 3) { const t = ix[k]; ix[k] = ix[k + 1]; ix[k + 1] = t; }
+      list.push(g);
+    }
+  }
+}
+const isleInto = (b, r) => {
+  b.cyl(r, r + 0.5, 1.1, PEARL, 0, -2.65, 0, 0, 0, 0, { seg: 18 }).cyl(r - 0.5, r - 0.35, 0.3, 0xffffff, 0, -1.95, 0, 0, 0, 0, { seg: 18 }).tor(r, 0.1, MGOLD, 0, -2.1, 0, PI / 2, 0, 0, { seg: 18, tseg: 5 });
+};
+// A giant arched looking-glass in a gold frame; it faces +z.
+const greatMirrorInto = (b) => {
+  isleInto(b, 3.4);
+  for (const sx of [-1, 1]) b.cyl(0.26, 0.3, 6.2, MGOLD, sx * 2.25, 1.3, 0, 0, 0, 0, { seg: 8 }).sph(0.42, MGOLD_D, sx * 2.25, -1.6, 0, 1, 0.8, 1, { seg: 8 }).sph(0.36, MGOLD_D, sx * 2.25, 4.45, 0, 1, 1, 1, { seg: 8 });
+  b.tor(2.25, 0.28, MGOLD, 0, 4.4, 0, 0, 0, 0, { arc: PI, seg: 18 });
+  b.box(4.4, 6.1, 0.12, 0xb8c4d0, 0, 1.35, -0.1).cyl(2.2, 2.2, 0.12, 0xb8c4d0, 0, 4.4, -0.1, PI / 2, 0, 0, { seg: 24 });
+  glassInto(b, 4.2, 6.0, 0, -1.6, 0);
+  b.add(new THREE.SphereGeometry(1, 16, 10), glassCol(2.3, 4.2, 0.2), 0, 4.4, 0, 0, 0, 0, 2.1, 2.1, 0.02, { glow: true, grad: 1 });
+  gemInto(b, 0, 6.75, 0, 1.1, GEMS[0]);
+  for (let i = 1; i < 6; i++) { const a = i * PI / 6; b.sph(0.2, MGOLD_D, Math.cos(a) * 2.25, 4.4 + Math.sin(a) * 2.25, 0.22, 1, 1, 1, { seg: 6 }); }
+  sparkleInto(b, -1.2, 3.6, 0.2, 0.5); sparkleInto(b, 1.3, 0.6, 0.2, 0.3);
+};
+// A great round looking-glass on a stand, ringed with gems.
+const roundMirrorInto = (b) => {
+  isleInto(b, 2.9);
+  b.cyl(0.4, 0.6, 2.0, MGOLD, 0, -0.8, -0.1, 0, 0, 0, { seg: 8 }).sph(0.6, MGOLD_D, 0, 0.1, -0.1, 1, 0.6, 1, { seg: 8 });
+  b.cyl(3.0, 3.0, 0.2, MGOLD, 0, 3.1, -0.06, PI / 2, 0, 0, { seg: 28 }).tor(3.0, 0.22, MGOLD_D, 0, 3.1, 0, 0, 0, 0, { seg: 28 });
+  ovalGlassInto(b, 2.72, 2.72, 0, 3.1, 0.06, 0.4);
+  for (let i = 0; i < 12; i++) { const a = i * PI / 6; b.sph(0.2, GEMS[i % 5], Math.cos(a) * 3.0, 3.1 + Math.sin(a) * 3.0, 0.2, 1, 1, 1, { glow: true, seg: 6, grad: 0.8 }); }
+  sparkleInto(b, 1.3, 4.4, 0.2, 0.45);
+};
+// Three tall panels that fold, like the mirror in a dressing room.
+const panelInto = (b, w, h) => {
+  b.box(w, h, 0.18, MGOLD, 0, -1.8 + h / 2, 0).box(w + 0.2, 0.25, 0.3, MGOLD_D, 0, -1.8 + h, 0).sph(0.3, MGOLD_D, 0, -1.5 + h, 0, 1.4, 1, 0.8, { seg: 7 });
+  glassInto(b, w - 0.4, h - 0.4, 0, -1.6, 0.09, w);
+};
+const tripleMirrorInto = (b) => {
+  isleInto(b, 3.8);
+  b.at(0, 0, -0.5, 0, () => panelInto(b, 3.0, 6.4));
+  for (const sx of [-1, 1]) b.at(sx * 1.5, 0, -0.5, sx * -0.75, () => b.at(sx * 1.25, 0, 0, 0, () => panelInto(b, 2.5, 5.6)));
+  gemInto(b, 0, 4.9, -0.5, 0.9, GEMS[1]);
+};
+// Crystals growing from a pearl rock at the water's edge.
+const SHARDS = [
+  [[0, 0, 5.6, 1, 0], [-1.0, 0.3, 3.4, 0, 0.24], [1.0, 0.1, 3.9, 3, -0.2], [0.3, 0.9, 2.4, 2, -0.1], [-0.4, -0.8, 2.9, 4, 0.12]],
+  [[0, 0, 4.4, 3, 0.06], [-0.9, 0.2, 2.8, 2, 0.26], [0.9, -0.2, 3.2, 0, -0.22], [0.1, 0.8, 2.0, 4, -0.05]],
+  [[0, 0, 6.4, 0, -0.04], [-1.1, 0.2, 4.2, 4, 0.2], [1.1, 0.3, 3.0, 1, -0.26], [0.4, -0.9, 3.6, 2, -0.1], [-0.5, 0.9, 2.2, 3, 0.14]],
+];
+const crystalsInto = (b, v) => {
+  b.sph(2.3, PEARL, 0, -2.7, 0, 1, 0.42, 1, { seg: 12 });
+  for (const [x, z, h, i, rz] of SHARDS[v]) {
+    const r = 0.32 + h * 0.06;
+    b.add(new THREE.CylinderGeometry(r, r * 1.15, h * 0.82, 6), GEMS[i], x - Math.sin(rz) * h * 0.41, -2.4 + Math.cos(rz) * h * 0.41, z, 0, i, rz, 1, 1, 1, { glow: true, grad: 0.6 });
+    b.add(new THREE.ConeGeometry(r, h * 0.3, 6), 0xffffff, x - Math.sin(rz) * h * 0.97, -2.4 + Math.cos(rz) * h * 0.97, z, 0, i, rz, 1, 1, 1, { glow: true, grad: 0.78 });
+  }
+  sparkleInto(b, -0.9, 2.2, 0.6, 0.4);
+};
+// The glass palace: pearl walls, looking-glass windows and a mirrored dome; the front faces +z.
+const palaceInto = (b) => {
+  b.box(14, 1.0, 9, PEARL, 0, -2.4, 0).box(10, 5.0, 5.6, 0xfdfaff, 0, 0.6, -0.5).box(10.5, 0.3, 6.1, MGOLD, 0, 3.25, -0.5);
+  for (let i = 0; i < 3; i++) b.box(4.4 - i * 0.6, 0.3, 1.2, 0xffffff, 0, -2.75 + i * 0.3, 4.9 - i * 0.5);
+  for (const i of [-2, -1, 1, 2]) { glassInto(b, 1.1, 2.6, i * 1.9, -0.8, 2.32, i * 0.3); b.box(1.3, 0.14, 0.1, MGOLD, i * 1.9, 1.9, 2.34).box(1.3, 0.14, 0.1, MGOLD, i * 1.9, -0.9, 2.34); }
+  b.box(2.0, 3.3, 0.2, MGOLD, 0, -0.25, 2.3).cyl(1.0, 1.0, 0.2, MGOLD, 0, 1.4, 2.3, PI / 2, 0, 0, { seg: 16 });
+  glassInto(b, 1.6, 3.0, 0, -1.8, 2.42, 0.5);
+  b.cyl(2.0, 2.0, 4.0, PEARL, 0, 5.3, -0.5, 0, 0, 0, { seg: 12 }).tor(2.05, 0.14, MGOLD, 0, 7.3, -0.5, PI / 2, 0, 0, { seg: 16 });
+  for (let i = 0; i < 6; i++) { const a = i * PI / 3 + PI / 6; b.at(Math.sin(a) * 2.0, 0, -0.5 + Math.cos(a) * 2.0, a, () => glassInto(b, 0.8, 2.2, 0, 4.3, 0.02, i * 0.2)); }
+  b.add(new THREE.SphereGeometry(2.05, 16, 8, 0, PI * 2, 0, PI / 2), glassCol(7.3, 2.05, 0.1), 0, 7.3, -0.5, 0, 0, 0, 1, 1.15, 1, { glow: true, grad: 1 });
+  b.sph(0.34, MGOLD_D, 0, 9.75, -0.5, 1, 1, 1, { seg: 7 }).cone(0.2, 1.5, MGOLD, 0, 10.7, -0.5, 0, 0, 0, { seg: 6 });
+  for (const sx of [-1, 1]) {
+    b.cyl(1.3, 1.4, 7.8, PEARL, sx * 5.6, 2.1, 1.4, 0, 0, 0, { seg: 10 }).tor(1.35, 0.12, MGOLD, sx * 5.6, 6.0, 1.4, PI / 2, 0, 0, { seg: 12 });
+    b.add(new THREE.ConeGeometry(1.6, 3.0, 10, 4), glassCol(6.0, 3.0, sx), sx * 5.6, 7.5, 1.4, 0, 0, 0, 1, 1, 1, { glow: true, grad: 1 });
+    b.sph(0.26, MGOLD_D, sx * 5.6, 9.1, 1.4, 1, 1, 1, { seg: 6 });
+    b.at(sx * 5.6, 0, 1.4, 0, () => { glassInto(b, 0.8, 2.0, 0, 2.6, 1.32, 0.2); glassInto(b, 0.8, 1.6, 0, -0.6, 1.36, 0.6); });
+  }
+};
+// Far out, a skyline of pale crystal peaks.
+const spiresInto = (b, v) => {
+  const rng = makeRng(1810 + v), cols = [0x9cc8f5, 0xc0aef0, 0xf0b0d6, 0x9fe6d6];
+  for (let i = 0; i < 4; i++) {
+    const x = 36 + rng() * 12, z = -3 - i * 10 - rng() * 3, h = 6 + rng() * 6 + (x - 36) * 0.3, r = 1.6 + rng() * 1.4;
+    b.add(new THREE.ConeGeometry(r, h, 5), cols[i % 4], x, WATER_Y - 0.4 + h / 2, z, 0, rng() * 6, (rng() - 0.5) * 0.14, 1, 1, 1, { grad: 0.6 });
+    if (i % 2) b.add(new THREE.ConeGeometry(r * 0.45, h * 0.55, 5), cols[(i + 2) % 4], x - r * 0.9, WATER_Y - 0.4 + h * 0.27, z + 1.2, 0, rng() * 6, 0.12, 1, 1, 1, { grad: 0.6 });
+  }
+};
+// Everything that stands still in one stretch of the Land of Mirrors: both sides and both reflections, as one model.
+const mirrorSet = (k) => prefab('mirrorSet' + k, () => {
+  const b = new Builder(0.86);
+  if (k === 0) { b.at(11.5, 0, -15, -PI / 2, () => greatMirrorInto(b)); b.at(9, 0, -33, 0.6, () => crystalsInto(b, 0)); }
+  else if (k === 1) { b.at(25, 0, -20, -PI / 2, () => palaceInto(b)); b.at(10.4, 0, -6, -PI / 2 + 0.3, () => roundMirrorInto(b)); b.at(9.5, 0, -36, 2, () => crystalsInto(b, 1)); }
+  else { b.at(12.2, 0, -21, -PI / 2, () => tripleMirrorInto(b)); b.at(8.8, 0, -5, 1.2, () => crystalsInto(b, 2)); }
+  if (k !== 1) spiresInto(b, k);
+  reflectInto(b);
+  return b.build({ cast: true, receive: false });
+});
+// A gold picture frame over the pier, to run through, with a mirror ball hanging in it.
+const mirrorGate = () => prefab('mirrorGate', () => {
+  const b = new Builder(0.88);
+  for (const sx of [-1, 1]) {
+    b.box(0.6, 9.6, 0.5, MGOLD, sx * 5.3, 2.2, 0).box(0.26, 9.2, 0.6, MGOLD_D, sx * 5.3, 2.2, 0).box(0.9, 0.5, 0.8, MGOLD_D, sx * 5.3, -2.5, 0);
+    b.sph(0.5, MGOLD_D, sx * 5.3, 7.05, 0, 1, 1, 0.8, { seg: 8 }).tor(0.5, 0.12, MGOLD, sx * 4.5, 6.2, 0, 0, 0, 0, { seg: 12 }).tor(0.34, 0.1, MGOLD, sx * 3.75, 6.5, 0, 0, 0, 0, { seg: 10 });
+    gemInto(b, sx * 5.3, 7.4, 0, 0.7, GEMS[sx > 0 ? 0 : 1]);
+  }
+  b.box(11.2, 0.6, 0.5, MGOLD, 0, 7.0, 0).box(11.2, 0.26, 0.6, MGOLD_D, 0, 7.0, 0).sph(0.7, MGOLD_D, 0, 7.5, 0, 1.5, 0.8, 0.7, { seg: 9 });
+  gemInto(b, 0, 7.8, 0, 0.9, GEMS[3]);
+  b.cyl(0.02, 0.02, 0.6, MSILV, 0, 6.4, 0, 0, 0, 0, { seg: 4 });
+  mirrorBallInto(b, 0.5, 0, 5.65, 0);
+  reflectInto(b, false);
+  return b.build({ cast: true, receive: false });
+});
+// A mirror ball on a gold post in the water; the ball (and its reflection) is a part named 'spin'.
+const ballPost = () => prefab('ballPost', () => {
+  const b = new Builder(0.88), g = new THREE.Group();
+  b.cyl(0.14, 0.2, 5.6, MGOLD, 0, 0, 0, 0, 0, 0, { seg: 8 }).cyl(0.5, 0.6, 0.3, MGOLD_D, 0, -2.5, 0, 0, 0, 0, { seg: 10 }).tor(0.5, 0.07, MGOLD_D, 0, 2.8, 0, PI / 2, 0, 0, { seg: 12 });
+  reflectInto(b, false); g.add(b.build({ cast: true, receive: false }));
+  const s = new Builder(1);
+  mirrorBallInto(s, 0.95, 0, 3.7, 0); s.tor(0.95, 0.04, MGOLD, 0, 3.7, 0, PI / 2, 0, 0, { seg: 16, tseg: 4, glow: true, grad: 1 });
+  reflectInto(s, false);
+  const m = s.build({ receive: false }); m.name = 'spin'; g.add(m);
+  return g;
+});
+// A great gem (0) or a looking-glass cube (1) that floats over the water, turning slowly; the turning part is named 'spin'.
+const floatGem = (v) => prefab('floatGem' + v, () => {
+  const s = new Builder(1), g = new THREE.Group();
+  if (v === 0) { gemInto(s, 0, 0.2, 0, 2.6, GEMS[1]); for (let i = 0; i < 4; i++) sparkleInto(s, Math.cos(i * 1.57) * 1.9, 1.8 + (i % 2) * 0.8, Math.sin(i * 1.57) * 1.9, 0.3); }
+  else { s.add(new THREE.BoxGeometry(2, 2, 2, 5, 5, 5), glassCol(0.2, 3.4), 0, 1.9, 0, 0.62, 0, 0.785, 1, 1, 1, { glow: true, grad: 1 }); for (let i = 0; i < 4; i++) s.sph(0.14, MGOLD, Math.cos(i * 1.57) * 2.0, 1.9, Math.sin(i * 1.57) * 2.0, 1, 1, 1, { glow: true, seg: 6, grad: 1 }); }
+  reflectInto(s, false);
+  const m = s.build({ receive: false }); m.name = 'spin'; g.add(m);
+  return g;
+});
+// A swan of blown glass, gliding with its reflection; it faces +z.
+const glassSwan = () => prefab('glassSwan', () => {
+  const b = new Builder(0.8), W = 0xf4fbff, A = 0xbfe6ff;
+  b.sph(1, W, 0, 0.45, 0, 0.85, 0.6, 1.5, { seg: 12 }).cone(0.5, 1.1, W, 0, 0.75, -1.5, -1.1, 0, 0, { seg: 8 });
+  for (const sx of [-1, 1]) b.sph(1, A, sx * 0.7, 0.75, -0.25, 0.22, 0.55, 1.15, { seg: 9 }).sph(1, W, sx * 0.82, 0.95, -0.55, 0.14, 0.4, 0.8, { seg: 8 });
+  b.tor(0.6, 0.17, W, 0, 1.25, 1.15, 0, PI / 2, 0, { arc: PI * 1.05, seg: 12 }).sph(0.24, W, 0, 1.86, 1.2, 1, 0.9, 1.2, { seg: 9 }).cone(0.1, 0.36, 0xffb347, 0, 1.8, 1.5, PI / 2 + 0.2, 0, 0, { seg: 6 });
+  for (const sx of [-1, 1]) b.sph(0.045, 0x1b1f24, sx * 0.13, 1.92, 1.36, 1, 1, 1, { seg: 5 });
+  b.cone(0.16, 0.3, MGOLD, 0, 2.2, 1.15, 0, 0, 0, { seg: 5 });
+  reflectInto(b, false, 0);
+  return b.build({ cast: true, receive: false });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -2111,7 +2259,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -2124,7 +2272,7 @@ export function populate(group, rawIndex, zone, anim) {
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
   if (!coast) { place(group, under40(), 0, 0, 0); place(group, rail40(), L, 0, 0); }
-  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && !coast);   // the right-hand side opens onto ground at deck level
+  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
@@ -2134,7 +2282,7 @@ export function populate(group, rawIndex, zone, anim) {
   }
   // furniture along the shoulders
   const fz = [-4, -16, -24, -36];
-  if (zone !== 8 && !coast) for (const z of fz) {
+  if (zone !== 8 && zone !== 18 && !coast) for (const z of fz) {
     const r = rng();
     if (r < 0.4) place(group, bench(), -3.95, 0, z, PI);
     else if (r < 0.55) place(group, lifeRing(), -4.2, 0, z, PI / 2);
@@ -2290,6 +2438,17 @@ export function populate(group, rawIndex, zone, anim) {
     for (const z of [-2, -24, -37]) if (rng() < 0.75) place(group, mooTree(Math.floor(rng() * 5)), 14.5 + rng() * 4, 0, z + rng() * 2, rng() * 6, 0.9 + rng() * 0.3);
     if (index % 2) anim.push({ o: place(group, cowBoat(), -9 - rng() * 6, WATER_Y, -8 - rng() * 22, rng() * 6), kind: 'bob', p: rng() * 6 });
     else anim.push({ o: place(group, buoy(pick(rng, [C.red, C.green])), -14 - rng() * 10, WATER_Y, -rng() * CHUNK), kind: 'bob', p: rng() * 6 });
+  } else if (zone === 18) {
+    // the Land of Mirrors: the sea is a looking-glass, the left side is the mirror image of the right, and everything stands on its own reflection
+    place(group, mirrorSet(index % 3), 0, 0, 0);
+    if (index % 2 === 0) place(group, mirrorGate(), 0, 0, -20);
+    for (const z of [-7, -33]) { place(group, bench(), -3.95, 0, z, PI); place(group, bench(), 3.95, 0, z, 0); }
+    for (const sx of [1, -1]) {
+      const flip = (o) => { o.scale.x = sx; return o; };
+      if (index % 2) anim.push({ o: flip(place(group, ballPost(), sx * 6.9, 0, -20)), kind: 'spin', v: sx * 0.6 });
+      if (index % 3 === 0) anim.push({ o: flip(place(group, floatGem(index % 2), sx * 8.2, 0, -29)), kind: 'spin', v: sx * 0.8 });
+      else if (index % 3 === 2) anim.push({ o: flip(place(group, glassSwan(), sx * 8.5, WATER_Y, -33)), kind: 'bob', p: index, amp: 0.6 });
+    }
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }
