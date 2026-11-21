@@ -302,6 +302,7 @@ export class GameAudio {
     else if (kind === 'nightOwl') this.hoot();
     else if (kind === 'blockBird') this.chirp8();
     else if (kind === 'flyBox') this.scratch();
+    else if (kind === 'flipGull') for (let i = 0; i < 3; i++) this.tone('sawtooth', 820, t + i * 0.17, 0.14, 0.07, null, { slide: 1350, lp: 2800, att: 0.02 });   // a gull's cry, backwards
     else if (kind === 'pteroBones') { this.rattle(); this.tone('sawtooth', 900, t + 0.1, 0.25, 0.03, null, { slide: 1300, lp: 2600, att: 0.03 }); }
     else if (kind === 'flashMirror') { this.twinkle(); this.tone('sine', 1320, t, 0.6, 0.04, null, { slide: 1980, att: 0.1 }); }
     else if (kind === 'chocJug') { this.glug(); this.tone('sine', 620, t, 0.5, 0.05, null, { slide: 880, vib: 0.02, vibHz: 7, att: 0.1 }); }
@@ -412,6 +413,9 @@ export class GameAudio {
   glug() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 3; i++) { const u = t + i * 0.19 + Math.random() * 0.05, f = rnd(110, 170); this.tone('sine', f, u, 0.16, 0.14, null, { slide: f * 1.7, att: 0.02 }); } } }
   crunch() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 3; i++) this.noise(t + i * 0.07, 0.05, 0.09, { type: 'bandpass', f: rnd(1400, 2600), q: 1.2 }); } }
   // ----- Dream Time -----
+  // the Upside-Down World: a swanee whistle going up (or down), and a wobbly "boing-oing"
+  whistle(up = true) { if (this.ok) { const t = this.ctx.currentTime + 0.1; this.tone('sine', up ? 420 : 1500, t, 0.55, 0.07, null, { slide: up ? 1500 : 420, att: 0.03, vib: 0.015, vibHz: 6 }); } }
+  wobble() { if (this.ok) { const t = this.ctx.currentTime; this.tone('triangle', 180, t, 0.6, 0.09, null, { slide: 320, vib: 0.25, vibHz: 14, att: 0.01 }); } }
   // Disco Land: a whoop from the dance floor, hand claps, a stab of brass and a record being scratched
   whoop() { if (this.ok) { const t = this.ctx.currentTime + 0.3; this.tone('sine', 500, t, 0.34, 0.07, null, { slide: 1250, att: 0.04, vib: 0.02, vibHz: 7 }); this.tone('triangle', 1000, t, 0.34, 0.02, null, { slide: 2500, att: 0.04 }); } }
   claps() { if (this.ok) { const t = this.ctx.currentTime; for (const d of [0, 0.27, 0.4]) { this.noise(t + d, 0.09, 0.09, { type: 'bandpass', f: 1500, q: 1.2 }); this.noise(t + d + 0.012, 0.07, 0.06, { type: 'bandpass', f: 2100, q: 1.2 }); } } }
@@ -464,6 +468,7 @@ export class GameAudio {
     else if (zone === 4) { run([64, 67, 71, 76], 'sawtooth', 0.07, 0.05); this.thunder(0.5); }
     else if (zone === 7) run([87, 91, 94, 99, 103], 'sine', 0.06, 0.06);
     else if (zone === 20) { run([79, 76, 72, 67, 72, 76, 84], 'sine', 0.11, 0.09); this.hoot(); }
+    else if (zone === 23) { run([84, 79, 76, 72, 76, 79, 84, 72], 'triangle', 0.08, 0.09); this.whistle(false); }
     else if (zone === 22) { run([69, 72, 76, 81, 79, 76, 81, 84], 'sawtooth', 0.08, 0.05); this.whoop(); }
     else if (zone === 21) { run([72, 76, 79, 84, 79, 84, 88, 96], 'square', 0.07, 0.07); this.coin8(); }
     else if (zone === 19) { run([58, 62, 65, 70, 65, 70, 74], 'triangle', 0.09, 0.08); this.bingBong(); }

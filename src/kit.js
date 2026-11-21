@@ -178,6 +178,16 @@ export class Builder {
     this.cur.copy(this.stack.pop());
     return this;
   }
+  // Run fn, then turn everything it added upside down (a half turn about the z axis), so that what fn put at the origin ends up
+  // at (x, y, z): something fn builds standing on the ground, h high, stands on its head on the ground when y = h.
+  flip(x, y, z, fn) {
+    const n0 = this.solid.length, g0 = this.glowParts.length;
+    fn(this);
+    const M = this.cur.clone().multiply(new THREE.Matrix4().makeRotationZ(Math.PI).setPosition(x, y, z)).multiply(this.cur.clone().invert());
+    for (let i = n0; i < this.solid.length; i++) this.solid[i].applyMatrix4(M);
+    for (let i = g0; i < this.glowParts.length; i++) this.glowParts[i].applyMatrix4(M);
+    return this;
+  }
   add(g, color, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1, o) {
     if (!g.index) {
       const n = g.attributes.position.count, idx = new Array(n);

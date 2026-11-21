@@ -522,4 +522,23 @@ THEMES[22] = theme('Glitter Ball Boogie', {
   drums: { thump: 'x...x...x...x...', tick: '..x...x...x...x.', snap: '....x.......x...' },
 });
 
+// ---- 23. the Upside-Down World: "Topsy-Turvy", whose second half is the first half turned upside down (F major) ----
+THEMES[23] = theme('Topsy-Turvy', {
+  key: 5, scale: 'maj', base: 65, gain: 1.0, tempo: 1.0, voice: 'clarinet', bassVoice: 'tuba', stab: 'pluck',
+  chords: 'I IV V I I IV V I',
+  tune: [
+    "1:2 3:2 5:2 3:2 1':4 5:4",
+    "6:2 1':2 4':2 1':2 6:4 4:4",
+    "5:2 7:2 2':2 7:2 5':4 2':4",
+    "3':2 1':2 5:2 3:2 1:4 -:4",
+    "1':2 5:2 3:2 5:2 1:4 3:4",
+    "4':2 1':2 6:2 1':2 4:4 6:4",
+    "5':2 2':2 7:2 2':2 5:4 7:4",
+    "1:2 3:2 5:2 1':2 3':4 -:4",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 0, _, _, _, 7, _, 12, _],
+  stabs: '....x.......x...',
+  drums: { thump: 'x.......x.......', tick: '..x...x...x...x.', rim: '....x.......x...' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

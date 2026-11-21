@@ -2030,6 +2030,112 @@ def('flyBox', 'deco', 2.4, 1.2, 1.2, (b) => {
   wings: (b, sx) => { for (let i = 0; i < 4; i++) b.sph(0.2, i % 2 ? 0xffffff : 0xffd0ea, sx * (0.3 + i * 0.26), 0.02 - i * 0.02, -0.04 * i, 1.5, 0.3, 1.4 - i * 0.22, { seg: 8 }); }, wingAt: [0.62, 0.1, 0],
 });
 
+// ---------- the Upside-Down World ----------
+export const UPS = { wall: 0xfff3d6, roofs: [0xe5383b, 0x4f8fe0, 0xffb347, 0x7fc46a], leaf: 0x5fbf4a, leafD: 0x3f9a4a, trunk: 0x8a5a3c, earth: 0x9a6a44, rock: 0x8c8478 };
+// A round tree, about 2.6 s high, standing on (x, y, z).
+export function roundTreeInto(b, x, y, z, s = 1, leaf = UPS.leaf, fruit = 0xe5383b) {
+  b.cyl(0.14 * s, 0.2 * s, 1.3 * s, UPS.trunk, x, y + 0.65 * s, z, 0, 0, 0, { seg: 7 }).sph(0.8 * s, leaf, x, y + 1.8 * s, z, 1, 0.95, 1, { seg: 10 }).sph(0.5 * s, UPS.leafD, x + 0.4 * s, y + 1.5 * s, z + 0.3 * s, 1, 1, 1, { seg: 8 }).sph(0.45 * s, leaf, x - 0.45 * s, y + 2.1 * s, z - 0.2 * s, 1, 1, 1, { seg: 8 });
+  for (const [dx, dy, dz] of [[0.5, 1.9, 0.55], [-0.3, 1.6, 0.7], [0.1, 2.3, 0.5], [-0.7, 1.9, 0.2], [0.75, 1.5, -0.1]]) b.sph(0.1 * s, fruit, x + dx * s, y + dy * s, z + dz * s, 1, 1, 1, { seg: 6 });
+}
+// A cottage, w wide: walls, a pitched roof, a door, two lit windows and a chimney. It faces +z.
+export function cottageInto(b, x, y, z, ry = 0, w = 2.4, roof = UPS.roofs[0], wall = UPS.wall) {
+  b.at(x, y, z, ry, () => {
+    const h = w * 0.7, d = w * 0.8;
+    b.box(w, h, d, wall, 0, h / 2, 0, 0, 0, 0, { grad: 0.9 }).prism(w * 1.14, w * 0.5, d * 1.12, roof, 0, h, 0, 0);
+    b.box(w * 0.2, h * 0.56, 0.06, 0x7a4a2e, 0, h * 0.28, d / 2 + 0.02).sph(0.04 * w, 0xffd23f, w * 0.06, h * 0.28, d / 2 + 0.06, 1, 1, 1, { seg: 5 });
+    for (const sx of [-1, 1]) b.box(w * 0.2, w * 0.2, 0.06, 0xffe9a0, sx * w * 0.3, h * 0.58, d / 2 + 0.02, 0, 0, 0, { glow: true, grad: 1 }).box(w * 0.24, 0.05, 0.08, 0xffffff, sx * w * 0.3, h * 0.58 - w * 0.12, d / 2 + 0.03);
+    b.box(w * 0.14, w * 0.4, w * 0.14, 0xb5553c, w * 0.3, h + w * 0.32, -d * 0.15);
+    for (let i = 0; i < 3; i++) b.sph(w * (0.07 + i * 0.025), 0xffffff, w * 0.3 + i * 0.06 * w, h + w * (0.62 + i * 0.16), -d * 0.15, 1, 1, 1, { seg: 6 });
+  });
+}
+def('upCone', 'low', 1.2, 0.98, 1.0, (b) => {
+  // somebody has dropped an ice cream as big as a bollard: scoop down, cone up
+  b.sph(0.52, 0xff9fc0, 0, 0.1, 0, 1.15, 0.5, 1.15, { seg: 12 }).sph(0.4, 0xff9fc0, 0, 0.3, 0, 1, 0.8, 1, { seg: 12 });
+  for (const [x, z, r] of [[0.6, 0.1, 0.16], [-0.5, 0.4, 0.14], [-0.3, -0.6, 0.12], [0.4, -0.5, 0.1]]) b.sph(r, 0xff9fc0, x, 0.03, z, 1, 0.3, 1, { seg: 7 });
+  b.cone(0.34, 0.75, 0xe0a85a, 0, 0.6, 0, 0, 0, 0.08, { seg: 12 });
+  for (let i = 0; i < 3; i++) b.tor(0.3 - i * 0.09, 0.012, 0xb5803c, 0.01 * i, 0.36 + i * 0.2, 0, PI / 2, 0, 0, { seg: 10, tseg: 3 });
+  for (const [x, y, z, c] of [[0.2, 0.42, 0.3, 0xffffff], [-0.25, 0.38, 0.25, 0x5ad0e0], [0, 0.34, 0.42, 0xffd23f]]) b.cap(0.02, 0.07, c, x, y, z, 0.6, x * 3, 0.5, { seg: 4 });
+});
+def('upBoat', 'low', 1.6, 0.9, 1.0, (b) => {
+  // a rowing boat, keel up, with a crab sunbathing on it
+  b.sph(1, 0x4f8fe0, 0, 0, 0, 0.78, 0.62, 0.44, { seg: 14 }).tor(0.5, 0.035, 0xffffff, 0, 0.14, 0, 0, PI / 2, 0, { arc: PI, seg: 12, tseg: 4 });
+  b.add(new THREE.TorusGeometry(1, 0.04, 4, 20), 0xffffff, 0, 0.04, 0, PI / 2, 0, 0, 0.79, 0.45, 1);
+  b.sph(0.12, 0xe5553b, 0.2, 0.64, 0, 1.3, 0.7, 1, { seg: 7 });
+  for (const sx of [-1, 1]) b.sph(0.05, 0xe5553b, 0.2 + sx * 0.18, 0.7, 0.06, 1, 1, 1, { seg: 5 }).sph(0.02, 0x1b1f24, 0.2 + sx * 0.05, 0.74, 0.08, 1, 1, 1, { seg: 4 });
+});
+def('upTable', 'low', 1.4, 0.95, 1.0, (b) => {
+  // a café table on its back with its legs in the air, and a cup that has somehow stayed on
+  b.box(1.2, 0.1, 0.8, 0xffffff, 0, 0.05, 0).box(1.1, 0.03, 0.7, 0xe5383b, 0, 0.115, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.04, 0.05, 0.75, 0x9aa6ae, sx * 0.5, 0.48, sz * 0.3, 0, 0, 0, { seg: 6 }).sph(0.06, 0x24262c, sx * 0.5, 0.86, sz * 0.3, 1, 0.6, 1, { seg: 6 });
+  b.cyl(0.1, 0.14, 0.16, 0x5ad0e0, 0.1, 0.21, 0, 0, 0, 0, { seg: 9 }).tor(0.06, 0.016, 0x5ad0e0, 0.24, 0.21, 0, 0, 0, 0, { seg: 8, tseg: 3 });
+});
+def('upBucket', 'low', 1.2, 0.9, 1.0, (b) => {
+  // a seaside bucket, upside down, with the spade stuck in the top and a starfish
+  b.cyl(0.3, 0.44, 0.64, 0xe5383b, 0, 0.32, 0, 0, 0, 0, { seg: 12 }).cyl(0.46, 0.46, 0.06, 0xffd23f, 0, 0.03, 0, 0, 0, 0, { seg: 12 });
+  b.tor(0.42, 0.02, 0xffffff, 0, 0.05, 0.1, PI / 2.3, 0, 0, { arc: PI, seg: 10, tseg: 3 });
+  b.cyl(0.025, 0.025, 0.4, 0x8a5a3c, 0.08, 0.8, 0, 0, 0, 0.3, { seg: 5 }).box(0.16, 0.2, 0.03, 0x4f8fe0, 0.0, 0.66, 0, 0, 0, 0.3);
+  for (let i = 0; i < 5; i++) b.cone(0.05, 0.2, 0xffb347, 0.5 + Math.cos(i * 1.257) * 0.1, 0.04, 0.3 + Math.sin(i * 1.257) * 0.1, PI / 2, 0, 0, { seg: 4 });
+});
+def('upHat', 'low', 1.2, 0.98, 1.0, (b) => {
+  // a top hat, brim up, with the rabbit looking out
+  b.cyl(0.4, 0.34, 0.6, 0x24262c, 0, 0.3, 0, 0, 0, 0, { seg: 12 }).cyl(0.6, 0.6, 0.05, 0x24262c, 0, 0.6, 0, 0, 0, 0, { seg: 14 }).cyl(0.41, 0.36, 0.1, 0xe5383b, 0, 0.5, 0, 0, 0, 0, { seg: 12 });
+  b.sph(0.2, 0xffffff, 0, 0.72, 0.06, 1, 0.9, 1, { seg: 9 }).sph(0.035, 0xff8fb0, 0, 0.7, 0.25, 1, 0.8, 0.6, { seg: 5 });
+  for (const sx of [-1, 1]) b.sph(0.03, 0x1b1f24, sx * 0.08, 0.76, 0.22, 1, 1.2, 0.6, { seg: 5 }).cap(0.05, 0.2, 0xffffff, sx * 0.09, 0.9, 0, 0, 0, sx * -0.2, { seg: 6 }).cap(0.025, 0.14, 0xff8fb0, sx * 0.09, 0.9, 0.035, 0, 0, sx * -0.2, { seg: 5 });
+});
+def('upTree', 'tall', 1.6, 2.8, 1.6, (b) => {
+  // a tree standing on its head, with its roots in the air and a bird's nest in them
+  b.flip(0, 2.7, 0, () => { roundTreeInto(b, 0, 0, 0, 1); for (let i = 0; i < 5; i++) b.cyl(0.03, 0.08, 0.5, UPS.trunk, Math.cos(i * 1.257) * 0.24, -0.1, Math.sin(i * 1.257) * 0.24, Math.sin(i * 1.257) * 0.9, 0, -Math.cos(i * 1.257) * 0.9, { seg: 5 }); });
+  b.cyl(0.2, 0.14, 0.12, 0xb5803c, 0, 2.86, 0, 0, 0, 0, { seg: 8 });
+  for (const sx of [-1, 1]) b.sph(0.06, 0xcfeeff, sx * 0.06, 2.94, 0, 1, 1.2, 1, { seg: 6 });
+});
+def('upLamp', 'tall', 1.1, 2.8, 1.1, (b) => {
+  // a lamp-post standing on its lamp
+  b.flip(0, 2.8, 0, () => {
+    b.cyl(0.26, 0.32, 0.24, 0x1f4a44, 0, 0.12, 0, 0, 0, 0, { seg: 8 }).cyl(0.07, 0.1, 1.9, 0x1f4a44, 0, 1.15, 0, 0, 0, 0, { seg: 7 }).cyl(0.2, 0.08, 0.14, 0x1f4a44, 0, 2.14, 0, 0, 0, 0, { seg: 8 });
+    b.cyl(0.26, 0.2, 0.42, 0xfff3c0, 0, 2.42, 0, 0, 0, 0, { seg: 8, glow: true, grad: 1 }).cone(0.32, 0.2, 0x1f4a44, 0, 2.73, 0, 0, 0, 0, { seg: 8 });
+  });
+});
+def('upHut', 'tall', 1.5, 2.7, 1.2, (b) => {
+  // a beach hut balancing on the point of its roof
+  b.flip(0, 2.66, 0, () => {
+    b.box(1.3, 1.7, 1.0, 0xffffff, 0, 0.85, 0, 0, 0, 0, { grad: 0.9 }).prism(1.5, 0.9, 1.16, 0x4f8fe0, 0, 1.7, 0, 0);
+    for (let i = -2; i <= 2; i += 2) b.box(0.26, 1.7, 0.03, 0x4f8fe0, i * 0.26, 0.85, 0.51);
+    b.box(0.44, 1.0, 0.04, 0xffd23f, 0, 0.5, 0.52).sph(0.04, 0x24262c, 0.14, 0.5, 0.56, 1, 1, 1, { seg: 5 }).box(1.4, 0.1, 1.1, 0x9a6a44, 0, 0.05, 0);
+  });
+});
+def('headTeddy', 'tall', 1.3, 2.6, 1.0, (b) => {
+  // a bear standing on its head
+  b.flip(0, 2.62, 0, () => teddyInto(b, 0, 0, 0, 1.65, { stand: true, pj: 0xe5383b }));
+  b.cyl(0.5, 0.5, 0.06, 0x5ad0e0, 0, 0.03, 0, 0, 0, 0, { seg: 12 });
+});
+def('upBrolly', 'tall', 1.7, 2.7, 1.7, (b) => {
+  // a beach umbrella standing on its point, with a duck having a bath in it
+  b.cyl(0.035, 0.035, 1.5, 0xfff3d6, 0, 0.75, 0, 0, 0, 0, { seg: 6 }).cone(0.07, 0.2, 0x9aa6ae, 0, 0.1, 0, PI, 0, 0, { seg: 6 });
+  b.add(new THREE.ConeGeometry(0.85, 1.0, 8, 1, true), (x, y, z, i) => (Math.floor(((Math.atan2(z, x) + PI) / (PI / 4)) + 0.5) % 2 ? 0xe5383b : 0xffffff), 0, 1.95, 0, PI, 0, 0);
+  b.cyl(0.8, 0.8, 0.04, 0x5ad0e0, 0, 2.38, 0, 0, 0, 0, { seg: 8 }).tor(0.85, 0.03, 0xffd23f, 0, 2.45, 0, PI / 2, 0, 0, { seg: 8, tseg: 4 });
+  b.sph(0.2, 0xffd23f, 0, 2.5, 0, 1.2, 0.8, 1, { seg: 8 }).sph(0.14, 0xffd23f, 0.16, 2.68, 0, 1, 1, 1, { seg: 8 }).cone(0.05, 0.12, 0xff8a3c, 0.32, 2.66, 0, 0, 0, -PI / 2, { seg: 5 });
+  for (const sz of [-1, 1]) b.sph(0.02, 0x1b1f24, 0.22, 2.72, sz * 0.09, 1, 1, 1, { seg: 4 });
+});
+def('turtleSkate', 'low', 1.5, 0.9, 0.9, (b) => {
+  // a tortoise riding a skateboard on its back, feet in the air; it faces +x
+  b.box(1.3, 0.06, 0.44, 0xe5383b, 0, 0.2, 0).box(0.2, 0.06, 0.44, 0xe5383b, 0.72, 0.24, 0, 0, 0, 0.4).box(0.2, 0.06, 0.44, 0xe5383b, -0.72, 0.24, 0, 0, 0, -0.4);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.09, 0.09, 0.08, 0xffd23f, sx * 0.42, 0.09, sz * 0.2, PI / 2, 0, 0, { seg: 8 });
+  b.sph(0.42, 0x4f8f4a, 0, 0.24, 0, 1.15, 0.5, 0.9, { seg: 11 }).sph(0.4, 0xe8d8a0, 0, 0.36, 0, 1.1, 0.5, 0.85, { seg: 11 });
+  b.sph(0.16, 0x7fc46a, 0.56, 0.44, 0, 1.1, 0.9, 0.9, { seg: 8 }).tor(0.05, 0.012, 0x1b1f24, 0.7, 0.42, 0, 0, PI / 2, 0, { arc: PI, seg: 6, tseg: 3 });
+  for (const sz of [-1, 1]) { b.sph(0.03, 0x1b1f24, 0.66, 0.5, sz * 0.09, 1, 1, 1, { seg: 5 }); for (const sx of [-1, 1]) b.cap(0.06, 0.2, 0x7fc46a, sx * 0.26, 0.66, sz * 0.24, 0, 0, sx * -0.4, { seg: 6 }); }
+  b.cone(0.04, 0.16, 0x7fc46a, -0.52, 0.42, 0, 0, 0, PI / 2 + 0.3, { seg: 5 });
+});
+def('flipGull', 'deco', 2.2, 1.1, 1.3, (b) => {
+  // a seagull that flies on its back, feet in the air, with an egg tucked under one wing
+  b.sph(0.36, 0xffffff, 0, 0, 0, 0.85, 0.75, 1.3, { seg: 10 }).sph(0.3, 0xb8c4d0, 0, -0.14, -0.04, 0.85, 0.5, 1.25, { seg: 9 });
+  b.sph(0.22, 0xffffff, 0, -0.08, 0.5, 1, 1, 1, { seg: 9 }).cone(0.07, 0.24, 0xffb347, 0, -0.1, 0.76, PI / 2, 0, 0, { seg: 6 });
+  for (const sx of [-1, 1]) { b.sph(0.035, 0x1b1f24, sx * 0.12, -0.14, 0.66, 1, 1, 0.6, { seg: 5 }); b.cyl(0.018, 0.018, 0.24, 0xffb347, sx * 0.1, 0.36, -0.05, 0, 0, 0, { seg: 4 }).box(0.1, 0.02, 0.14, 0xffb347, sx * 0.1, 0.48, 0.0); }
+  b.cone(0.16, 0.36, 0xb8c4d0, 0, -0.06, -0.6, -PI / 2, 0, 0, { seg: 5 });
+  b.sph(0.18, 0xfff6e0, 0.2, 0.24, 0.1, 0.85, 1.1, 0.85, { seg: 8 });
+}, {
+  wings: (b, sx) => { b.sph(0.5, 0xffffff, sx * 0.45, 0, 0, 1.2, 0.12, 0.6, { seg: 8 }).sph(0.3, 0xb8c4d0, sx * 0.95, 0.0, -0.05, 1.3, 0.1, 0.5, { seg: 7 }); }, wingAt: [0.25, -0.05, 0],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -2630,8 +2736,10 @@ export const TALL_TYPES = {
   20: ['grandClock', 'pillowTower', 'bigTeddy', 'moonLamp', 'wardrobe', 'pillowTower'],
   21: ['arcade', 'pxTree', 'blockTower', 'boxRobot', 'heartSign', 'blockTower'],
   22: ['speakerStack', 'lavaLamp', 'jukebox', 'neonNote', 'ballStand', 'speakerStack'],
+  23: ['upTree', 'upLamp', 'upHut', 'headTeddy', 'upBrolly', 'upTree'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
 export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'],
   21: ['pxCrate', 'cubeJelly', 'retroTV', 'joystick', 'pxBush', 'cubeJelly'],
-  22: ['recordStack', 'boomBox', 'platformShoes', 'floorLights', 'miniBall', 'boomBox'] };
+  22: ['recordStack', 'boomBox', 'platformShoes', 'floorLights', 'miniBall', 'boomBox'],
+  23: ['upCone', 'upBoat', 'upTable', 'upBucket', 'upHat', 'upCone'] };

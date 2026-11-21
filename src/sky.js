@@ -32,6 +32,8 @@ const PAL = [
   { top: 0x2f86e8, hor: 0xbfe6ff, sun: 0xfff6d8, sunI: 2.9, hemiS: 0xd8f0ff, hemiG: 0x8fc070, hemiI: 1.25, deep: 0x2f6fd8, shal: 0x5ad0e0, foam: 0xffffff, cloud: 0xffffff, el: 0.8, az: 0.4, stars: 0, storm: 0, pixel: 1 },
   // 22 Disco Land: a warm purple night, bright enough to see by
   { top: 0x140a3a, hor: 0x9a3aa8, sun: 0xffd0f4, sunI: 2.1, hemiS: 0xe0b8ff, hemiG: 0x7a4a9a, hemiI: 1.6, deep: 0x2a0f5a, shal: 0x8a3ac0, foam: 0xff9fe0, cloud: 0x7a4aa8, el: 0.6, az: -0.35, stars: 0.9, storm: 0 },
+  // 23 the Upside-Down World: the sky is the wrong way up too (pale overhead, deep blue low down), and there is no sea at all (nosea)
+  { top: 0xd8f0ff, hor: 0x4f9ae8, sun: 0xfff6dc, sunI: 2.8, hemiS: 0xe8f4ff, hemiG: 0xf4f8e4, hemiI: 1.5, deep: 0x4f9ae8, shal: 0x8fc4f4, foam: 0xffffff, cloud: 0xffffff, el: 0.7, az: 0.3, stars: 0, storm: 0, nosea: 1 },
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 
@@ -39,7 +41,7 @@ export class Sky {
   constructor(scene, quality) {
     this.scene = scene;
     this.group = new THREE.Group(); scene.add(this.group);
-    this.cur = { top: col(0), hor: col(0), sun: col(0), hemiS: col(0), hemiG: col(0), deep: col(0), shal: col(0), cloud: col(0), stars: 0, storm: 0, fun: 0, snow: 0, aurora: 0, under: 0, space: 0, swirl: 0, mirror: 0, pixel: 0 };
+    this.cur = { top: col(0), hor: col(0), sun: col(0), hemiS: col(0), hemiG: col(0), deep: col(0), shal: col(0), cloud: col(0), stars: 0, storm: 0, fun: 0, snow: 0, aurora: 0, under: 0, space: 0, swirl: 0, mirror: 0, pixel: 0, nosea: 0 };
     this.flash = 0; this.boltT = 0; this.hidden = false;
     this.sunDir = new THREE.Vector3(0, 1, 0);
 
@@ -333,7 +335,7 @@ export class Sky {
     const c = this.cur;
     for (const key of ['top', 'hor', 'sun', 'hemiS', 'hemiG', 'deep', 'shal', 'cloud']) c[key].copy(this._a.set(A[key])).lerp(this._b.set(B[key]), k);
     c.stars = lerp(A.stars, B.stars, k); c.storm = lerp(A.storm, B.storm, k);
-    for (const key of ['fun', 'snow', 'aurora', 'under', 'space', 'swirl', 'mirror', 'pixel']) c[key] = lerp(A[key] || 0, B[key] || 0, k);
+    for (const key of ['fun', 'snow', 'aurora', 'under', 'space', 'swirl', 'mirror', 'pixel', 'nosea']) c[key] = lerp(A[key] || 0, B[key] || 0, k);
     // under the sea everything takes on the colour of the water, and gets bluer the deeper it goes
     this.dive = dive;
     if (dive > 0) {
@@ -376,8 +378,10 @@ export class Sky {
     this.sun.target.position.set(0, 0, -12);
 
     // nothing earthly on the horizon in space, and no gulls in space or underground
-    const earth = c.space < 0.5 && dive < 0.5;
-    this.far.visible = earth; for (const m of this.sails) m.visible = earth;
+    const earth = c.space < 0.5 && dive < 0.5, afloat = earth && c.nosea < 0.5;
+    this.far.visible = afloat; for (const m of this.sails) m.visible = afloat;
+    // in the Upside-Down World the sea drops away out of sight
+    this.sea.position.y = WATER_Y - c.nosea * c.nosea * 90; this.sea.visible = !this.hidden && c.nosea < 0.98;
     for (const g of this.gulls) g.visible = earth && c.under < 0.5;
     for (const g of this.clouds) g.visible = dive < 0.5;
     this.planets.visible = c.space > 0.01; this.spaceMat.opacity = c.space;
