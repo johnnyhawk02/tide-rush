@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto, GRK, greekColInto, amphoraInto, oliveInto, owlInto, woodHorseInto } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto, GRK, greekColInto, amphoraInto, oliveInto, owlInto, woodHorseInto, DINO, fernInto, cycadInto, dinoNeckInto, longNeckInto, trikeInto, rexInto, caveKidInto } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -3309,10 +3309,134 @@ const greekGate = () => prefab('greekGate', () => {
   return b.build({ cast: true, receive: false });
 });
 
+// ---------- Ancient Time ----------
+const AT_GRASS = 0x7ab85a, AT_GRASS_L = 0x94cc6a, AT_GRASS_D = 0x5f9a48;
+// A tall tree from long ago: a bare trunk with tiers of dark branches.
+const oldPineInto = (b, x, y, z, s) => {
+  b.cyl(0.18 * s, 0.3 * s, 4 * s, DINO.bark, x, y + 2 * s, z, 0, 0, 0, { seg: 6 });
+  for (let i = 0; i < 4; i++) b.cone((1.5 - i * 0.3) * s, 1.0 * s, i % 2 ? DINO.fernD : 0x2a6a3a, x, y + (2.6 + i * 0.8) * s, z, 0, i, 0, { seg: 7 });
+};
+// The ground on both sides of the boards: grass edged with logs, ferns, cycads, old pines and boulders, with hills beyond. clear(x, z)
+// is true where something bigger is going to stand.
+const dinoGroundInto = (b, rng, clear) => {
+  for (const sd of [-1, 1]) {
+    b.box(46, 3.6, CHUNK, AT_GRASS, sd * (DECK_HALF + 23), -1.82, -CHUNK / 2);
+    for (let i = 0; i < 10; i++) b.cyl(0.18, 0.18, 3.8, i % 2 ? DINO.bark : 0x8a6a48, sd * (DECK_HALF + 0.18), 0.02, -2 - i * 4, PI / 2, 0, 0, { seg: 6 });
+    for (let i = 0; i < 9; i++) b.sph(1, i % 2 ? AT_GRASS_L : AT_GRASS_D, sd * (DECK_HALF + 2.5 + rng() * 24), -0.04, -rng() * CHUNK, 1.5 + rng() * 2.6, 0.07, 1 + rng() * 2, { seg: 7 });
+    for (let i = 0; i < 18; i++) {
+      const x = sd * (DECK_HALF + 1.5 + rng() * 24), z = -rng() * CHUNK, t = rng(), s = rng();
+      if (clear(x, z)) continue;
+      if (Math.abs(x) < 8.5 || t < 0.4) fernInto(b, x, 0, z, 0.7 + s * 0.7, 6);
+      else if (t < 0.65) cycadInto(b, x, 0, z, 0.9 + s * 0.6);
+      else if (t < 0.88) oldPineInto(b, x, 0, z, 1 + s * 0.5);
+      else b.sph(0.6 + s * 0.6, i % 2 ? DINO.rock : DINO.rockD, x, 0.2, z, 1.2, 0.8, 1, { seg: 6 });
+    }
+    for (let i = 0; i < 2; i++) b.sph(15 + rng() * 5, i % 2 ? AT_GRASS_D : 0x6aa850, sd * (56 + rng() * 8), -2, -8 - i * 20 - rng() * 6, 1.2, 0.4 + rng() * 0.15, 1, { seg: 9, grad: 0.75 });
+  }
+};
+// A volcano a long way off, puffing gently, with warm streams running down it. sd is the side of the boards it stands on.
+const volcanoInto = (b, x, z, sd) => {
+  b.cyl(4, 16, 18, 0x8a6a58, x, 7, z, 0, 0, 0, { seg: 11, grad: 0.7 }).cyl(3.6, 4.1, 0.5, DINO.lava, x, 16.1, z, 0, 0, 0, { seg: 11, glow: true, grad: 1 });
+  b.cyl(0.5, 0.8, 9, DINO.lava, x - sd * 6.7, 12.2, z, 0, 0, -sd * 0.588, { seg: 5, glow: true, grad: 0.9 });
+  for (const dz of [-1, 1]) b.cyl(0.4, 0.6, 6, DINO.lava, x - sd * 1.5, 13.5, z + dz * 5.5, dz * -0.588, 0, -sd * 0.15, { seg: 5, glow: true, grad: 0.9 });
+  for (let i = 0; i < 5; i++) b.sph(1.6 + i * 0.5, i % 2 ? 0xffffff : 0xe8e0d8, x + sd * i * 1.2, 18 + i * 2.2, z - i * 0.8, 1.2, 0.9, 1.2, { seg: 7 });
+};
+// A cave in a rocky mound with a warm light inside, handprints round the door and the family outside. It faces +z.
+const caveInto = (b) => {
+  b.sph(5, DINO.rock, 0, 0, 0, 1.25, 0.85, 1, { seg: 10, grad: 0.8 }).sph(3, DINO.rockD, -4.4, 0, 1.2, 1, 0.8, 1, { seg: 8 }).sph(2.2, DINO.rock, 4.6, 0, 1.6, 1, 0.8, 1, { seg: 7 });
+  b.sph(2.0, 0x3a302a, 0, 0.4, 4.0, 1, 1.15, 0.6, { seg: 9 }).sph(1.3, 0xffb060, 0, 0.7, 4.75, 1, 1, 0.34, { seg: 8, glow: true, grad: 0.8 });
+  const surf = (px, py) => 5 * Math.sqrt(Math.max(0.05, 1 - (px / 6.25) ** 2 - (py / 4.25) ** 2)) + 0.03;
+  [[-2.7, 1.9, 0xc8503a], [-2.2, 2.9, 0xe8a040], [2.6, 2.2, 0xe8a040], [2.9, 1.2, 0xc8503a], [1.2, 3.2, 0xfff3d6], [-0.8, 3.3, 0xc8503a]].forEach(([px, py, c]) => { const z = surf(px, py); b.sph(0.2, c, px, py, z, 1, 1.1, 0.25, { seg: 5 }); for (let f = 0; f < 4; f++) b.sph(0.05, c, px - 0.15 + f * 0.1, py + 0.3, z - 0.03, 1, 2.4, 0.5, { seg: 4 }); });
+  caveKidInto(b, -2.6, 0, 5.6, 1.5, { wave: true, ry: 0.2 }); caveKidInto(b, 2.5, 0, 5.9, 1.25, { hair: 0xc85a2a, ry: -0.3 }); caveKidInto(b, 3.4, 0, 5.4, 1.7, { hair: 0x2a2420, fur: 0xa86a3a, wave: true, ry: -0.2 });
+  // supper on the go, and a rack of fish drying
+  for (let i = 0; i < 8; i++) b.sph(0.22, i % 2 ? DINO.rock : DINO.rockD, Math.cos(i * 0.785) * 0.8, 0.1, 7 + Math.sin(i * 0.785) * 0.8, 1, 0.8, 1, { seg: 5 });
+  b.sph(0.6, DINO.rockD, 0, 0.7, 7, 1, 0.8, 1, { seg: 9 }).cyl(0.5, 0.5, 0.05, 0x8fd058, 0, 1.1, 7, 0, 0, 0, { seg: 9 });
+  for (let i = 0; i < 4; i++) b.sph(0.12, DINO.lava, Math.cos(i * 1.57) * 0.4, 0.14, 7 + Math.sin(i * 1.57) * 0.4, 1, 0.7, 1, { seg: 4, glow: true, grad: 1 });
+  for (const sx of [-1, 1]) b.cyl(0.07, 0.09, 2.2, DINO.bark, -5.2 + sx * 1.2, 1.1, 5, 0, 0, 0, { seg: 5 });
+  b.cyl(0.05, 0.05, 2.8, DINO.bark, -5.2, 2.1, 5, 0, 0, PI / 2, { seg: 5 });
+  for (let i = 0; i < 3; i++) b.sph(0.3, 0x8fc8e0, -6 + i * 0.8, 1.6, 5, 0.5, 1.3, 0.2, { seg: 6 }).cone(0.2, 0.3, 0x8fc8e0, -6 + i * 0.8, 1.1, 5, 0, 0, 0, { seg: 3 });
+};
+// A woolly mammoth with curly tusks, facing +x: about 4.5 high.
+const mammothInto = (b) => {
+  const F = 0x9a6a3a, FD = 0x7a4f2a, IV = 0xfff3d6;
+  b.sph(1.6, F, 0, 2.3, 0, 1.3, 1.0, 1.0, { seg: 10 }).sph(1.1, F, 1.9, 3.0, 0, 1, 1.1, 0.95, { seg: 9 }).sph(0.6, FD, 1.8, 4.05, 0, 1.1, 0.7, 0.9, { seg: 7 });
+  for (const sx of [-1.0, 1.0]) for (const sz of [-0.8, 0.8]) b.cyl(0.42, 0.48, 1.6, FD, sx, 0.8, sz, 0, 0, 0, { seg: 8 }).sph(0.5, F, sx, 0.14, sz, 1, 0.3, 1, { seg: 6 });
+  for (let i = 0; i < 9; i++) for (const sz of [-1, 1]) b.cone(0.4, 0.9, FD, -1.6 + i * 0.4, 1.35, sz * 1.25, PI, 0, 0, { seg: 4 });
+  for (let i = 0; i < 9; i++) b.sph(0.36 - i * 0.026, F, 2.8 + Math.sin(i * 0.42) * 0.55, 2.7 - i * 0.3 + (i > 6 ? (i - 6) * 0.36 : 0), 0, 1, 1, 1, { seg: 6 });
+  for (const sz of [-1, 1]) {
+    b.tor(1.0, 0.13, IV, 3.2, 2.7, sz * 0.7, 0, sz * -0.35, -2.9, { arc: 2.5, seg: 10, tseg: 5 });
+    b.sph(0.55, FD, 1.5, 3.2, sz * 1.0, 0.5, 1, 0.3, { seg: 7 }).sph(0.13, 0xffffff, 2.6, 3.35, sz * 0.72, 1, 1.1, 0.7, { seg: 6 }).sph(0.07, DINO.eye, 2.66, 3.35, sz * 0.8, 1, 1.1, 0.6, { seg: 5 }).sph(0.12, DINO.cheek, 2.75, 2.95, sz * 0.62, 1, 0.7, 0.5, { seg: 5 });
+  }
+  b.cyl(0.06, 0.04, 1.2, FD, -2.1, 1.9, 0, 0, 0, -0.3, { seg: 4 }).sph(0.14, FD, -2.3, 1.3, 0, 1, 1.4, 1, { seg: 5 });
+};
+// Everything that stands still in one stretch of Ancient Time, as one model.
+const dinoSet = (k) => prefab('dinoSet' + k, () => {
+  const b = new Builder(0.86), rng = makeRng(2810 + k);
+  const near = (x, z, cx, cz, r) => (x - cx) ** 2 + (z - cz) ** 2 < r * r;
+  if (k === 0) {
+    dinoGroundInto(b, rng, (x, z) => near(x, z, 12, -20, 8) || near(x, z, -14, -20, 9));
+    b.at(-15, 0, -21, PI / 2, () => caveInto(b));
+    cycadInto(b, 18.5, 0, -15, 1.6); oldPineInto(b, 20, 0, -26, 1.6);
+  } else if (k === 1) {
+    dinoGroundInto(b, rng, (x, z) => near(x, z, -13, -19, 8) || near(x, z, 11, -10, 4) || x > 26);
+    volcanoInto(b, 46, -20, 1);
+    // a water hole, and the three-horn family having a drink
+    b.cyl(4.6, 4.6, 0.08, 0x5ab8e0, -12, 0.03, -17, 0, 0, 0, { seg: 14 });
+    for (let i = 0; i < 12; i++) { const a = i * 0.524; b.sph(0.4 + (i % 3) * 0.15, i % 2 ? DINO.rock : DINO.rockD, -12 + Math.cos(a) * 4.7, 0.1, -17 + Math.sin(a) * 4.7, 1, 0.6, 1, { seg: 5 }); }
+    for (let i = 0; i < 4; i++) b.cyl(0.5, 0.5, 0.03, 0x4f9a48, -12 + Math.cos(i * 1.9) * 2.4, 0.09, -17 + Math.sin(i * 1.9) * 2.2, 0, 0, 0, { seg: 7 });
+    trikeInto(b, -16.5, 0, -22.5, 2.5, DINO.teal, 0.35); trikeInto(b, -15.5, 0, -12.6, 1.1, DINO.purple, -0.5); trikeInto(b, -9.6, 0, -23.4, 0.9, DINO.green, 0.9);
+    // a nest on a mound
+    b.sph(2.6, AT_GRASS_D, 11, -0.2, -10, 1, 0.4, 1, { seg: 8 }).tor(1.3, 0.36, DINO.bark, 11, 0.9, -10, PI / 2, 0, 0, { seg: 10, tseg: 5 });
+    for (let i = 0; i < 3; i++) { const ex = 11 + Math.cos(i * 2.1) * 0.6, ez = -10 + Math.sin(i * 2.1) * 0.6; b.sph(0.5, 0xfff3d6, ex, 1.5, ez, 1, 1.3, 1, { seg: 8 }); for (let q = 0; q < 4; q++) b.sph(0.11, [DINO.teal, DINO.purple, DINO.orange][i], ex + Math.cos(q * 1.6 + i) * 0.44, 1.5 + (q % 2) * 0.3 - 0.1, ez + Math.sin(q * 1.6 + i) * 0.44, 1, 1, 1, { seg: 4 }); }
+  } else {
+    dinoGroundInto(b, rng, (x, z) => near(x, z, 15, -22, 7) || near(x, z, -13, -20, 6));
+    b.at(-13.5, 0, -20, 0.4, () => mammothInto(b), 1.15);
+    // the trees the tyrannosaur is hiding behind (populate adds it)
+    oldPineInto(b, 11.4, 0, -18.6, 1.3); cycadInto(b, 11, 0, -24.5, 1.5); oldPineInto(b, 12.6, 0, -27, 1.1);
+  }
+  return b.build({ cast: true, receive: true });
+});
+// A very big long-neck who leans over for a look as you go by (the part named 'neck' sways). It faces +x.
+const bigLongNeck = () => prefab('bigLongNeck', () => {
+  const g = new THREE.Group(), b = new Builder(0.88), S = 3.2;
+  longNeckInto(b, 0, 0, 0, S, { neck: false }); g.add(b.build({ cast: true, receive: false }));
+  const n = new Builder(0.88); n.at(0, 0, 0, 0, () => { dinoNeckInto(n); n.sph(0.2, DINO.fern, 1.6, 1.86, 0, 1.3, 0.3, 1, { seg: 5 }).sph(0.16, DINO.fernD, 1.66, 1.8, 0.1, 1.3, 0.3, 1, { seg: 5 }); }, S);
+  const m = n.build({ cast: true, receive: false }); m.name = 'neck'; m.position.set(0.85 * S, 1.35 * S, 0); g.add(m);
+  return g;
+});
+// A tyrannosaur as tall as the trees, who only wants to say hello.
+const bigRex = () => prefab('bigRex', () => { const b = new Builder(0.88); rexInto(b, 0, 0, 0, 4.0); return b.build({ cast: true, receive: false }); });
+// Three pterosaurs gliding round and round (the part named 'spin' turns).
+const pteroRing = () => prefab('pteroRing', () => {
+  const g = new THREE.Group(), b = new Builder(0.9);
+  for (let i = 0; i < 3; i++) b.at(Math.cos(i * 2.094) * (7 + i), i * 1.2, Math.sin(i * 2.094) * (7 + i), -i * 2.094, () => {
+    b.sph(0.4, DINO.orange, 0, 0, 0, 0.8, 0.7, 1.4, { seg: 7 }).sph(0.26, DINO.orange, 0, 0.2, 0.7, 0.9, 0.9, 1.1, { seg: 6 }).cone(0.1, 0.8, DINO.yellow, 0, 0.14, 1.3, PI / 2, 0, 0, { seg: 4 }).cone(0.1, 0.6, DINO.purple, 0, 0.44, 0.34, -1.1, 0, 0, { seg: 4 });
+    for (const sx of [-1, 1]) b.sph(1, i % 2 ? 0xffb878 : DINO.orange, sx * 1.1, 0.05, 0, 1.2, 0.05, 0.6, { seg: 6 }).sph(0.6, 0xffb878, sx * 2.2, 0.1, -0.3, 1.1, 0.05, 0.5, { seg: 5 });
+  }, 1.1);
+  const m = b.build({ cast: false, receive: false }); m.name = 'spin'; g.add(m);
+  return g;
+});
+// Two standing stones with a third laid across the top, painted with a sun, a spiral and handprints.
+const stoneGate = () => prefab('stoneGate', () => {
+  const b = new Builder(0.9);
+  for (const sx of [-1, 1]) b.box(1.7, 6.9, 1.5, sx > 0 ? DINO.rock : 0xa89c94, sx * 5.7, 3.45, 0, 0, 0, sx * 0.03, { grad: 0.82 }).sph(1.1, DINO.rockD, sx * 5.9, 0.2, 0.3, 1.2, 0.5, 1, { seg: 6 });
+  b.box(14.2, 1.4, 1.7, DINO.rockD, 0, 7.5, 0, 0, 0, 0.015, { grad: 0.9 });
+  const R = 0xc8503a, O = 0xe8a040, z = 0.87;
+  b.cyl(0.4, 0.4, 0.04, O, 0, 7.5, z, PI / 2, 0, 0, { seg: 9 });
+  for (let i = 0; i < 8; i++) b.box(0.08, 0.26, 0.04, O, Math.cos(i * 0.785) * 0.62, 7.5 + Math.sin(i * 0.785) * 0.52, z, 0, 0, i * 0.785 - PI / 2);
+  for (const sx of [-1, 1]) {
+    b.tor(0.36, 0.05, R, sx * 3.2, 7.5, z, 0, 0, 0, { seg: 9, tseg: 3 }).tor(0.18, 0.045, R, sx * 3.16, 7.5, z, 0, 0, 0, { seg: 7, tseg: 3 });
+    for (let q = 0; q < 2; q++) { const hx = sx * 5.7 + (q ? 0.3 : -0.3), hy = 3.2 + q * 1.4; b.sph(0.2, q ? O : R, hx, hy, 0.78, 1, 1.1, 0.1, { seg: 5 }); for (let f = 0; f < 4; f++) b.box(0.06, 0.24, 0.03, q ? O : R, hx - 0.15 + f * 0.1, hy + 0.3, 0.78, 0, 0, (1.5 - f) * 0.15); }
+    fernInto(b, sx * 4.6, 8.2, 0, 0.8, 6); b.sph(0.6, AT_GRASS_D, sx * 2.2, 8.2, 0.1, 1.6, 0.3, 1, { seg: 6 });
+    for (let i = 0; i < 3; i++) b.cone(0.1, 1.0 + i * 0.4, DINO.fern, sx * (6.2 - i * 0.5), 6.4 - i * 0.2, 0.8, PI, 0, 0, { seg: 4 });
+  }
+  return b.build({ cast: true, receive: false });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD', 'ANCIENT GREECE'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD', 'ANCIENT GREECE', 'ANCIENT TIME'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8, 0x2f6fd8][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8, 0x2f6fd8, 0x4f9a48][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -3320,7 +3444,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280', '#1f4fa8'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280', '#1f4fa8', '#2f6a2a'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); if (zone === 23) s.rotation.z = PI;   // (the sign for the Upside-Down World is upside down, of course)
   g.add(s);
   return g;
@@ -3333,7 +3457,7 @@ export function populate(group, rawIndex, zone, anim) {
   const rng = makeRng(index * 7919 + 13);
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
-  if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19 && zone !== 25) place(group, rail40(), L, 0, 0); }
+  if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19 && zone !== 25 && zone !== 28) place(group, rail40(), L, 0, 0); }
   const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && zone !== 23 && zone !== 24 && zone !== 26 && zone !== 27 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
@@ -3598,6 +3722,13 @@ export function populate(group, rawIndex, zone, anim) {
     if (k === 0) anim.push({ o: place(group, trireme(), -12.5, WATER_Y + 0.5, -18), kind: 'bob', p: rng() * 6 });
     else if (k === 1) anim.push({ o: place(group, dolphinLeap(), 8.5, WATER_Y - 0.4, -6, PI / 2), kind: 'leap', p: rng() });
     else anim.push({ o: place(group, windmill(), -14, -0.45, -22), kind: 'whirl', v: 0.8 });
+  } else if (zone === 28) {
+    const k = index % 3;
+    place(group, dinoSet(k), 0, 0, 0);
+    if (index % 2 === 1) place(group, stoneGate(), 0, 0, -20);
+    if (k === 0) anim.push({ o: place(group, bigLongNeck(), 13.5, 0, -20, PI), kind: 'nod', p: rng() * 6 });
+    else if (k === 1) anim.push({ o: place(group, pteroRing(), 30, 17, -20), kind: 'spin', v: 0.45 });
+    else anim.push({ o: place(group, bigRex(), 15.5, 0, -22, -PI / 2), kind: 'bob', p: rng() * 6, amp: 1.2 });
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }

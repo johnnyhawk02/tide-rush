@@ -2729,6 +2729,203 @@ def('pegasus', 'deco', 2.2, 1.2, 1.5, (b) => {
   wings: (b, sx) => { for (let i = 0; i < 4; i++) b.sph(0.3 - i * 0.03, i % 2 ? 0xeaf6ff : 0xffffff, sx * (0.22 + i * 0.2), 0.02 - i * 0.01, -0.02 - i * 0.07, 1.1, 0.1, 0.62, { seg: 7 }); }, wingAt: [0.18, 0.16, -0.05],
 });
 
+// ---------- Ancient Time (dinosaurs and cave people) ----------
+export const DINO = { green: 0x6fbf5a, greenD: 0x4f9a48, teal: 0x4fb8a8, orange: 0xff9a4a, purple: 0x9a7ad8, yellow: 0xffd23f, belly: 0xfff0c8, rock: 0x9a8f88, rockD: 0x7a706a, bone: 0xfff3d6, fern: 0x3f9a4a, fernD: 0x2f7a3a, bark: 0x7a5a3c, lava: 0xff7a2a, skin: 0xf0c098, fur: 0xc8823a, eye: 0x1b1f24, cheek: 0xff9ab0 };
+// A fern: a ring of fronds about s long.
+export function fernInto(b, x, y, z, s = 1, n = 7) {
+  for (let i = 0; i < n; i++) { const a = i * 6.283 / n + x; b.cone(0.15 * s, 0.95 * s, i % 2 ? DINO.fern : DINO.fernD, x + Math.cos(a) * 0.3 * s, y + 0.3 * s, z + Math.sin(a) * 0.3 * s, Math.sin(a) * 1.0, 0, -Math.cos(a) * 1.0, { seg: 4 }); }
+}
+// A cycad: a fat ringed trunk with a crown of long fronds and an orange cone in the middle, about 2.6 s high.
+export function cycadInto(b, x, y, z, s = 1) {
+  b.at(x, y, z, 0, () => {
+    b.cyl(0.22, 0.3, 1.4, DINO.bark, 0, 0.7, 0, 0, 0, 0, { seg: 8 });
+    for (let i = 0; i < 4; i++) b.tor(0.27 - i * 0.015, 0.035, 0x5a4230, 0, 0.2 + i * 0.34, 0, PI / 2, 0, 0, { seg: 8, tseg: 3 });
+    for (let i = 0; i < 12; i++) { const a = i * 0.524, lean = i % 3 ? 1.15 : 0.5, l = i % 3 ? 1.5 : 1.2; b.cone(0.17, l, i % 2 ? DINO.fern : DINO.fernD, Math.cos(a) * Math.sin(lean) * l * 0.5, 1.4 + Math.cos(lean) * l * 0.5, Math.sin(a) * Math.sin(lean) * l * 0.5, Math.sin(a) * lean, 0, -Math.cos(a) * lean, { seg: 4 }); }
+    b.cone(0.16, 0.4, DINO.orange, 0, 1.6, 0, 0, 0, 0, { seg: 6 });
+  }, s);
+}
+// The neck and head of a long-necked dinosaur, drawn from its shoulder at (0, 0, 0) and reaching up towards +x.
+export function dinoNeckInto(b, col = DINO.green) {
+  for (let i = 0; i < 7; i++) b.sph(0.24 - i * 0.012, col, i * 0.14, i * 0.3, 0, 1, 1.1, 1, { seg: 7 });
+  b.sph(0.26, col, 1.1, 2.0, 0, 1.4, 0.95, 1, { seg: 9 }).sph(0.18, col, 1.36, 1.95, 0, 1.2, 0.8, 0.95, { seg: 7 });
+  for (const sz of [-1, 1]) b.sph(0.075, 0xffffff, 1.18, 2.1, sz * 0.2, 1, 1.1, 0.6, { seg: 6 }).sph(0.04, DINO.eye, 1.21, 2.1, sz * 0.24, 1, 1.1, 0.5, { seg: 5 }).sph(0.05, DINO.cheek, 1.28, 1.93, sz * 0.165, 1, 0.7, 0.4, { seg: 5 }).sph(0.018, DINO.eye, 1.52, 2.0, sz * 0.07, 1, 1, 1, { seg: 4 });
+}
+// A long-necked dinosaur facing +x, about 3.5 s to the top of its head. neck: false leaves the neck and head off (they join at
+// (0.85, 1.35, 0) s).
+export function longNeckInto(b, x, y, z, s = 1, o = {}) {
+  const col = o.col ?? DINO.green, spot = o.spot ?? DINO.greenD;
+  b.at(x, y, z, o.ry || 0, () => {
+    b.sph(0.6, col, 0, 1.0, 0, 1.5, 0.95, 1.0, { seg: 10 }).sph(0.5, DINO.belly, 0, 0.82, 0, 1.4, 0.7, 0.9, { seg: 8 });
+    for (const sx of [-0.5, 0.5]) for (const sz of [-0.32, 0.32]) b.cyl(0.17, 0.2, 0.75, col, sx, 0.38, sz, 0, 0, 0, { seg: 7 }).sph(0.2, spot, sx + 0.04, 0.06, sz, 1, 0.4, 1, { seg: 6 });
+    for (let i = 0; i < 6; i++) b.sph(0.3 - i * 0.04, col, -0.9 - i * 0.3, 0.95 - i * 0.1, 0, 1.2, 1, 1, { seg: 6 });
+    for (const [px, pz] of [[-0.3, 0.2], [0.2, -0.25], [0.45, 0.15], [-0.6, -0.1], [0, 0]]) b.sph(0.13, spot, px, 1.5 - Math.abs(px) * 0.12, pz, 1, 0.5, 1, { seg: 5 });
+    if (o.neck !== false) b.at(0.85, 1.35, 0, 0, () => dinoNeckInto(b, col));
+  }, s);
+}
+// A three-horned dinosaur facing +x: about 2.4 s long and 1.5 s high.
+export function trikeInto(b, x, y, z, s = 1, col = DINO.teal, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    b.sph(0.55, col, 0, 0.75, 0, 1.4, 0.95, 1.0, { seg: 10 }).sph(0.45, DINO.belly, 0, 0.6, 0, 1.3, 0.7, 0.9, { seg: 8 });
+    for (const sx of [-0.45, 0.45]) for (const sz of [-0.3, 0.3]) b.cyl(0.15, 0.18, 0.5, col, sx, 0.25, sz, 0, 0, 0, { seg: 7 });
+    for (let i = 0; i < 4; i++) b.sph(0.28 - i * 0.055, col, -0.8 - i * 0.24, 0.7 - i * 0.08, 0, 1.2, 1, 1, { seg: 6 });
+    b.sph(0.5, DINO.orange, 0.66, 1.06, 0, 0.3, 1.0, 1.15, { seg: 9 }).sph(0.36, col, 0.95, 0.85, 0, 1.2, 1, 0.95, { seg: 9 }).sph(0.15, 0xffd890, 1.36, 0.76, 0, 1, 0.8, 0.8, { seg: 6 });
+    for (let i = 0; i < 7; i++) { const a = -1.3 + i * 0.433; b.sph(0.07, DINO.yellow, 0.64, 1.06 + Math.cos(a) * 0.5, Math.sin(a) * 0.57, 1, 1, 1, { seg: 5 }); }
+    b.cone(0.06, 0.24, DINO.bone, 1.3, 1.02, 0, 0, 0, -0.5, { seg: 5 });
+    for (const sz of [-1, 1]) b.cone(0.065, 0.42, DINO.bone, 1.08, 1.26, sz * 0.17, 0, 0, -0.7, { seg: 5 }).sph(0.075, 0xffffff, 1.14, 0.95, sz * 0.29, 1, 1.1, 0.6, { seg: 6 }).sph(0.04, DINO.eye, 1.17, 0.95, sz * 0.33, 1, 1.1, 0.5, { seg: 5 }).sph(0.05, DINO.cheek, 1.2, 0.76, sz * 0.27, 1, 0.7, 0.4, { seg: 5 });
+  }, s);
+}
+// A friendly tyrannosaur standing up and facing +z, with a big smile and very small arms: about 2.4 s high.
+export function rexInto(b, x, y, z, s = 1, col = DINO.orange, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    for (const sx of [-1, 1]) {
+      b.cyl(0.2, 0.24, 0.7, col, sx * 0.3, 0.35, 0, 0, 0, 0, { seg: 7 }).sph(0.24, col, sx * 0.3, 0.1, 0.15, 1, 0.5, 1.4, { seg: 6 });
+      for (let i = 0; i < 3; i++) b.sph(0.05, 0xffffff, sx * 0.3 + (i - 1) * 0.12, 0.07, 0.48, 1, 1, 1, { seg: 4 });
+      b.cap(0.055, 0.2, col, sx * 0.44, sx > 0 ? 1.34 : 1.2, 0.42, sx > 0 ? -0.6 : -1.1, 0, sx * -0.5, { seg: 5 });
+      b.sph(0.11, 0xffffff, sx * 0.24, 2.08, 0.5, 1, 1.1, 0.7, { seg: 7 }).sph(0.06, DINO.eye, sx * 0.25, 2.09, 0.58, 1, 1.1, 0.6, { seg: 5 }).sph(0.08, DINO.cheek, sx * 0.34, 1.82, 0.6, 1, 0.7, 0.5, { seg: 5 }).sph(0.025, DINO.eye, sx * 0.1, 1.92, 0.87, 1, 1, 1, { seg: 4 });
+    }
+    b.sph(0.6, col, 0, 1.0, -0.05, 1, 1.15, 1.0, { seg: 10 }).sph(0.46, DINO.belly, 0, 0.95, 0.2, 1, 1.15, 0.8, { seg: 8 });
+    for (let i = 0; i < 5; i++) b.sph(0.36 - i * 0.06, col, 0, 0.75 - i * 0.1, -0.55 - i * 0.32, 1, 1, 1.2, { seg: 6 });
+    b.sph(0.48, col, 0, 1.85, 0.15, 1, 0.9, 1.15, { seg: 10 }).sph(0.36, col, 0, 1.76, 0.55, 1, 0.75, 1, { seg: 9 });
+    b.tor(0.22, 0.022, DINO.eye, 0, 1.72, 0.84, 0.3, 0, PI, { arc: PI, seg: 8, tseg: 3 });
+    for (let i = 0; i < 4; i++) b.sph(0.035, 0xffffff, -0.15 + i * 0.1, 1.56 + Math.abs(i - 1.5) * 0.05, 0.86 - Math.abs(i - 1.5) * 0.03, 1, 1, 1, { seg: 4 });
+    for (let i = 0; i < 6; i++) b.cone(0.07, 0.18, DINO.yellow, 0, i < 2 ? 2.34 - i * 0.14 : 1.75 - (i - 2) * 0.3, i < 2 ? 0.0 - i * 0.3 : -0.5 - (i - 2) * 0.2, i < 2 ? -0.4 : -1.0, 0, 0, { seg: 4 });
+  }, s);
+}
+// A cave child about s high, facing +z, in a spotted fur tunic with a bone in their hair. wave lifts an arm.
+export function caveKidInto(b, x, y, z, s = 1, o = {}) {
+  const hair = o.hair ?? 0x5a3a24, fur = o.fur ?? DINO.fur;
+  b.at(x, y, z, o.ry || 0, () => {
+    for (const sx of [-1, 1]) b.cyl(0.055, 0.055, 0.26, DINO.skin, sx * 0.09, 0.14, 0, 0, 0, 0, { seg: 5 }).sph(0.07, DINO.skin, sx * 0.09, 0.03, 0.03, 1, 0.5, 1.4, { seg: 5 });
+    b.cyl(0.15, 0.24, 0.42, fur, 0, 0.44, 0, 0, 0, 0, { seg: 9 }).box(0.09, 0.22, 0.3, fur, -0.1, 0.66, 0, 0, 0, 0.5);
+    for (let i = 0; i < 8; i++) b.cone(0.07, 0.12, fur, Math.cos(i * 0.785) * 0.2, 0.2, Math.sin(i * 0.785) * 0.2, PI, 0, 0, { seg: 4 });
+    for (const [px, py, pz] of [[0.1, 0.5, 0.17], [-0.08, 0.36, 0.2], [0.02, 0.56, -0.16], [-0.16, 0.44, -0.1]]) b.sph(0.035, 0x7a4a24, px, py, pz, 1, 1, 0.6, { seg: 4 });
+    b.cap(0.045, 0.18, DINO.skin, -0.24, 0.5, 0, 0, 0, -0.4, { seg: 5 });
+    if (o.wave) b.cap(0.045, 0.2, DINO.skin, 0.27, 0.74, 0, 0, 0, -0.7, { seg: 5 }); else b.cap(0.045, 0.18, DINO.skin, 0.24, 0.5, 0, 0, 0, 0.4, { seg: 5 });
+    b.sph(0.2, DINO.skin, 0, 0.84, 0, 1, 1, 1, { seg: 10 }).sph(0.21, hair, 0, 0.9, -0.04, 1.02, 0.8, 1, { seg: 8 });
+    for (let i = 0; i < 5; i++) b.cone(0.06, 0.14, hair, -0.14 + i * 0.07, 1.06, -0.02 + (i % 2) * 0.05, 0, 0, (2 - i) * 0.25, { seg: 4 });
+    b.cyl(0.018, 0.018, 0.22, DINO.bone, 0.02, 1.08, -0.1, 0, 0, PI / 2 - 0.3, { seg: 4 });
+    for (const sx of [-1, 1]) b.sph(0.032, DINO.bone, 0.02 + sx * 0.11, 1.08 + sx * 0.035, -0.1, 1, 1, 1, { seg: 4 }).sph(0.028, DINO.eye, sx * 0.075, 0.86, 0.18, 1, 1.2, 0.5, { seg: 5 }).sph(0.035, DINO.cheek, sx * 0.13, 0.79, 0.15, 1, 0.7, 0.4, { seg: 4 });
+    b.tor(0.04, 0.01, DINO.eye, 0, 0.79, 0.19, 0, 0, PI, { arc: PI, seg: 6, tseg: 3 });
+  }, s);
+}
+// A big speckled egg standing on end, about 2.6 r high.
+function spotEggInto(b, x, y, z, r, col = 0xfff3d6, spot = DINO.teal) {
+  b.sph(r, col, x, y + r * 1.25, z, 1, 1.3, 1, { seg: 9 });
+  for (let i = 0; i < 6; i++) { const a = i * 1.047 + x * 5, h = (i % 3 - 1) * 0.6; b.sph(r * 0.2, spot, x + Math.cos(a) * r * 0.92 * Math.sqrt(1 - h * h * 0.5), y + r * 1.25 + h * r, z + Math.sin(a) * r * 0.92 * Math.sqrt(1 - h * h * 0.5), 1, 1, 1, { seg: 4 }); }
+}
+def('eggNest', 'low', 1.4, 0.95, 1.2, (b) => {
+  // a nest of speckled eggs, and somebody small looking out of one of them
+  b.tor(0.5, 0.14, DINO.bark, 0, 0.14, 0, PI / 2, 0, 0, { seg: 10, tseg: 5 }).cyl(0.5, 0.5, 0.1, 0x9a7a4a, 0, 0.08, 0, 0, 0, 0, { seg: 10 });
+  for (let i = 0; i < 9; i++) b.cyl(0.02, 0.02, 0.5, i % 2 ? 0x9a7a4a : 0x5a4230, Math.cos(i * 0.7) * 0.52, 0.22, Math.sin(i * 0.7) * 0.52, 0.4, i * 0.7, 1.2, { seg: 3 });
+  spotEggInto(b, -0.24, 0.1, -0.05, 0.2); spotEggInto(b, 0.26, 0.1, -0.1, 0.18, 0xfff3d6, DINO.purple);
+  b.sph(0.2, 0xfff3d6, 0.02, 0.3, 0.22, 1, 1, 1, { seg: 8 }).sph(0.16, DINO.green, 0.02, 0.52, 0.22, 1, 0.95, 1, { seg: 8 }).sph(0.1, DINO.green, 0.02, 0.48, 0.34, 1, 0.75, 1, { seg: 6 });
+  for (const sx of [-1, 1]) b.sph(0.045, 0xffffff, 0.02 + sx * 0.07, 0.58, 0.33, 1, 1.1, 0.6, { seg: 5 }).sph(0.024, DINO.eye, 0.02 + sx * 0.07, 0.58, 0.36, 1, 1.1, 0.5, { seg: 4 }).cone(0.07, 0.1, 0xfff3d6, 0.02 + sx * 0.12, 0.42, 0.26, 0, 0, sx * -0.5, { seg: 3 });
+  b.sph(0.1, 0xfff3d6, 0.02, 0.7, 0.16, 1, 0.5, 1, { seg: 5 });
+});
+def('babyTrike', 'low', 1.5, 0.95, 1.0, (b) => {
+  // a baby three-horn having a rest
+  trikeInto(b, -0.1, -0.08, 0, 0.62, DINO.teal, -0.5);
+  fernInto(b, 0.55, 0, -0.3, 0.4, 5);
+});
+def('boneXylo', 'low', 1.4, 0.85, 1.0, (b) => {
+  // a xylophone made of bones, with two beaters
+  for (const sz of [-1, 1]) b.cyl(0.07, 0.07, 1.3, DINO.bark, 0, 0.3, sz * 0.2, 0, 0, PI / 2, { seg: 6 });
+  for (const sx of [-1, 1]) b.cyl(0.06, 0.08, 0.6, DINO.bark, sx * 0.6, 0.16, 0.22, 0.3, 0, 0, { seg: 5 }).cyl(0.06, 0.08, 0.6, DINO.bark, sx * 0.6, 0.16, -0.22, -0.3, 0, 0, { seg: 5 });
+  for (let i = 0; i < 7; i++) { const l = 0.72 - i * 0.055, x = -0.51 + i * 0.17; b.cyl(0.045, 0.045, l, DINO.bone, x, 0.4, 0, PI / 2, 0, 0, { seg: 5 }); for (const sz of [-1, 1]) b.sph(0.065, DINO.bone, x, 0.4, sz * l / 2, 1, 1, 1, { seg: 5 }); }
+  for (const sx of [-1, 1]) b.cyl(0.02, 0.02, 0.5, DINO.bark, sx * 0.3, 0.62, 0.3, 0.9, 0, sx * 0.3, { seg: 4 }).sph(0.07, DINO.rock, sx * 0.24, 0.48, 0.1, 1, 1, 1, { seg: 5 });
+});
+def('stewPot', 'low', 1.3, 0.95, 1.2, (b) => {
+  // supper: a stone pot of soup on warm embers, with steam coming off it
+  for (let i = 0; i < 8; i++) b.sph(0.13, i % 2 ? DINO.rock : DINO.rockD, Math.cos(i * 0.785) * 0.5, 0.08, Math.sin(i * 0.785) * 0.5, 1, 0.8, 1, { seg: 5 });
+  for (let i = 0; i < 3; i++) b.cyl(0.06, 0.06, 0.7, DINO.bark, 0, 0.1, 0, PI / 2, i * 1.05, 0, { seg: 5 });
+  for (let i = 0; i < 5; i++) b.sph(0.07, DINO.lava, Math.cos(i * 1.257) * 0.22, 0.14, Math.sin(i * 1.257) * 0.22, 1, 0.7, 1, { seg: 4, glow: true, grad: 1 });
+  b.sph(0.38, DINO.rockD, 0, 0.5, 0, 1, 0.8, 1, { seg: 10 }).cyl(0.34, 0.36, 0.08, DINO.rock, 0, 0.74, 0, 0, 0, 0, { seg: 10 }).cyl(0.3, 0.3, 0.03, 0x8fd058, 0, 0.78, 0, 0, 0, 0, { seg: 10 });
+  for (let i = 0; i < 3; i++) b.sph(0.05, 0xb8e878, -0.1 + i * 0.1, 0.8, (i % 2) * 0.12 - 0.06, 1, 0.6, 1, { seg: 5 });
+  b.cyl(0.02, 0.02, 0.5, DINO.bone, 0.16, 0.9, 0, 0, 0, -0.4, { seg: 4 });
+});
+def('shellFossils', 'low', 1.5, 0.9, 1.0, (b) => {
+  // boulders with curly shells in them, a fern, and a snail going past
+  b.sph(0.46, DINO.rock, -0.3, 0.36, 0, 1.1, 0.85, 0.9, { seg: 7 }).sph(0.34, DINO.rockD, 0.34, 0.27, 0.05, 1.1, 0.85, 1, { seg: 6 });
+  for (const [x, y, z, r] of [[-0.3, 0.42, 0.4, 0.2], [0.36, 0.3, 0.37, 0.14]]) b.tor(r, r * 0.3, DINO.bone, x, y, z, 0, 0, 0, { seg: 10, tseg: 4 }).tor(r * 0.5, r * 0.26, DINO.bone, x + r * 0.1, y, z + 0.01, 0, 0, 0, { seg: 8, tseg: 4 }).sph(r * 0.22, DINO.bone, x + r * 0.1, y, z + 0.02, 1, 1, 0.6, { seg: 5 });
+  fernInto(b, 0.06, 0.3, -0.3, 0.5, 6);
+  b.sph(0.1, DINO.orange, 0.62, 0.14, 0.4, 1, 1, 0.6, { seg: 6 }).sph(0.06, 0xe8d8a0, 0.62, 0.05, 0.42, 2.2, 0.6, 1, { seg: 5 });
+  for (const sz of [-1, 1]) b.cyl(0.008, 0.008, 0.08, 0xe8d8a0, 0.73, 0.11, 0.42 + sz * 0.02, 0, 0, -0.3, { seg: 3 });
+});
+def('paintRock', 'tall', 1.6, 2.75, 1.0, (b) => {
+  // a standing stone covered in cave paintings, and the artist
+  b.box(1.4, 2.6, 0.5, DINO.rock, 0, 1.3, -0.1, 0.03, 0, 0.02, { grad: 0.85 }).sph(0.72, DINO.rock, 0, 2.55, -0.1, 1, 0.35, 0.36, { seg: 7 });
+  const R = 0xc8503a, O = 0xe8a040, K = 0x4a3428, z = 0.17;
+  b.sph(0.26, R, -0.2, 2.0, z, 1.3, 0.8, 0.08, { seg: 7 }).sph(0.13, R, 0.1, 2.08, z, 1, 1, 0.08, { seg: 6 });   // a mammoth
+  for (const x of [-0.36, -0.08]) b.box(0.07, 0.24, 0.02, R, x, 1.78, z);
+  b.tor(0.12, 0.02, K, 0.22, 1.96, z, 0, 0, PI, { arc: PI, seg: 6, tseg: 3 });
+  b.cyl(0.14, 0.14, 0.02, O, 0.42, 2.34, z, PI / 2, 0, 0, { seg: 8 });   // the sun
+  for (let i = 0; i < 8; i++) b.box(0.03, 0.1, 0.02, O, 0.42 + Math.cos(i * 0.785) * 0.22, 2.34 + Math.sin(i * 0.785) * 0.22, z, 0, 0, i * 0.785 - PI / 2);
+  for (const [x, y, c] of [[0.38, 1.5, O], [-0.42, 1.36, R], [0.12, 1.3, K]]) { b.sph(0.08, c, x, y, z, 1, 1.1, 0.08, { seg: 5 }); for (let f = 0; f < 4; f++) b.box(0.025, 0.1, 0.02, c, x - 0.06 + f * 0.04, y + 0.12, z, 0, 0, (1.5 - f) * 0.15); }   // handprints
+  b.tor(0.1, 0.018, R, -0.3, 1.0, z, 0, 0, 0, { seg: 8, tseg: 3 }).tor(0.05, 0.016, R, -0.29, 1.0, z, 0, 0, 0, { seg: 6, tseg: 3 });
+  caveKidInto(b, 0.34, 0, 0.42, 1.05, { wave: true, ry: -0.3 });
+  b.cyl(0.12, 0.09, 0.1, DINO.rockD, -0.3, 0.05, 0.5, 0, 0, 0, { seg: 6 }).cyl(0.1, 0.1, 0.02, R, -0.3, 0.1, 0.5, 0, 0, 0, { seg: 6 });
+});
+def('longNeckCalf', 'tall', 1.6, 2.8, 1.6, (b) => {
+  // a young long-neck, already taller than you
+  longNeckInto(b, 0.1, 0, -0.3, 0.76, { ry: -PI / 2 + 0.35 });
+  fernInto(b, -0.5, 0, 0.5, 0.5, 6);
+});
+def('stoneTotem', 'tall', 1.4, 2.75, 1.0, (b) => {
+  // three boulders with painted faces, balanced on top of one another
+  const cols = [DINO.rockD, DINO.rock, 0xb0a498], R = 0xc8503a;
+  for (let i = 0; i < 3; i++) {
+    const r = 0.56 - i * 0.07, y = [0.46, 1.3, 2.02][i];
+    b.sph(r, cols[i], 0, y, 0, 1.05, 0.88, 0.9, { seg: 8 });
+    for (const sx of [-1, 1]) b.sph(0.07, DINO.eye, sx * r * 0.36, y + 0.08, r * 0.82, 1, 1.2, 0.4, { seg: 5 }).sph(0.06, R, sx * r * 0.62, y - 0.06, r * 0.7, 1, 0.7, 0.4, { seg: 5 });
+    b.tor(r * 0.22, 0.02, DINO.eye, 0, y - 0.06, r * 0.86, 0.15, 0, PI, { arc: PI, seg: 6, tseg: 3 });
+  }
+  for (let i = 0; i < 5; i++) b.cone(0.1, 0.4, i % 2 ? DINO.fern : DINO.fernD, (i - 2) * 0.12, 2.5, 0, 0, 0, (2 - i) * 0.3, { seg: 4 });
+});
+def('cycadTree', 'tall', 1.6, 2.9, 1.6, (b) => {
+  // a cycad with an orange cone
+  cycadInto(b, 0, 0, 0, 1.08);
+  b.sph(0.2, DINO.rock, 0.42, 0.12, 0.36, 1, 0.7, 1, { seg: 5 }).sph(0.14, DINO.rockD, -0.4, 0.08, 0.3, 1, 0.7, 1, { seg: 5 });
+});
+def('rexHello', 'tall', 1.6, 2.8, 1.4, (b) => {
+  // a young tyrannosaur waving both of its very small arms
+  rexInto(b, 0, 0, 0.1, 1.12);
+});
+def('stoneWheel', 'low', 1.2, 1.0, 1.0, (b) => {
+  // the very first wheel, rolling down the lane on its log axle
+  b.cyl(0.5, 0.5, 0.34, DINO.rock, 0, 0, 0, 0, 0, PI / 2, { seg: 14, grad: 0.95 }).cyl(0.09, 0.09, 1.15, DINO.bark, 0, 0, 0, 0, 0, PI / 2, { seg: 6 });
+  for (const sx of [-1, 1]) { b.tor(0.44, 0.03, DINO.rockD, sx * 0.175, 0, 0, 0, PI / 2, 0, { seg: 14, tseg: 3 }).cyl(0.18, 0.18, 0.02, DINO.rockD, sx * 0.18, 0, 0, 0, 0, PI / 2, { seg: 8 }); for (let i = 0; i < 3; i++) b.sph(0.05, 0xc8503a, sx * 0.18, Math.cos(i * 2.09) * 0.32, Math.sin(i * 2.09) * 0.32, 0.4, 1, 1, { seg: 5 }); }
+}, { center: true });
+def('rollEgg', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the pterosaur drops: a big speckled egg, rolling
+  b.sph(0.4, 0xfff3d6, 0, 0, 0, 1.2, 1, 1, { seg: 12 });
+  for (let i = 0; i < 9; i++) { const u = (i + 0.5) / 9, ph = Math.acos(1 - 2 * u), th = i * 2.4; b.sph(0.085, i % 2 ? DINO.teal : DINO.purple, Math.cos(ph) * 0.47, Math.sin(ph) * Math.cos(th) * 0.39, Math.sin(ph) * Math.sin(th) * 0.39, 1, 1, 1, { seg: 5 }); }
+}, { center: true });
+def('compy', 'low', 1.3, 0.95, 0.9, (b) => {
+  // a very small dinosaur running across with a leaf it has found; it faces +x
+  const c = DINO.yellow;
+  b.sph(0.26, c, -0.02, 0.5, 0, 1.4, 0.9, 0.9, { seg: 9 }).sph(0.2, DINO.belly, 0.02, 0.44, 0, 1.3, 0.7, 0.8, { seg: 7 });
+  for (let i = 0; i < 5; i++) b.sph(0.14 - i * 0.022, c, -0.38 - i * 0.15, 0.52 + i * 0.03, 0, 1.3, 1, 1, { seg: 5 });
+  for (let i = 0; i < 3; i++) b.sph(0.13 - i * 0.01, c, 0.3 + i * 0.07, 0.6 + i * 0.1, 0, 1, 1.1, 1, { seg: 6 });
+  b.sph(0.17, c, 0.5, 0.86, 0, 1.25, 0.9, 0.95, { seg: 8 }).sph(0.1, c, 0.68, 0.82, 0, 1.2, 0.7, 0.9, { seg: 6 });
+  for (const sz of [-1, 1]) {
+    b.sph(0.06, 0xffffff, 0.54, 0.92, sz * 0.14, 1, 1.1, 0.6, { seg: 6 }).sph(0.034, DINO.eye, 0.56, 0.92, sz * 0.17, 1, 1.1, 0.5, { seg: 5 }).sph(0.035, DINO.cheek, 0.6, 0.8, sz * 0.13, 1, 0.7, 0.4, { seg: 4 });
+    b.cyl(0.045, 0.045, 0.34, c, sz * 0.12 * 0 + (sz > 0 ? 0.08 : -0.12), 0.22, sz * 0.13, 0, 0, sz * 0.5, { seg: 5 }).sph(0.07, DINO.orange, (sz > 0 ? 0.2 : -0.22), 0.04, sz * 0.13, 1.6, 0.5, 1, { seg: 5 }).cap(0.03, 0.1, c, 0.26, 0.5, sz * 0.2, 0, 0, -1.0, { seg: 4 });
+  }
+  for (let i = 0; i < 4; i++) b.sph(0.05, DINO.orange, -0.2 + i * 0.13, 0.73, 0, 1.4, 0.6, 1, { seg: 4 });
+  b.sph(0.16, DINO.fern, 0.86, 0.8, 0, 1.4, 0.2, 0.8, { seg: 6 }).cyl(0.012, 0.012, 0.12, DINO.fernD, 0.76, 0.8, 0, 0, 0, PI / 2, { seg: 3 });
+});
+def('ptero', 'deco', 2.4, 1.1, 1.4, (b) => {
+  // a pterosaur with a long beak and a crest, carrying an egg
+  const c = DINO.orange;
+  b.sph(0.28, c, 0, 0, -0.05, 0.9, 0.8, 1.3, { seg: 9 }).sph(0.22, DINO.belly, 0, -0.08, 0, 0.8, 0.6, 1.1, { seg: 7 }).cap(0.1, 0.2, c, 0, 0.14, 0.34, 0.9, 0, 0, { seg: 6 });
+  b.sph(0.2, c, 0, 0.3, 0.52, 0.9, 0.9, 1.1, { seg: 8 }).cone(0.1, 0.6, DINO.yellow, 0, 0.24, 0.98, PI / 2, 0, 0, { seg: 5 }).cone(0.09, 0.46, DINO.purple, 0, 0.5, 0.24, -1.1, 0, 0, { seg: 4 });
+  for (const sx of [-1, 1]) b.sph(0.07, 0xffffff, sx * 0.14, 0.36, 0.62, 0.6, 1.1, 1, { seg: 6 }).sph(0.04, DINO.eye, sx * 0.17, 0.36, 0.65, 0.6, 1.1, 1, { seg: 5 }).sph(0.04, DINO.cheek, sx * 0.15, 0.24, 0.66, 0.6, 0.7, 1, { seg: 4 }).cyl(0.02, 0.02, 0.26, c, sx * 0.1, -0.3, 0, 0, 0, sx * 0.25, { seg: 4 });
+  b.cone(0.07, 0.36, c, 0, -0.02, -0.56, -PI / 2, 0, 0, { seg: 4 });
+  b.sph(0.17, 0xfff3d6, 0, -0.56, 0, 1, 1.25, 1, { seg: 8 }); for (let i = 0; i < 4; i++) b.sph(0.04, DINO.teal, Math.cos(i * 1.6) * 0.15, -0.56 + (i % 2) * 0.12 - 0.06, Math.sin(i * 1.6) * 0.15, 1, 1, 1, { seg: 4 });
+}, {
+  wings: (b, sx) => { b.sph(0.5, DINO.orange, sx * 0.48, 0, 0, 1.2, 0.07, 0.72, { seg: 7 }).sph(0.3, 0xffb878, sx * 0.86, 0, -0.14, 1.2, 0.07, 0.6, { seg: 6 }).cyl(0.03, 0.03, 1.2, 0xe07a2a, sx * 0.6, 0.03, 0.3, 0, 0, PI / 2, { seg: 4 }); }, wingAt: [0.14, 0.05, 0],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -3334,6 +3531,7 @@ export const TALL_TYPES = {
   25: ['stepLadder', 'sapling', 'beeHives', 'scareFriend', 'juiceBarrels', 'sapling'],
   26: ['tallGhost', 'ghostStack', 'grandClock', 'ghostLamp', 'sheetLine', 'ghostStack'],
   27: ['owlColumn', 'heroStatue', 'templeFront', 'oliveTree', 'bigVase', 'owlColumn'],
+  28: ['paintRock', 'longNeckCalf', 'stoneTotem', 'cycadTree', 'rexHello', 'stoneTotem'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
 export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'],
@@ -3343,4 +3541,5 @@ export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'b
   24: ['calfNap', 'leafBasket', 'hoofBoots', 'scarfPile', 'antHill', 'calfNap'],
   25: ['fruitCrate', 'fruitBaskets', 'wheelbarrow', 'wormApple', 'wateringCan', 'fruitCrate'],
   26: ['ghostNap', 'pumpkinPals', 'ghostTea', 'sheetBasket', 'booBooks', 'pumpkinPals'],
-  27: ['amphorae', 'laurelPrize', 'lyreScrolls', 'oliveBaskets', 'colDrums', 'amphorae'] };
+  27: ['amphorae', 'laurelPrize', 'lyreScrolls', 'oliveBaskets', 'colDrums', 'amphorae'],
+  28: ['eggNest', 'babyTrike', 'boneXylo', 'stewPot', 'shellFossils', 'eggNest'] };

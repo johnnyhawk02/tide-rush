@@ -618,4 +618,23 @@ THEMES[27] = theme('Olive Grove Dance', {
   drums: { thump: 'x...x...x...x...', tick: '..x...x...x...x.', rim: '....x.......x...' },
 });
 
+// ---- 28. Ancient Time: "Stomp Along", big slow footsteps with a tune on top (C major) ----
+THEMES[28] = theme('Stomp Along', {
+  key: 0, scale: 'maj', base: 60, gain: 1.1, tempo: 0.92, voice: 'brass', bassVoice: 'tuba', stab: 'pluck',
+  chords: 'I I IV I V IV I V',
+  tune: [
+    "1:4 1:4 3:2 5:2 3:4",
+    "1:4 1:4 3:2 5:2 6:4",
+    "4:4 4:4 6:2 1':2 6:4",
+    "5:2 3:2 1:4 3:4 -:4",
+    "5:4 5:4 7:2 2':2 7:4",
+    "6:2 4:2 1:4 4:4 6:4",
+    "5:2 3:2 5:2 1':2 3':4 1':4",
+    "2':4 7:4 5:8",
+  ],
+  bass: [0, _, _, _, 0, _, _, _, 7, _, _, _, 7, _, 12, _],
+  stabs: '....x.......x...',
+  drums: { thump: 'x...x...x...x.x.', tick: '..x...x...x...x.', rim: '....x.......x...' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));
