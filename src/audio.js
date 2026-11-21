@@ -299,6 +299,7 @@ export class GameAudio {
     else if (kind === 'bat') { this.squeak(4, 1.5); this.noise(t, 0.5, 0.05, { type: 'bandpass', f: 900, q: 1, att: 0.2 }); }
     else if (kind === 'eagle') this.eagle();
     else if (kind === 'crow') this.caw();
+    else if (kind === 'pteroBones') { this.rattle(); this.tone('sawtooth', 900, t + 0.1, 0.25, 0.03, null, { slide: 1300, lp: 2600, att: 0.03 }); }
     else if (kind === 'flashMirror') { this.twinkle(); this.tone('sine', 1320, t, 0.6, 0.04, null, { slide: 1980, att: 0.1 }); }
     else if (kind === 'chocJug') { this.glug(); this.tone('sine', 620, t, 0.5, 0.05, null, { slide: 880, vib: 0.02, vibHz: 7, att: 0.1 }); }
     else if (kind === 'inkOcto') { this.blub(); this.wobble('sine', 300, 520, t, 0.6, 0.06, 9, 40, { att: 0.15 }); }
@@ -407,6 +408,10 @@ export class GameAudio {
   // ----- Chocolate Coast -----
   glug() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 3; i++) { const u = t + i * 0.19 + Math.random() * 0.05, f = rnd(110, 170); this.tone('sine', f, u, 0.16, 0.14, null, { slide: f * 1.7, att: 0.02 }); } } }
   crunch() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 3; i++) this.noise(t + i * 0.07, 0.05, 0.09, { type: 'bandpass', f: rnd(1400, 2600), q: 1.2 }); } }
+  // ----- the Museum -----
+  bingBong() { if (this.ok) { const t = this.ctx.currentTime; [[76, 0], [72, 0.5]].forEach(([n, d]) => { this.tone('sine', midi(n), t + d, 1.1, 0.06, null, { att: 0.01 }); this.tone('triangle', midi(n + 12), t + d, 0.5, 0.015, null, { att: 0.01 }); }); } }
+  tock() { if (this.ok) { const t = this.ctx.currentTime; this.tone('square', 640, t, 0.03, 0.04, null, { lp: 1800 }); this.tone('square', 480, t + 0.5, 0.03, 0.04, null, { lp: 1600 }); } }
+  rattle() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 7; i++) this.tone('triangle', rnd(900, 1700), t + i * 0.055 + Math.random() * 0.02, 0.05, 0.06, null, { lp: 3200 }); } }
   // ----- the Land of Mirrors -----
   twinkle() { if (this.ok) { const t = this.ctx.currentTime, up = [93, 96, 100, 105]; [...up, ...up.slice(0, 3).reverse()].forEach((n, i) => this.tone('sine', midi(n), t + i * 0.085, 0.5, 0.04, null, { att: 0.005 })); } }
   glassTing() { if (this.ok) { const t = this.ctx.currentTime, f = midi([88, 91, 93, 96][(Math.random() * 4) | 0]); this.tone('sine', f, t, 1.6, 0.06, null, { att: 0.004, vib: 0.002, vibHz: 6 }); this.tone('sine', f * 2.76, t, 0.5, 0.018, null, { att: 0.004 }); this.tone('sine', f * 5.4, t, 0.2, 0.008); } }
@@ -441,6 +446,7 @@ export class GameAudio {
     else if (zone === 3) run([72, 76, 79, 84, 79, 84], 'square', 0.08, 0.06);
     else if (zone === 4) { run([64, 67, 71, 76], 'sawtooth', 0.07, 0.05); this.thunder(0.5); }
     else if (zone === 7) run([87, 91, 94, 99, 103], 'sine', 0.06, 0.06);
+    else if (zone === 19) { run([58, 62, 65, 70, 65, 70, 74], 'triangle', 0.09, 0.08); this.bingBong(); }
     else if (zone === 18) { run([81, 85, 88, 93, 97, 93, 88, 85, 81], 'sine', 0.075, 0.09); this.glassTing(); }
     else if (zone === 17) { run([62, 66, 69, 74, 69, 74, 78], 'triangle', 0.075, 0.08); this.moo(); this.cowbell(); }
     else if (zone === 16) { run([65, 69, 72, 75, 77, 81, 84], 'triangle', 0.075, 0.08); this.glug(); }

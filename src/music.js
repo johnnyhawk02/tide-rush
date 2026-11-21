@@ -443,4 +443,24 @@ THEMES[18] = theme('Mirror, Mirror', {
   drums: { thump: 'x.......x.......', tick: '..x...x...x...x.', snap: '....x.......x...' },
 });
 
+// ---- 19. The Museum: "The Grand Gallery", a stately little dance on a harpsichord (B flat major) ----
+THEMES[19] = theme('The Grand Gallery', {
+  key: 10, scale: 'maj', base: 70, gain: 1.5, tempo: 0.94, voice: 'pluck', bassVoice: 'pizz', stab: 'organ',
+  chords: 'I V vi iii IV I ii V',
+  tune: [
+    "5:4 1':2 7:2 1':4 3':4",
+    "2':4 7:2 5:2 7:4 2':4",
+    "1':4 6:2 7:2 1':4 3':4",
+    "7:6 5:2 3:4 5:4",
+    "6:4 4:2 6:2 1':4 6:4",
+    "5:4 3:2 5:2 1':6 5:2",
+    "4:2 6:2 2':2 4':2 2':4 6:4",
+    "7:4 2':4 5:4 -:4",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 12, _, _, _, 7, _, _, _],
+  stabs: '....x.......x...',
+  arp: { pat: [0, 2, 1, 2], wave: 'triangle', oct: 12, vol: 0.02, every: 2 },
+  drums: { thump: 'x.......x.......', tick: '..x...x...x...x.', rim: '....x.......x...' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

@@ -1417,6 +1417,202 @@ def('flashMirror', 'deco', 2.2, 1.6, 1.3, (b) => {
   }, wingAt: [0.5, 0.1, -0.05],
 });
 
+// ---------- the Museum ----------
+export const MARBLE = 0xf4f0e8, MARBLE_D = 0xd9d2c4, VELVET = 0xb0203a, BONE = 0xf6eed8, BONE_D = 0xdccfae, STEEL = 0xc4ccd6, STEEL_D = 0x8c96a4;
+// A brass post for a velvet rope.
+export function stanchionInto(b, x, z, h = 0.92) {
+  b.cyl(0.2, 0.22, 0.06, MGOLD_D, x, 0.03, z, 0, 0, 0, { seg: 10 }).cyl(0.04, 0.05, h - 0.1, MGOLD, x, h / 2, z, 0, 0, 0, { seg: 7 }).sph(0.085, MGOLD, x, h - 0.03, z, 1, 1, 1, { seg: 8 });
+}
+// A velvet rope sagging between (x0, z0) and (x1, z1), hung at height y.
+export function ropeInto(b, x0, z0, x1, z1, y = 0.8, sag = 0.2, col = VELVET) {
+  const n = 6, L = Math.hypot(x1 - x0, z1 - z0), ry = Math.atan2(-(z1 - z0), x1 - x0);
+  b.at(x0, 0, z0, ry, () => { for (let i = 0; i < n; i++) { const u0 = i / n, u1 = (i + 1) / n, a = [u0 * L, y - sag * Math.sin(PI * u0)], c = [u1 * L, y - sag * Math.sin(PI * u1)]; b.cyl(0.04, 0.04, Math.hypot(c[0] - a[0], c[1] - a[1]) + 0.03, col, (a[0] + c[0]) / 2, (a[1] + c[1]) / 2, 0, 0, 0, Math.atan2(c[1] - a[1], c[0] - a[0]) - PI / 2, { seg: 6 }); } });
+}
+// A marble plinth, w square and h high, standing on (x, y, z).
+export function plinthInto(b, w, h, x, y, z) {
+  b.box(w + 0.16, 0.12, w + 0.16, MARBLE_D, x, y + 0.06, z).box(w, h - 0.22, w, MARBLE, x, y + h / 2, z).box(w + 0.14, 0.1, w + 0.14, MARBLE_D, x, y + h - 0.05, z);
+}
+// A fluted column, h high.
+export function columnInto(b, r, h, x, y, z) {
+  b.box(r * 2.7, 0.2, r * 2.7, MARBLE_D, x, y + 0.1, z).cyl(r * 1.15, r * 1.25, 0.16, MARBLE, x, y + 0.28, z, 0, 0, 0, { seg: 12 }).cyl(r * 0.88, r, h - 0.7, MARBLE, x, y + h / 2, z, 0, 0, 0, { seg: 12 });
+  b.cyl(r * 1.2, r * 0.9, 0.18, MARBLE, x, y + h - 0.27, z, 0, 0, 0, { seg: 12 }).box(r * 2.7, 0.18, r * 2.7, MARBLE_D, x, y + h - 0.09, z);
+}
+// A marble head and shoulders; it faces +z and is about 1.15 s high.
+export function bustInto(b, x, y, z, s = 1, col = MARBLE) {
+  b.at(x, y, z, 0, () => {
+    b.sph(0.46, col, 0, 0.2, 0, 1, 0.5, 0.6, { seg: 12 }).cyl(0.22, 0.3, 0.14, col, 0, 0.04, 0, 0, 0, 0, { seg: 10 }).cyl(0.12, 0.15, 0.24, col, 0, 0.5, 0, 0, 0, 0, { seg: 8 });
+    b.sph(0.27, col, 0, 0.82, 0.02, 0.92, 1.05, 1, { seg: 12 }).sph(0.05, col, 0, 0.8, 0.28, 0.8, 1.3, 1, { seg: 6 }).sph(0.29, MARBLE_D, 0, 0.9, -0.05, 0.98, 0.9, 0.95, { seg: 10 });
+    for (const sx of [-1, 1]) b.sph(0.035, 0x6a6258, sx * 0.1, 0.86, 0.25, 1, 1, 0.5, { seg: 5 }).sph(0.06, col, sx * 0.27, 0.8, 0, 0.5, 1, 0.8, { seg: 5 });
+    b.tor(0.07, 0.014, 0x6a6258, 0, 0.72, 0.25, 0, 0, PI, { arc: PI, seg: 6 });
+    for (let i = 0; i < 7; i++) b.sph(0.06, MGOLD, Math.cos(PI * i / 6) * 0.25, 1.0 + Math.sin(PI * i / 6) * 0.07, Math.sin(PI * i / 6) * 0.1 - 0.02, 1, 0.6, 1.2, { seg: 5 });
+  }, s);
+}
+// A big painted vase, about 2 s high.
+export function vaseInto(b, x, y, z, s = 1, c1 = 0xfdfaf2, c2 = 0x2f62c0) {
+  b.at(x, y, z, 0, () => {
+    b.cyl(0.3, 0.36, 0.14, c2, 0, 0.07, 0, 0, 0, 0, { seg: 12 }).cyl(0.2, 0.3, 0.2, c1, 0, 0.24, 0, 0, 0, 0, { seg: 12 }).sph(0.56, c1, 0, 0.92, 0, 1, 1.15, 1, { seg: 14 });
+    b.cyl(0.3, 0.22, 0.4, c1, 0, 1.62, 0, 0, 0, 0, { seg: 12 }).cyl(0.36, 0.3, 0.1, c2, 0, 1.87, 0, 0, 0, 0, { seg: 12 });
+    for (const yy of [0.55, 1.3]) b.tor(0.47, 0.035, c2, 0, yy, 0, PI / 2, 0, 0, { seg: 14, tseg: 5 });
+    for (let i = 0; i < 6; i++) { const a = i * PI / 3; b.sph(0.11, c2, Math.cos(a) * 0.55, 0.95, Math.sin(a) * 0.55, 1, 1.5, 0.35, { seg: 6 }).sph(0.05, MGOLD, Math.cos(a + 0.52) * 0.56, 0.95, Math.sin(a + 0.52) * 0.56, 1, 1, 1, { seg: 5 }); }
+    for (const sx of [-1, 1]) b.tor(0.2, 0.04, c2, sx * 0.42, 1.5, 0, 0, 0, sx * -0.5, { arc: PI * 1.1, seg: 8 });
+  }, s);
+}
+// A suit of armour, standing to attention with a shield; it faces +z and is about 2.3 s high.
+export function armourInto(b, x, y, z, s = 1) {
+  b.at(x, y, z, 0, () => {
+    for (const sx of [-1, 1]) {
+      b.cap(0.12, 0.6, STEEL, sx * 0.17, 0.52, 0, 0, 0, 0, { seg: 8 }).sph(0.14, STEEL_D, sx * 0.17, 0.62, 0.04, 1, 0.8, 1, { seg: 7 }).sph(0.16, STEEL_D, sx * 0.17, 0.08, 0.08, 0.9, 0.55, 1.5, { seg: 7 });
+      b.sph(0.2, STEEL_D, sx * 0.46, 1.58, 0, 1, 0.8, 1, { seg: 8 }).cap(0.09, 0.5, STEEL, sx * 0.52, 1.2, 0.02, 0, 0, sx * 0.1, { seg: 7 }).sph(0.11, STEEL_D, sx * 0.56, 0.86, 0.04, 1, 1, 1, { seg: 6 });
+    }
+    b.sph(0.4, STEEL, 0, 1.36, 0, 1, 1.0, 0.72, { seg: 12 }).cyl(0.3, 0.36, 0.3, STEEL_D, 0, 0.98, 0, 0, 0, 0, { seg: 10 }).box(0.06, 0.5, 0.03, MGOLD, 0, 1.4, 0.28);
+    b.sph(0.25, STEEL, 0, 1.98, 0, 1, 1.12, 1, { seg: 12 }).box(0.34, 0.05, 0.1, 0x2a2f38, 0, 2.02, 0.21).box(0.04, 0.22, 0.1, STEEL_D, 0, 1.9, 0.23).cyl(0.2, 0.24, 0.1, STEEL_D, 0, 1.74, 0, 0, 0, 0, { seg: 10 });
+    for (let i = 0; i < 5; i++) b.sph(0.1, 0xd2302c, 0, 2.3 + Math.sin(i * 0.7) * 0.1, 0.04 - i * 0.09, 0.7, 1.2 - i * 0.1, 1, { seg: 6 });
+    // the shield, on the left arm
+    b.cyl(0.36, 0.36, 0.06, 0x2f62c0, -0.56, 1.05, 0.2, PI / 2, 0, 0, { seg: 5 }).cyl(0.2, 0.2, 0.07, MGOLD, -0.56, 1.05, 0.21, PI / 2, 0, 0, { seg: 5 }).sph(0.07, STEEL, -0.56, 1.05, 0.26, 1, 1, 0.6, { seg: 6 });
+    b.cyl(0.02, 0.02, 2.1, 0x8a5a3c, 0.6, 1.05, 0.1, 0, 0, 0, { seg: 5 }).box(0.26, 0.3, 0.03, STEEL, 0.6, 2.1, 0.1).cone(0.05, 0.3, STEEL, 0.6, 2.38, 0.1, 0, 0, 0, { seg: 5 });
+  }, s);
+}
+// A painted mummy case, standing up; friendly, with a big smile. It faces +z and is about 2.4 s high.
+export function mummyInto(b, x, y, z, s = 1) {
+  const BL = 0x2f62c0, TQ = 0x3fc0b0;
+  b.at(x, y, z, 0, () => {
+    b.cap(0.42, 1.2, MGOLD, 0, 1.0, 0, 0, 0, 0, { seg: 12 }).sph(0.4, MGOLD, 0, 0.3, 0.06, 1, 0.6, 1.1, { seg: 10 });
+    for (let i = 0; i < 6; i++) b.tor(0.425, 0.035, [BL, TQ, 0xd2302c][i % 3], 0, 0.5 + i * 0.17, 0, PI / 2, 0, 0, { seg: 14, tseg: 5 });
+    b.sph(0.5, BL, 0, 1.95, -0.06, 1, 1.05, 0.8, { seg: 12 }).sph(0.3, 0xf2c98a, 0, 1.92, 0.2, 1, 1.1, 0.7, { seg: 10 });
+    for (let i = 0; i < 5; i++) for (const sx of [-1, 1]) b.box(0.16, 0.05, 0.1, MGOLD, sx * 0.4, 1.56 + i * 0.16, 0.16, 0, sx * 0.5, 0);
+    for (const sx of [-1, 1]) b.sph(0.06, 0xffffff, sx * 0.11, 1.98, 0.39, 1, 0.8, 0.4, { seg: 6, grad: 1 }).sph(0.035, 0x1b1f24, sx * 0.11, 1.98, 0.41, 1, 1, 0.4, { seg: 5, grad: 1 }).box(0.16, 0.025, 0.02, 0x1b1f24, sx * 0.14, 2.05, 0.4, 0, 0, sx * 0.1);
+    b.tor(0.08, 0.016, 0x8a3a2a, 0, 1.84, 0.4, 0, 0, PI, { arc: PI, seg: 7 }).cyl(0.04, 0.06, 0.24, BL, 0, 1.62, 0.36, 0.2, 0, 0, { seg: 6 });
+    b.sph(0.08, MGOLD, 0, 2.42, 0.2, 0.7, 1.5, 0.7, { seg: 6 });
+    for (const sx of [-1, 1]) b.cap(0.07, 0.4, 0xf2c98a, sx * 0.12, 1.2, 0.4, 0, 0, sx * 0.9, { seg: 6 });
+    b.box(0.03, 0.44, 0.03, TQ, -0.26, 1.26, 0.46, 0, 0, 0.5).box(0.03, 0.44, 0.03, 0xd2302c, 0.26, 1.26, 0.46, 0, 0, -0.5);
+  }, s);
+}
+// A picture in a gold frame, w by h, centred on (x, y, z) and facing +z (turned by ry). Six pictures: 0 a sailing boat, 1 Pixel the cat,
+// 2 Izzi the dog, 3 coloured squares, 4 a bowl of fruit, 5 sunflowers.
+export function pictureInto(b, w, h, x, y, z, ry = 0, kind = 0) {
+  b.at(x, y, z, ry, () => {
+    const t = 0.16, u = Math.min(w, h) - 0.3, f = 0.07;
+    b.box(w + t * 2, h + t * 2, 0.1, MGOLD, 0, 0, 0).box(w + t * 2 + 0.1, 0.1, 0.16, MGOLD_D, 0, h / 2 + t, 0).box(w + t * 2 + 0.1, 0.1, 0.16, MGOLD_D, 0, -h / 2 - t, 0);
+    const bg = [0x8fd0f5, 0x3fb0a0, 0xf08fb0, 0xfdf6e6, 0x6a4a8a, 0x8fd0f5][kind];
+    b.box(w, h, 0.04, bg, 0, 0, 0.04, 0, 0, 0, { grad: 1 });
+    const d = (r, c, px, py, sx = 1, sy = 1) => b.sph(r * u, c, px * u, py * u, f, sx, sy, 0.06, { seg: 10, grad: 1 });
+    if (kind === 0) { b.box(w, h * 0.36, 0.05, 0x2f62c0, 0, -h * 0.32, 0.045, 0, 0, 0, { grad: 1 }); d(0.13, 0xffd23f, 0.28, 0.3); b.box(u * 0.5, u * 0.08, 0.03, 0xd2302c, -0.05 * u, -0.14 * u, f); b.flat([[[-0.06 * u, -0.08 * u, f], [-0.06 * u, 0.36 * u, f], [0.22 * u, -0.08 * u, f]], [[-0.1 * u, -0.08 * u, f], [-0.28 * u, -0.08 * u, f], [-0.1 * u, 0.26 * u, f]]], 0xffffff); }
+    else if (kind === 1) { d(0.3, 0x24262c, 0, -0.04, 1, 0.92); d(0.16, 0xffffff, 0, -0.14, 1.1, 1); b.flat([[[-0.3 * u, 0.1 * u, f], [-0.24 * u, 0.36 * u, f], [-0.08 * u, 0.2 * u, f]], [[0.3 * u, 0.1 * u, f], [0.08 * u, 0.2 * u, f], [0.24 * u, 0.36 * u, f]]], 0x24262c); for (const sx of [-1, 1]) { d(0.06, 0x9fe04a, sx * 0.12, 0.04, 1, 1.1); b.sph(0.02 * u, 0x1b1f24, sx * 0.12 * u, 0.04 * u, f + 0.012, 1, 2, 0.4, { seg: 5, grad: 1 }); } d(0.03, 0xff9fb0, 0, -0.1); }
+    else if (kind === 2) { d(0.3, 0x24262c, 0, 0, 1, 1); d(0.14, 0xffffff, 0, 0.05, 0.7, 2.0); d(0.17, 0xffffff, 0, -0.16, 1.1, 0.9); for (const sx of [-1, 1]) { d(0.12, 0x24262c, sx * 0.27, 0.24, 0.8, 1.2); d(0.04, 0x6a4326, sx * 0.13, 0.06); } d(0.05, 0x1b1f24, 0, -0.1, 1.2, 0.9); d(0.05, 0xff8fa0, 0, -0.25, 1, 1.4); }
+    else if (kind === 3) { const cs = [0xd2302c, 0xffd23f, 0x2f62c0, 0xfdf6e6, 0x1b1f24]; let i = 0; for (const [px, py, sw, sh] of [[-0.25, 0.2, 0.4, 0.5], [0.2, 0.28, 0.5, 0.34], [0.26, -0.14, 0.36, 0.5], [-0.2, -0.26, 0.5, 0.36]]) b.box(sw * w, sh * h, 0.02, cs[i++], px * w, py * h, f, 0, 0, 0, { grad: 1 }); b.box(0.04, h, 0.025, cs[4], -0.02 * w, 0, f + 0.005).box(w, 0.04, 0.025, cs[4], 0, 0.02 * h, f + 0.005); }
+    else if (kind === 4) { b.box(w, h * 0.3, 0.05, 0x8a5a3c, 0, -h * 0.35, 0.045, 0, 0, 0, { grad: 1 }); d(0.26, 0xfdf6e6, 0, -0.18, 1.3, 0.55); d(0.11, 0xe5283b, -0.14, 0.0); d(0.11, 0xffd23f, 0.02, 0.05, 1.5, 0.7); d(0.1, 0xff8a3c, 0.16, 0.0); d(0.08, 0x6fc24a, 0.04, 0.16); }
+    else { b.box(w, h * 0.25, 0.05, 0x6fc24a, 0, -h * 0.375, 0.045, 0, 0, 0, { grad: 1 }); for (const [px, py] of [[-0.2, 0.08], [0.12, 0.2], [0.24, -0.08]]) { b.box(0.03 * u, 0.4 * u, 0.02, 0x3f9a4a, px * u, (py - 0.22) * u, f - 0.01); for (let i = 0; i < 8; i++) d(0.05, 0xffd23f, px + Math.cos(i * 0.785) * 0.1, py + Math.sin(i * 0.785) * 0.1); d(0.07, 0x6a4326, px, py); } }
+  });
+}
+def('ropeBarrier', 'low', 1.6, 0.96, 0.6, (b) => {
+  // "keep back, please": a velvet rope between two brass posts
+  for (const sx of [-1, 1]) stanchionInto(b, sx * 0.68, 0);
+  ropeInto(b, -0.68, 0, 0.68, 0, 0.82, 0.2);
+});
+def('displayCase', 'low', 1.4, 0.96, 1.0, (b) => {
+  // a show case with a crown in it
+  b.box(1.3, 0.42, 0.9, 0x6a4326, 0, 0.21, 0).box(1.36, 0.06, 0.96, 0x8a5a3c, 0, 0.45, 0).box(1.1, 0.07, 0.7, VELVET, 0, 0.5, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(0.035, 0.46, 0.035, MGOLD, sx * 0.64, 0.7, sz * 0.44);
+  b.box(1.32, 0.035, 0.035, MGOLD, 0, 0.93, 0.44).box(1.32, 0.035, 0.035, MGOLD, 0, 0.93, -0.44).box(0.035, 0.035, 0.92, MGOLD, 0.64, 0.93, 0).box(0.035, 0.035, 0.92, MGOLD, -0.64, 0.93, 0);
+  b.cyl(0.2, 0.2, 0.14, MGOLD, 0, 0.6, 0, 0, 0, 0, { seg: 12 });
+  for (let i = 0; i < 6; i++) { const a = i * PI / 3; b.cone(0.06, 0.16, MGOLD, Math.cos(a) * 0.18, 0.74, Math.sin(a) * 0.18, 0, 0, 0, { seg: 5 }).sph(0.035, [0xe5283b, 0x3f8fe0, 0x4fae56][i % 3], Math.cos(a) * 0.2, 0.6, Math.sin(a) * 0.2, 1, 1, 1, { seg: 5 }); }
+  b.box(0.3, 0.02, 0.003, 0xffffff, -0.3, 0.75, 0.45, 0, 0, 0.7, { glow: true, grad: 1 }).box(0.16, 0.02, 0.003, 0xffffff, -0.16, 0.72, 0.45, 0, 0, 0.7, { glow: true, grad: 1 });
+});
+def('dinoEggs', 'low', 1.4, 0.95, 1.1, (b) => {
+  // a nest of dinosaur eggs, and one of them is hatching
+  b.tor(0.5, 0.17, 0xb98a3a, 0, 0.17, 0, PI / 2, 0, 0, { seg: 14 }).cyl(0.5, 0.5, 0.1, 0x8a6a34, 0, 0.1, 0, 0, 0, 0, { seg: 12 });
+  for (let i = 0; i < 9; i++) b.box(0.5, 0.03, 0.03, STRAW, Math.cos(i * 0.7) * 0.5, 0.3 + (i % 3) * 0.03, Math.sin(i * 0.7) * 0.5, 0, -i * 0.7 + 1.4, 0.2);
+  for (const [x, z, r] of [[-0.24, 0.1, 0.2], [0.26, 0.16, -0.25]]) { b.sph(0.21, 0xfdf3dc, x, 0.46, z, 1, 1.3, 1, { seg: 10 }); for (let i = 0; i < 5; i++) b.sph(0.035, 0x9fb8a0, x + Math.cos(i * 1.3) * 0.17, 0.4 + (i % 3) * 0.1, z + Math.sin(i * 1.3) * 0.17, 1, 1, 1, { seg: 5 }); }
+  b.sph(0.2, 0xfdf3dc, 0.02, 0.36, -0.2, 1, 0.9, 1, { seg: 10 });
+  b.sph(0.16, 0x6fc24a, 0.02, 0.62, -0.18, 1, 0.95, 1.1, { seg: 9 }).sph(0.09, 0x6fc24a, 0.02, 0.58, -0.04, 1, 0.8, 1, { seg: 7 });
+  for (const sx of [-1, 1]) b.sph(0.05, 0xffffff, 0.02 + sx * 0.08, 0.7, -0.07, 1, 1, 0.6, { seg: 6, grad: 1 }).sph(0.026, 0x1b1f24, 0.02 + sx * 0.08, 0.7, -0.035, 1, 1, 0.6, { seg: 5, grad: 1 });
+  b.sph(0.08, 0xfdf3dc, 0.04, 0.8, -0.24, 1.2, 0.5, 1.2, { seg: 6 });
+});
+def('noTouch', 'low', 1.2, 0.98, 0.8, (b) => {
+  // "please do not touch"
+  b.cyl(0.28, 0.3, 0.06, MGOLD_D, 0, 0.03, 0, 0, 0, 0, { seg: 12 }).cyl(0.035, 0.035, 0.42, MGOLD, 0, 0.24, 0, 0, 0, 0, { seg: 6 });
+  b.box(0.96, 0.56, 0.05, 0xfdfaf2, 0, 0.68, 0, -0.12, 0, 0).box(1.02, 0.62, 0.03, MGOLD, 0, 0.68, -0.02, -0.12, 0, 0);
+  b.at(0, 0.68, 0.04, 0, () => {
+    b.box(0.16, 0.14, 0.02, 0xf2c98a, 0, -0.06, 0); for (let i = 0; i < 4; i++) b.box(0.03, 0.14 - Math.abs(i - 1.5) * 0.02, 0.02, 0xf2c98a, -0.06 + i * 0.04, 0.07, 0);
+    b.box(0.035, 0.09, 0.02, 0xf2c98a, 0.1, -0.03, 0, 0, 0, -0.7);
+    b.tor(0.2, 0.03, 0xd2302c, 0, 0, 0.01, 0, 0, 0, { seg: 18, tseg: 5 }).box(0.38, 0.04, 0.02, 0xd2302c, 0, 0, 0.012, 0, 0, 0.785);
+  });
+});
+def('artCrate', 'low', 1.4, 0.94, 1.1, (b) => {
+  // a packing case, with the corner of a painting showing
+  b.at(0, 0, 0, -0.12, () => crateInto(b, 1.25, 0.84, 1.0, 0xc9a26b, 0x8a6a48));
+  b.box(0.5, 0.36, 0.06, MGOLD, 0.2, 0.9, 0.0, 0, -0.12, 0.3).box(0.38, 0.26, 0.07, 0x8fd0f5, 0.2, 0.9, 0.0, 0, -0.12, 0.3, { grad: 1 });
+  for (let i = 0; i < 6; i++) b.box(0.4, 0.025, 0.025, STRAW, -0.25 + (i % 3) * 0.15, 0.86 + (i % 2) * 0.03, -0.2 + i * 0.07, 0, i * 1.1, 0.25);
+  b.cone(0.09, 0.14, 0xd2302c, -0.3, 0.52, 0.51, PI, -0.12, 0, { seg: 8 }).cyl(0.012, 0.012, 0.14, 0xd2302c, -0.3, 0.4, 0.51, 0, 0, 0, { seg: 4 }).cyl(0.06, 0.06, 0.015, 0xd2302c, -0.3, 0.33, 0.51, 0, 0, 0, { seg: 8 });
+});
+def('statueBust', 'tall', 1.3, 2.8, 1.3, (b) => {
+  // a marble head on a column
+  columnInto(b, 0.34, 1.6, 0, 0, 0);
+  bustInto(b, 0, 1.6, 0, 1.05);
+});
+def('bigVase', 'tall', 1.4, 2.6, 1.4, (b) => {
+  // a priceless vase (mind your elbows)
+  plinthInto(b, 0.9, 0.6, 0, 0, 0);
+  vaseInto(b, 0, 0.6, 0, 1.0);
+});
+def('armour', 'tall', 1.6, 2.7, 1.0, (b) => {
+  // a suit of armour standing guard
+  b.cyl(0.6, 0.66, 0.18, MARBLE_D, 0, 0.09, 0, 0, 0, 0, { seg: 12 });
+  armourInto(b, 0, 0.18, 0, 1.04);
+});
+def('easel', 'tall', 1.6, 2.7, 1.2, (b) => {
+  // a painting on an easel
+  for (const sx of [-1, 1]) b.box(0.08, 2.7, 0.08, 0x8a5a3c, sx * 0.5, 1.33, 0.12, -0.12, 0, sx * -0.14);
+  b.box(0.08, 2.6, 0.08, 0x8a5a3c, 0, 1.28, -0.32, 0.26, 0, 0).box(1.3, 0.08, 0.2, 0x6a4326, 0, 0.92, 0.26);
+  pictureInto(b, 1.1, 1.3, 0, 1.75, 0.2, 0, 0);
+  b.sph(0.1, 0xd2302c, 0.36, 1.0, 0.36, 1, 0.5, 1, { seg: 6 }).sph(0.1, 0xffd23f, 0.16, 1.0, 0.36, 1, 0.5, 1, { seg: 6 }).sph(0.1, 0x2f62c0, -0.04, 1.0, 0.36, 1, 0.5, 1, { seg: 6 });
+});
+def('mummyCase', 'tall', 1.3, 2.75, 1.1, (b) => {
+  // a painted mummy case, smiling politely
+  b.box(1.1, 0.2, 0.9, MARBLE_D, 0, 0.1, 0);
+  mummyInto(b, 0, 0.2, 0, 1.03);
+});
+def('globe', 'low', 1.1, 1.0, 1.0, (b) => {
+  // the museum's globe has rolled off its stand
+  b.sph(0.5, 0x3f8fe0, 0, 0, 0, 1, 1, 1, { seg: 18, grad: 0.85 });
+  for (let i = 0; i < 9; i++) { const u = (i + 0.5) / 9, ph = Math.acos(1 - 2 * u), th = i * 2.4, r = 0.46; b.sph(0.2 - (i % 3) * 0.04, i % 4 === 3 ? 0xe6c462 : 0x4fae56, Math.sin(ph) * Math.cos(th) * r, Math.cos(ph) * r, Math.sin(ph) * Math.sin(th) * r, 1.2, 0.5 + (i % 2) * 0.4, 1, { seg: 7 }); }
+  b.tor(0.52, 0.02, MGOLD, 0, 0, 0, 0, PI / 2, 0, { seg: 18, tseg: 4 });
+}, { center: true });
+def('ammonite', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the little pterodactyl drops: a fossil that rolls like a wheel
+  b.cyl(0.46, 0.46, 0.22, 0xc9a87a, 0, 0, 0, 0, 0, PI / 2, { seg: 18 });
+  for (const sx of [-1, 1]) { for (let i = 0; i < 4; i++) b.tor(0.4 - i * 0.1, 0.035, i % 2 ? 0xb08a5a : 0xe0c49a, sx * 0.115, 0, (i % 2) * 0.03, 0, PI / 2, 0, { seg: 14, tseg: 5 }); b.sph(0.07, 0xb08a5a, sx * 0.13, 0, 0, 0.5, 1, 1, { seg: 6 }); }
+  for (let i = 0; i < 12; i++) b.box(0.24, 0.05, 0.03, 0xb08a5a, 0, Math.cos(i * PI / 6) * 0.46, Math.sin(i * PI / 6) * 0.46, i * PI / 6, 0, 0);
+}, { center: true });
+def('polisher', 'low', 1.5, 0.98, 1.1, (b) => {
+  // a floor polisher that has set off on its own; it faces +x
+  b.sph(0.5, 0xffc928, 0, 0.42, 0, 1.2, 0.6, 0.95, { seg: 12 }).cyl(0.56, 0.56, 0.1, 0x3a4252, 0.1, 0.1, 0, 0, 0, 0, { seg: 16 }).cyl(0.6, 0.6, 0.04, 0xfdfaf2, 0.1, 0.03, 0, 0, 0, 0, { seg: 16 });
+  b.cyl(0.03, 0.03, 0.7, STEEL, -0.52, 0.66, 0, 0, 0, 0.5, { seg: 6 }).cyl(0.035, 0.035, 0.5, 0x3a4252, -0.7, 0.94, 0, PI / 2, 0, 0, { seg: 6 });
+  for (const sz of [-1, 1]) b.sph(0.11, 0xffffff, 0.5, 0.56, sz * 0.17, 0.5, 1.1, 1, { seg: 8, grad: 1 }).sph(0.055, 0x1b1f24, 0.55, 0.55, sz * 0.17, 0.5, 1, 1, { seg: 6, grad: 1 });
+  b.tor(0.1, 0.02, 0x8a3a2a, 0.58, 0.4, 0, PI / 2, PI / 2, 0, { arc: PI, seg: 7 }).sph(0.07, 0xe5283b, 0, 0.74, 0, 1, 0.8, 1, { glow: true, seg: 6, grad: 1 });
+  b.box(0.5, 0.05, 0.02, 0x3a4252, 0, 0.5, 0.47).box(0.5, 0.05, 0.02, 0x3a4252, 0, 0.5, -0.47);
+});
+def('pteroBones', 'deco', 2.4, 1.2, 1.6, (b) => {
+  // a little pterodactyl skeleton that has flapped down off its stand, with a fossil to drop
+  b.sph(0.26, BONE, 0, 0, 0, 0.9, 0.8, 1.3, { seg: 10 });
+  for (let i = 0; i < 4; i++) b.tor(0.25, 0.028, BONE_D, 0, 0, -0.24 + i * 0.16, 0, 0, 0, { seg: 10, tseg: 4 });
+  b.cyl(0.05, 0.05, 0.3, BONE, 0, 0.12, 0.42, 1.0, 0, 0, { seg: 6 });
+  b.sph(0.2, BONE, 0, 0.26, 0.62, 0.9, 0.9, 1.1, { seg: 10 }).cone(0.1, 0.62, BONE, 0, 0.2, 1.08, PI / 2 + 0.1, 0, 0, { seg: 7 }).cone(0.08, 0.5, BONE_D, 0, 0.4, 0.34, -1.1, 0, 0, { seg: 6 });
+  for (const sx of [-1, 1]) {
+    b.sph(0.085, 0xffffff, sx * 0.12, 0.32, 0.72, 1, 1.1, 0.6, { seg: 8, grad: 1 }).sph(0.045, 0x1b1f24, sx * 0.12, 0.31, 0.76, 1, 1, 0.6, { seg: 6, grad: 1 });
+    b.cap(0.025, 0.2, BONE_D, sx * 0.1, -0.3, -0.05, 0.3, 0, 0, { seg: 5 });
+  }
+  b.box(0.2, 0.02, 0.02, 0x6a5a48, 0, 0.17, 0.95, 0, 0, 0);
+  for (let i = 0; i < 4; i++) b.sph(0.045 - i * 0.006, BONE, 0, -0.02 - i * 0.02, -0.4 - i * 0.13, 1, 1, 1.5, { seg: 5 });
+  b.cyl(0.2, 0.2, 0.1, 0xc9a87a, 0, -0.42, 0.05, 0, 0, PI / 2, { seg: 10 });
+}, {
+  wings: (b, sx) => {
+    b.cap(0.035, 0.6, BONE, sx * 0.36, 0, 0.05, 0, 0, PI / 2, { seg: 6 }).cap(0.03, 0.56, BONE, sx * 0.94, 0, -0.06, 0, sx * 0.3, PI / 2, { seg: 6 });
+    for (let i = 0; i < 3; i++) b.cap(0.018, 0.4 - i * 0.06, BONE_D, sx * (0.5 + i * 0.26), -0.005, -0.3, PI / 2, 0, sx * 0.25, { seg: 5 });
+    b.sph(0.5, 0xfdf3dc, sx * 0.62, -0.012, -0.22, 1.2, 0.03, 0.62, { seg: 9 });
+  }, wingAt: [0.2, 0.06, 0],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -2013,6 +2209,7 @@ export const TALL_TYPES = {
   16: ['chocFountain', 'chocBunny', 'foilEgg', 'biscuitTower', 'cakeSlice', 'chocBunny'],
   17: ['bigBottle', 'hayStack', 'scareCow', 'milkFloat', 'butterChurn', 'bigBottle'],
   18: ['standMirror', 'mirrorPillar', 'wonkyMirror', 'prismTower', 'vanity', 'standMirror'],
+  19: ['statueBust', 'bigVase', 'armour', 'easel', 'mummyCase', 'bigVase'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
-export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'] };
+export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'] };

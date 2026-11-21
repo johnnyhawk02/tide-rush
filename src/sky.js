@@ -26,6 +26,7 @@ const PAL = [
   { top: 0xe9a85c, hor: 0xfff1d2, sun: 0xfff3dc, sunI: 2.7, hemiS: 0xfff0dc, hemiG: 0xc08a5a, hemiI: 1.45, deep: 0x3a1a0c, shal: 0x7d4420, foam: 0xb98552, cloud: 0xfff8ea, el: 0.72, az: 0.4, stars: 0, storm: 0 },   // Chocolate Coast: a caramel sky with whipped-cream clouds over a sea of melted chocolate
   { top: 0x3f9be8, hor: 0xdff5ff, sun: 0xfffbe8, sunI: 3.0, hemiS: 0xeaf6ff, hemiG: 0x9fc878, hemiI: 1.4, deep: 0x1a78b0, shal: 0x58c8d8, cloud: 0xffffff, el: 0.8, az: -0.4, stars: 0, storm: 0 },   // Moo Town: a bright spring morning over green meadows
   { top: 0x2f7fe0, hor: 0xcbe4ff, sun: 0xfffaf0, sunI: 2.9, hemiS: 0xe6f0ff, hemiG: 0xc8d8f0, hemiI: 1.4, deep: 0x4f90d0, shal: 0xa8d4f0, cloud: 0xffffff, el: 0.6, az: 0.5, stars: 0, storm: 0, mirror: 1 },   // the Land of Mirrors: a clear pearly sky, and a sea as still as glass
+  { top: 0x4f93e6, hor: 0xe2eefa, sun: 0xfff4dc, sunI: 2.6, hemiS: 0xfff6e6, hemiG: 0xd8c8a8, hemiI: 1.5, deep: 0x12689a, shal: 0x45c6cf, cloud: 0xffffff, el: 0.95, az: 0.05, stars: 0, storm: 0 },   // the Museum: high noon, pouring in through the open roof
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 

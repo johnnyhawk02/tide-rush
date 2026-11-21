@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -2248,10 +2248,147 @@ const glassSwan = () => prefab('glassSwan', () => {
   return b.build({ cast: true, receive: false });
 });
 
+// ---------- the Museum ----------
+const MUS_W = 10.3, MUS_H = 9, GALLERY = 0x2f7f86, GALLERY_D = 0x266a70, STONEW = 0xeee4cc, STONEW_D = 0xd6c8a8;
+// One stretch of the great hall: chequered marble either side of the boards, gallery walls, and arches overhead open to the sky.
+const museumHall = () => prefab('museumHall', () => {
+  const b = new Builder(0.88), g = new THREE.Group();
+  for (const sx of [-1, 1]) {
+    const [fg, fc] = painted(new THREE.BoxGeometry(5.6, 0.3, CHUNK, 4, 1, 29), (x, y, z) => ((Math.floor((x + 2.8) / 1.4) + Math.floor((z + CHUNK / 2) / (CHUNK / 29))) & 1 ? 0xfbf8f0 : 0x56687a));
+    b.add(fg, fc, sx * (DECK_HALF + 2.8), -0.15, -CHUNK / 2, 0, 0, 0, 1, 1, 1, { grad: 1 });
+    b.box(0.6, MUS_H, CHUNK, GALLERY, sx * (MUS_W + 0.3), MUS_H / 2, -CHUNK / 2, 0, 0, 0, { grad: 0.9 }).box(0.7, 1.3, CHUNK, STONEW, sx * (MUS_W + 0.28), 0.65, -CHUNK / 2).box(0.76, 0.12, CHUNK, STONEW_D, sx * (MUS_W + 0.28), 1.36, -CHUNK / 2);
+    b.box(0.9, 0.5, CHUNK, STONEW, sx * (MUS_W + 0.25), MUS_H - 0.05, -CHUNK / 2).box(0.96, 0.12, CHUNK, MGOLD, sx * (MUS_W + 0.22), MUS_H - 0.42, -CHUNK / 2);
+    b.box(3.2, 3.6, CHUNK, 0x8a7a66, sx * (MUS_W + 1.6), -1.9, -CHUNK / 2);
+    for (let i = 0; i < 4; i++) { const z = -5 - i * 10; b.box(0.5, MUS_H - 0.3, 1.0, STONEW, sx * (MUS_W - 0.2), (MUS_H - 0.3) / 2, z).box(0.6, 0.4, 1.2, STONEW_D, sx * (MUS_W - 0.2), 0.2, z).box(0.64, 0.3, 1.24, MGOLD, sx * (MUS_W - 0.2), MUS_H - 0.6, z); }
+    // the velvet rope along the edge of the boards
+    for (let i = 0; i < 8; i++) { stanchionInto(b, sx * (DECK_HALF + 0.3), -i * 5); ropeInto(b, sx * (DECK_HALF + 0.3), -i * 5, sx * (DECK_HALF + 0.3), -i * 5 - 5, 0.8, 0.16); }
+    b.box(0.2, 0.24, CHUNK, 0x8a5a3c, sx * 6.5, 12.36, -CHUNK / 2);
+  }
+  b.box(0.3, 0.3, CHUNK, 0x8a5a3c, 0, 13.45, -CHUNK / 2);
+  for (let i = 0; i < 4; i++) {
+    const z = -5 - i * 10;
+    b.add(new THREE.TorusGeometry(MUS_W, 0.3, 6, 22, PI), STONEW, 0, MUS_H, z, 0, 0, 0, 1, 0.43, 1).add(new THREE.TorusGeometry(MUS_W - 0.36, 0.08, 5, 22, PI), MGOLD, 0, MUS_H, z, 0, 0, 0, 1, 0.43, 1);
+    for (const sx of [-1, 1]) {
+      const c = [0xc23b2e, 0x2f62c0, 0xf2c230, 0x4fae56][(i + (sx > 0 ? 0 : 2)) % 4];
+      b.box(1.1, 2.6, 0.05, c, sx * 6.5, 10.9, z).cone(0.55, 0.5, c, sx * 6.5, 9.36, z, PI, PI / 4, 0, { seg: 4 }).cyl(0.2, 0.2, 0.06, 0xfdf6e6, sx * 6.5, 11.2, z, PI / 2, 0, 0, { seg: 10 });
+      b.cyl(0.015, 0.015, 2.0, 0x6a747c, sx * 3.0, 12.2, z, 0, 0, 0, { seg: 4 }).sph(0.34, 0xfff3c8, sx * 3.0, 11.0, z, 1, 1, 1, { glow: true, seg: 8, grad: 1 }).cyl(0.2, 0.1, 0.14, MGOLD, sx * 3.0, 11.36, z, 0, 0, 0, { seg: 8 });
+    }
+  }
+  g.add(b.build({ material: MAT.double }));
+  return g;
+});
+// The grand front (and back) of the museum: a wall across the pier with the way through it, columns and a pediment; the front faces +z.
+const museumFront = () => prefab('museumFront', () => {
+  const b = new Builder(0.86), W = 17, OP = 4.9, TOP = 13.6;
+  for (const sx of [-1, 1]) b.box(W - OP, TOP + 3.4, 1.0, STONEW, sx * (OP + (W - OP) / 2), (TOP - 3.4) / 2, 0);
+  b.box(OP * 2, TOP - 8.2, 1.0, STONEW, 0, 8.2 + (TOP - 8.2) / 2, 0);
+  b.add(new THREE.TorusGeometry(OP, 0.5, 6, 20, PI), STONEW_D, 0, 8.2, 0, 0, 0, 0, 1, 0.34, 2.4).box(1.0, 1.3, 1.5, MGOLD, 0, 10.0, 0);
+  for (const sx of [-1, 1]) b.box(0.7, 8.2, 1.3, STONEW_D, sx * (OP + 0.35), 4.1, 0);
+  for (const z of [1.5, -1.5]) for (const x of [-13.2, -7.6, 7.6, 13.2]) columnInto(b, 0.75, 11.4, x, 0, z);
+  for (const x of [-13.2, -7.6, 7.6, 13.2]) b.box(2.6, 3.4, 4.6, STONEW_D, x, -1.7, 0);
+  b.box(W * 2 + 1.4, 1.5, 4.6, STONEW, 0, 12.15, 0).box(W * 2 + 2, 0.3, 5.0, STONEW_D, 0, 13.0, 0).box(W * 2 + 1.4, 0.16, 4.7, MGOLD, 0, 11.5, 0);
+  b.prism(W * 2 + 2, 4.2, 4.6, STONEW, 0, 13.15, 0, 0).prism(W * 2 - 6, 3.0, 4.8, STONEW_D, 0, 13.4, 0, 0);
+  for (const z of [2.45, -2.45]) { b.cyl(1.0, 1.0, 0.1, MGOLD, 0, 14.6, z, PI / 2, 0, 0, { seg: 16 }); for (let i = 0; i < 8; i++) b.box(0.1, 0.6, 0.06, MGOLD, Math.cos(i * 0.785) * 1.4, 14.6 + Math.sin(i * 0.785) * 1.4, z, 0, 0, i * 0.785 - PI / 2); }
+  for (const sx of [-1, 1]) { b.box(1.3, 4.4, 0.08, 0xc23b2e, sx * 10.4, 7.6, 0.6).cone(0.65, 0.6, 0xc23b2e, sx * 10.4, 5.1, 0.6, PI, PI / 4, 0, { seg: 4 }).cyl(0.3, 0.3, 0.1, MGOLD, sx * 10.4, 8.4, 0.62, PI / 2, 0, 0, { seg: 10 }); }
+  const g = new THREE.Group(); g.add(b.build({ cast: true }));
+  for (const sz of [1, -1]) { const s = signMesh('MUSEUM', 9.0, 1.1, '#eee4cc', '#4a3a2a', '#f2c230'); s.position.set(0, 12.15, sz * 2.32); s.rotation.y = sz > 0 ? 0 : PI; g.add(s); }
+  return g;
+});
+// The skeleton of a long-necked dinosaur, with a friendly grin; it stands along x with its head at +x, and is seen from +z.
+const exDino = () => prefab('exDino', () => {
+  const b = new Builder(0.86);
+  b.box(11, 0.4, 3.2, MARBLE_D, 0, 0.2, 0).box(10.6, 0.1, 2.8, MARBLE, 0, 0.44, 0);
+  const pts = [[-5.2, 1.1], [-4.2, 1.6], [-3.0, 2.5], [-1.6, 3.3], [0, 3.6], [1.6, 3.4], [2.5, 4.0], [3.2, 4.9], [3.8, 5.8], [4.3, 6.4]];
+  for (let i = 0; i < pts.length - 1; i++) for (let k = 0; k < 3; k++) {
+    const u = k / 3, x = lerp(pts[i][0], pts[i + 1][0], u), y = lerp(pts[i][1], pts[i + 1][1], u), r = 0.1 + 0.13 * Math.max(0, 1 - Math.abs(x) / 5.5);
+    b.sph(r, BONE, x, y, 0, 1, 1, 1.25, { seg: 7 }); if (x > -4 && x < 2.4 && k % 2 === 0) b.box(0.07, 0.4, 0.07, BONE_D, x, y + 0.2, 0);
+  }
+  for (let i = 0; i < 6; i++) { const x = -0.9 + i * 0.44, r = 0.72 - Math.abs(i - 2.5) * 0.07; b.tor(r, 0.05, BONE_D, x, 3.5 - r * 0.92, 0, 0, PI / 2, 0, { seg: 12, tseg: 5 }); }
+  for (const [x, top] of [[-1.5, 3.2], [1.5, 3.3]]) for (const sz of [-1, 1]) {
+    b.sph(0.26, BONE, x, top, sz * 0.55, 1, 1, 1, { seg: 7 }).cap(0.11, 1.2, BONE, x + 0.12, top - 0.75, sz * 0.62, 0, 0, 0.16, { seg: 7 }).sph(0.16, BONE_D, x + 0.24, top - 1.5, sz * 0.64, 1, 1, 1, { seg: 6 });
+    b.cap(0.09, 1.1, BONE, x + 0.14, top - 2.15, sz * 0.64, 0, 0, -0.14, { seg: 7 }).sph(0.2, BONE, x + 0.16, 0.58, sz * 0.64, 1.5, 0.5, 1.1, { seg: 7 });
+  }
+  // the skull, with a big toothy smile
+  b.sph(0.44, BONE, 4.7, 6.6, 0, 1.35, 0.9, 0.9, { seg: 10 }).sph(0.3, BONE, 5.2, 6.48, 0, 1.2, 0.7, 0.85, { seg: 8 }).box(0.8, 0.1, 0.5, BONE_D, 5.0, 6.2, 0, 0, 0, -0.16);
+  for (const sz of [-1, 1]) { b.sph(0.13, 0x3a342c, 4.72, 6.72, sz * 0.34, 1, 1, 0.5, { seg: 7 }).sph(0.06, 0xffffff, 4.75, 6.75, sz * 0.4, 1, 1, 0.5, { seg: 5, grad: 1 }); for (let i = 0; i < 5; i++) b.cone(0.04, 0.12, 0xffffff, 4.75 + i * 0.14, 6.3 - i * 0.02, sz * 0.24, PI, 0, 0, { seg: 4 }); }
+  for (const x of [-5, -2.5, 0, 2.5, 5]) stanchionInto(b, x, 1.9);
+  for (const x of [-5, -2.5, 0, 2.5]) ropeInto(b, x, 1.9, x + 2.5, 1.9, 0.8, 0.16);
+  const g = new THREE.Group(); g.add(b.build({ cast: true }));
+  const s = signMesh('LONGNECK', 2.2, 0.5, '#fdfaf2', '#4a3a2a', '#f2c230'); s.position.set(0, 0.25, 1.62); g.add(s);
+  return g;
+});
+// Three pictures hung on the gallery wall, with a bench to sit and look at them; the wall is at z = 0 and they face +z.
+const exPaintings = (v) => prefab('exPaintings' + v, () => {
+  const b = new Builder(0.86), k = [[0, 1, 4], [2, 3, 5], [1, 5, 0]][v];
+  pictureInto(b, 2.3, 3.0, -3.6, 4.2, 0.1, 0, k[0]); pictureInto(b, 3.6, 2.6, 0, 4.4, 0.1, 0, k[1]); pictureInto(b, 2.3, 3.0, 3.6, 4.2, 0.1, 0, k[2]);
+  for (const x of [-3.6, 0, 3.6]) b.box(0.6, 0.2, 0.04, MGOLD, x, 2.2, 0.06).box(0.12, 0.1, 0.3, MGOLD_D, x, 6.3, 0.16).sph(0.12, 0xfff3c8, x, 6.22, 0.34, 1.6, 0.6, 1, { glow: true, seg: 6, grad: 1 });
+  b.box(3.0, 0.16, 0.8, VELVET, 0, 0.52, 2.6).box(2.8, 0.36, 0.6, 0x6a4326, 0, 0.26, 2.6);
+  for (const sx of [-1, 1]) b.cyl(0.06, 0.06, 0.1, MGOLD, sx * 1.3, 0.05, 2.6, 0, 0, 0, { seg: 6 });
+  return b.build({ cast: true });
+});
+// A row of treasures on plinths: 0 a head, a vase and a suit of armour; 1 two suits of armour and a blue vase; 2 a head between two vases.
+const exStatues = (v) => prefab('exStatues' + v, () => {
+  const b = new Builder(0.86);
+  const put = (kind, x) => {
+    if (kind === 'bust') { columnInto(b, 0.42, 1.9, x, 0, 0); bustInto(b, x, 1.9, 0, 1.4); }
+    else if (kind === 'armour') { b.cyl(0.8, 0.86, 0.3, MARBLE_D, x, 0.15, 0, 0, 0, 0, { seg: 12 }); armourInto(b, x, 0.3, 0, 1.3); }
+    else { plinthInto(b, 1.2, 0.9, x, 0, 0); vaseInto(b, x, 0.9, 0, 1.3, kind === 'vase2' ? 0x2f62c0 : 0xfdfaf2, kind === 'vase2' ? 0xfdfaf2 : kind === 'vase3' ? 0xc23b2e : 0x2f62c0); }
+  };
+  [['bust', 'vase', 'armour'], ['armour', 'vase2', 'armour'], ['vase3', 'bust', 'vase']][v].forEach((kd, i) => put(kd, (i - 1) * 2.8));
+  for (const x of [-4.2, -1.4, 1.4, 4.2]) stanchionInto(b, x, 1.6);
+  for (const x of [-4.2, -1.4, 1.4]) ropeInto(b, x, 1.6, x + 2.8, 1.6, 0.8, 0.16);
+  return b.build({ cast: true });
+});
+// The Egyptian corner: a mummy case between two cat statues, with a little pyramid.
+const exEgypt = () => prefab('exEgypt', () => {
+  const b = new Builder(0.86), SANDY = 0xe6c98a;
+  b.box(7.4, 0.3, 2.6, SANDY, 0, 0.15, 0);
+  mummyInto(b, 0, 0.3, -0.2, 1.7);
+  for (const sx of [-1, 1]) b.at(sx * 2.3, 0.3, 0, sx * -0.3, () => {
+    plinthInto(b, 0.9, 0.5, 0, 0, 0);
+    b.sph(0.34, 0x24262c, 0, 0.9, 0, 0.9, 1.2, 1.1, { seg: 10 }).cap(0.16, 0.3, 0x24262c, 0, 1.36, 0.1, 0.2, 0, 0, { seg: 8 }).sph(0.24, 0x24262c, 0, 1.76, 0.14, 1, 0.95, 1, { seg: 10 });
+    for (const s2 of [-1, 1]) b.cone(0.09, 0.26, 0x24262c, s2 * 0.14, 2.04, 0.12, 0, 0, s2 * -0.2, { seg: 5 }).sph(0.045, 0x9fe04a, s2 * 0.09, 1.8, 0.35, 1, 1, 0.5, { glow: true, seg: 5, grad: 1 }).cap(0.07, 0.4, 0x24262c, s2 * 0.16, 0.76, 0.3, 0, 0, 0, { seg: 6 });
+    b.tor(0.17, 0.04, MGOLD, 0, 1.52, 0.11, PI / 2 - 0.2, 0, 0, { seg: 10 }).sph(0.05, 0x3fc0b0, 0, 1.46, 0.28, 1, 1, 1, { seg: 5 });
+    b.tor(0.26, 0.05, 0x24262c, -0.26, 0.66, -0.2, PI / 2, 0, 0, { arc: PI * 1.2, seg: 8 });
+  });
+  b.cone(0.8, 0.9, SANDY, -3.2, 0.75, 0.6, 0, PI / 4, 0, { seg: 4 }).cone(0.5, 0.56, 0xd6b574, 3.2, 0.58, 0.7, 0, PI / 4, 0, { seg: 4 });
+  for (const x of [-3.6, -1.2, 1.2, 3.6]) stanchionInto(b, x, 1.7);
+  for (const x of [-3.6, -1.2, 1.2]) ropeInto(b, x, 1.7, x + 2.4, 1.7, 0.8, 0.16);
+  return b.build({ cast: true });
+});
+// The planets: a brass machine with the sun in the middle; the planets (a part named 'spin') go slowly round.
+const exOrrery = () => prefab('exOrrery', () => {
+  const b = new Builder(0.86), g = new THREE.Group();
+  b.cyl(2.2, 2.4, 0.4, MARBLE_D, 0, 0.2, 0, 0, 0, 0, { seg: 16 }).cyl(0.3, 0.6, 1.0, MGOLD_D, 0, 0.9, 0, 0, 0, 0, { seg: 10 }).cyl(0.12, 0.12, 1.6, MGOLD, 0, 2.2, 0, 0, 0, 0, { seg: 8 });
+  b.sph(0.7, 0xffd23f, 0, 3.3, 0, 1, 1, 1, { glow: true, seg: 12, grad: 0.8 });
+  for (let i = 0; i < 8; i++) b.cone(0.14, 0.4, 0xffb300, Math.cos(i * 0.785) * 0.9, 3.3 + Math.sin(i * 0.785) * 0.9, 0, 0, 0, i * 0.785 - PI / 2, { glow: true, seg: 5, grad: 1 });
+  for (let i = 0; i < 6; i++) { stanchionInto(b, Math.cos(i * 1.047) * 3.0, Math.sin(i * 1.047) * 3.0); }
+  g.add(b.build({ cast: true }));
+  const s = new Builder(0.86);
+  for (const [r, a, y, size, col, ring] of [[1.4, 0, 2.5, 0.2, 0xc9a87a], [2.0, 2.2, 2.2, 0.32, 0x3f8fe0], [2.6, 4.1, 1.9, 0.26, 0xd2502c], [3.2, 1.0, 1.6, 0.5, 0xe6c98a, 1], [1.7, 5.2, 2.36, 0.24, 0x4fae56]]) {
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
+    s.cyl(0.025, 0.025, r, MGOLD, x / 2, y, z / 2, 0, -a, PI / 2, { seg: 5 }).cyl(0.02, 0.02, 0.5, MGOLD, x, y + 0.25, z, 0, 0, 0, { seg: 5 }).sph(size, col, x, y + 0.5 + size, z, 1, 1, 1, { seg: 10 });
+    if (ring) s.tor(size * 1.6, 0.04, 0xfdf3dc, x, y + 0.5 + size, z, PI / 2 - 0.3, 0, 0, { seg: 14, tseg: 4 });
+  }
+  const m = s.build({ cast: true }); m.name = 'spin'; g.add(m);
+  return g;
+});
+// A model of a great blue whale, hung from the roof; it swims along z with its head at +z.
+const exWhale = () => prefab('exWhale', () => {
+  const b = new Builder(0.86), BLU = 0x4f8fd0;
+  b.add(new THREE.SphereGeometry(1, 16, 12), (x, y) => (y < -0.25 ? 0xe6f0fa : BLU), 0, 0, 0, 0, 0, 0, 1.5, 1.25, 5.2);
+  b.cone(0.8, 3.0, BLU, 0, 0.1, -5.6, -PI / 2, 0, 0, { seg: 10 });
+  for (const sx of [-1, 1]) { b.sph(1, BLU, sx * 1.0, 0.15, -7.2, 1.3, 0.14, 0.7, { seg: 8 }).sph(1, BLU, sx * 1.7, -0.5, 1.6, 1.0, 0.12, 0.5, { seg: 8 }); b.sph(0.14, 0xffffff, sx * 1.28, 0.1, 3.3, 0.4, 1, 1, { seg: 7, grad: 1 }).sph(0.07, 0x1b1f24, sx * 1.33, 0.1, 3.34, 0.4, 1, 1, { seg: 5, grad: 1 }); }
+  b.tor(1.0, 0.04, 0x2a5a96, 0, -0.1, 4.2, PI / 2, 0, 0, { arc: PI, seg: 12 });
+  for (let i = 0; i < 5; i++) b.box(0.03, 0.03, 3.0, 0xcfe0f2, (i - 2) * 0.3, -1.05 + Math.abs(i - 2) * 0.1, 2.6);
+  for (const z of [-3.2, 0, 3.2]) b.cyl(0.02, 0.02, 3.6, 0x6a747c, 0, 2.9, z, 0, 0, 0, { seg: 4 });
+  return b.build({ cast: true });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -2259,7 +2396,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); g.add(s);
   return g;
 });
@@ -2271,10 +2408,10 @@ export function populate(group, rawIndex, zone, anim) {
   const rng = makeRng(index * 7919 + 13);
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
-  if (!coast) { place(group, under40(), 0, 0, 0); place(group, rail40(), L, 0, 0); }
+  if (!coast) { place(group, under40(), 0, 0, 0); if (zone !== 19) place(group, rail40(), L, 0, 0); }
   const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
-  if (zone !== 8 && zone !== 15) for (const z of [-10, -30]) {
+  if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
     place(group, lamp(), -4.05, 0, z, 0, 1.24); if (flags) place(group, bunting20(), -4.05, 4.86, z);
     if (zone !== 2) { place(group, lamp(), open ? 4.75 : 4.05, 0, z, 0, 1.24); if (flags) place(group, bunting20(), open ? 4.75 : 4.05, 4.86, z); }
@@ -2282,7 +2419,7 @@ export function populate(group, rawIndex, zone, anim) {
   }
   // furniture along the shoulders
   const fz = [-4, -16, -24, -36];
-  if (zone !== 8 && zone !== 18 && !coast) for (const z of fz) {
+  if (zone !== 8 && zone !== 18 && zone !== 19 && !coast) for (const z of fz) {
     const r = rng();
     if (r < 0.4) place(group, bench(), -3.95, 0, z, PI);
     else if (r < 0.55) place(group, lifeRing(), -4.2, 0, z, PI / 2);
@@ -2449,6 +2586,16 @@ export function populate(group, rawIndex, zone, anim) {
       if (index % 3 === 0) anim.push({ o: flip(place(group, floatGem(index % 2), sx * 8.2, 0, -29)), kind: 'spin', v: sx * 0.8 });
       else if (index % 3 === 2) anim.push({ o: flip(place(group, glassSwan(), sx * 8.5, WATER_Y, -33)), kind: 'bob', p: index, amp: 0.6 });
     }
+  } else if (zone === 19) {
+    // the Museum: a great hall of treasures built over the pier, with a different show in every bay
+    place(group, museumHall(), 0, 0, 0);
+    const k = index % ZONE_CHUNKS, v = index % 4, R = (o, z, x = 8.3) => place(group, o, x, 0, z, -PI / 2), Lf = (o, z, x = 8.3) => place(group, o, -x, 0, z, PI / 2);
+    if (k === 0) place(group, museumFront(), 0, 0, 1.0);
+    if (k === ZONE_CHUNKS - 1) place(group, museumFront(), 0, 0, -CHUNK - 1.0, PI);
+    if (v === 0) { R(exDino(), -20, 8.2); Lf(exPaintings(0), -20, MUS_W); place(group, exWhale(), -6.6, 8.7, -20); }
+    else if (v === 1) { R(exStatues(0), -10); R(exEgypt(), -30, 8.5); anim.push({ o: place(group, exOrrery(), -7.5, 0, -20), kind: 'spin', v: 0.35 }); }
+    else if (v === 2) { R(exPaintings(1), -11, MUS_W); R(exPaintings(2), -30, MUS_W); Lf(exStatues(1), -10); Lf(exStatues(2), -30); }
+    else { anim.push({ o: place(group, exOrrery(), 7.5, 0, -11), kind: 'spin', v: -0.35 }); R(exStatues(2), -30); Lf(exEgypt(), -11, 8.5); Lf(exPaintings(0), -30, MUS_W); place(group, exWhale(), 6.6, 8.7, -26); }
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }
