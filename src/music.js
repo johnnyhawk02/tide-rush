@@ -560,4 +560,24 @@ THEMES[24] = theme('Head in the Clouds', {
   drums: { thump: 'x.......x.......', tick: '..x.x...x.x...x.', rim: '....x.......x...' },
 });
 
+// ---- 25. Orchard Land: "Apple Blossom", a fresh little country tune on a whistle (D major) ----
+THEMES[25] = theme('Apple Blossom', {
+  key: 2, scale: 'maj', base: 74, gain: 1.5, tempo: 0.98, voice: 'piccolo', bassVoice: 'pizz', stab: 'pluck',
+  chords: 'I V vi IV I IV V I',
+  tune: [
+    "5:4 3:2 1:2 3:4 5:4",
+    "2':4 7:2 5:2 7:4 2':4",
+    "1':4 6:2 3:2 6:4 1':4",
+    "6:2 1':2 4':4 1':4 6:4",
+    "5:2 1':2 3':2 1':2 5:4 3:4",
+    "4:2 6:2 1':2 6:2 4':4 1':4",
+    "2':2 7:2 5:2 7:2 2':2 4':2 5':4",
+    "3':4 1':4 1':8",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 12, _, _, _, 7, _, _, _],
+  stabs: '....x.......x...',
+  arp: { pat: [0, 1, 2, 1], wave: 'triangle', oct: 12, vol: 0.018, every: 2 },
+  drums: { thump: 'x.......x.......', tick: '..x...x...x...x.', rim: '....x.......x...' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -2921,10 +2921,139 @@ const giraffeSet = (k) => prefab('giraffeSet' + k, () => {
   return b.build({ cast: true, receive: false });
 });
 
+// ---------- Orchard Land ----------
+const OGRASS = 0x7cc850, OGRASS_L = 0x98d868, OGRASS_D = 0x62b040;
+const ORCH_ROWS = [[0, 5, 1, 2, 6], [1, 2, 6, 3, 4]];   // what grows in each row, counting out from the boards: right side, then left (see orchTreeInto)
+// Grass either side of the boards with daisies in it, and rows and rows of fruit trees. clear(side, row, z) is true where a tree is
+// left out to make room for something else.
+const orchRowsInto = (b, rng, clear) => {
+  for (const sd of [-1, 1]) {
+    b.box(46, 3.6, CHUNK, OGRASS, sd * (DECK_HALF + 23), -1.82, -CHUNK / 2);
+    for (let i = 0; i < 20; i++) b.box(0.34, 0.18, 1.9, i % 2 ? 0xd9d2c4 : 0xc4bcae, sd * (DECK_HALF + 0.17), 0.03, -1 - i * 2);
+    for (let i = 0; i < 9; i++) b.sph(1, i % 2 ? OGRASS_L : OGRASS_D, sd * (DECK_HALF + 2.5 + rng() * 24), -0.04, -rng() * CHUNK, 1.5 + rng() * 2.6, 0.07, 1 + rng() * 2, { seg: 7 });
+    for (let i = 0; i < 30; i++) { const x = sd * (DECK_HALF + 0.9 + rng() * 14), z = -rng() * CHUNK; b.sph(0.08, [0xffffff, 0xffd23f, ORCH.blossom][i % 3], x, 0.1, z, 1, 0.5, 1, { seg: 5 }); }
+    for (let row = 0; row < 5; row++) for (let j = 0; j < 5; j++) {
+      const x = sd * (9 + row * 6.5), z = -4 - j * 8;
+      if (clear(sd, row, z)) continue;
+      const kind = ORCH_ROWS[sd > 0 ? 0 : 1][row], s = 0.95 + rng() * 0.25;
+      orchTreeInto(b, x + (rng() - 0.5) * 0.6, 0, z + (rng() - 0.5) * 0.6, s, kind, rng() * 6);
+      // windfalls under the trees in the front rows
+      if (row < 2 && kind < 5) for (let q = 0; q < 2; q++) fruitInto(b, kind, x + (rng() - 0.5) * 2.4, 0.1, z + (rng() - 0.5) * 2.4, 0.11, 5);
+    }
+    // green hills beyond the last row
+    for (let i = 0; i < 2; i++) b.sph(15 + rng() * 5, i % 2 ? OGRASS_D : 0x6cb848, sd * (56 + rng() * 8), -2, -8 - i * 20 - rng() * 6, 1.2, 0.4 + rng() * 0.15, 1, { seg: 9, grad: 0.75 });
+  }
+};
+// A stall selling what the orchard grows (the sign is added by fruitStall). It faces +z.
+const stallInto = (b) => {
+  b.box(3.6, 1.0, 1.3, 0xc8964a, 0, 0.5, 0, 0, 0, 0, { grad: 0.85 }).box(3.8, 0.1, 1.5, 0xa87a3a, 0, 1.05, 0);
+  for (const sx of [-1, 1]) b.box(0.12, 3.0, 0.12, 0xfff3d6, sx * 1.8, 1.5, -0.6).box(0.12, 2.5, 0.12, 0xfff3d6, sx * 1.8, 1.25, 0.66);
+  for (let i = 0; i < 8; i++) b.box(0.5, 0.08, 1.8, i % 2 ? 0xffffff : 0xe5383b, -1.75 + i * 0.5, 2.78, 0.05, 0.36, 0, 0);
+  for (let i = 0; i < 4; i++) fruitCrateInto(b, -1.35 + i * 0.9, 1.1, 0.1, 0.8, [0, 1, 2, 3][i]);
+  fruitCrateInto(b, -2.6, 0, 0.5, 1.0, 4, 0.3); fruitCrateInto(b, 2.7, 0, 0.4, 1.0, 0, -0.2);
+  for (let i = 0; i < 3; i++) b.cyl(0.12, 0.1, 0.34, [0xffb347, 0xe5383b, 0xd8d04a][i], 0.9 + i * 0.3, 1.27, 0.55, 0, 0, 0, { seg: 7 });
+};
+const fruitStall = () => prefab('fruitStall', () => {
+  const b = new Builder(0.88), g = new THREE.Group();
+  stallInto(b); g.add(b.build({ cast: true, receive: false }));
+  const s = signMesh('FRESH FRUIT', 3.2, 0.56, '#fff3d6', '#2f7a34', '#e5383b'); s.position.set(0, 2.2, 0.98); s.rotation.x = -0.2; g.add(s);
+  return g;
+});
+// A tractor with a trailer piled with apples, parked between the rows. It faces +z.
+const tractorInto = (b) => {
+  b.box(1.5, 0.9, 2.4, 0xe5383b, 0, 1.25, 0.4, 0, 0, 0, { grad: 0.85 }).box(1.4, 0.7, 1.4, 0xc22a2e, 0, 1.2, 1.9).box(1.5, 1.3, 1.3, 0x3a4252, 0, 2.3, -0.2, 0, 0, 0, { grad: 0.9 }).box(1.7, 0.1, 1.5, 0xe5383b, 0, 3.0, -0.2);
+  for (const sx of [-1, 1]) { b.cyl(0.95, 0.95, 0.5, 0x24262c, sx * 1.0, 0.95, -0.3, 0, 0, PI / 2, { seg: 14 }).cyl(0.45, 0.45, 0.54, 0xffd23f, sx * 1.0, 0.95, -0.3, 0, 0, PI / 2, { seg: 8 }); b.cyl(0.5, 0.5, 0.36, 0x24262c, sx * 0.85, 0.5, 2.0, 0, 0, PI / 2, { seg: 12 }).cyl(0.22, 0.22, 0.4, 0xffd23f, sx * 0.85, 0.5, 2.0, 0, 0, PI / 2, { seg: 7 }); b.sph(0.14, 0xfff3c0, sx * 0.45, 1.3, 2.62, 1, 1, 0.5, { seg: 6, glow: true, grad: 1 }); }
+  b.cyl(0.07, 0.07, 1.0, 0x3a4252, 0.5, 2.0, 2.2, 0, 0, 0, { seg: 6 });
+  b.box(2.0, 0.8, 3.0, 0x4f8f4a, 0, 1.0, -3.4, 0, 0, 0, { grad: 0.85 }).box(0.1, 0.1, 1.2, 0x3a4252, 0, 0.8, -1.5);
+  for (const sx of [-1, 1]) b.cyl(0.5, 0.5, 0.3, 0x24262c, sx * 1.1, 0.5, -3.6, 0, 0, PI / 2, { seg: 12 });
+  for (let i = 0; i < 26; i++) { const u = i / 26; b.sph(0.22, i % 5 ? ORCH.apple : 0x9acd32, -0.7 + ((i * 7) % 5) * 0.35, 1.46 + (i % 3) * 0.2 * (1 - Math.abs(u - 0.5)), -4.6 + u * 2.4, 1, 0.94, 1, { seg: 6 }); }
+};
+// A cottage that is a giant apple: door, round window, a chimney for a stalk. It faces +z.
+const appleHouseInto = (b) => {
+  b.sph(2.5, ORCH.apple, 0, 2.3, 0, 1.06, 0.96, 1.06, { seg: 16 }).sph(1.2, 0xff8a7a, 0.9, 3.4, 1.5, 1, 1, 0.5, { seg: 8 });
+  b.box(0.9, 1.5, 0.2, 0x7a4a2e, -0.3, 0.75, 2.5).cyl(0.45, 0.45, 0.2, 0x7a4a2e, -0.3, 1.5, 2.5, PI / 2, 0, 0, { seg: 10 }).sph(0.07, 0xffd23f, 0.0, 0.8, 2.64, 1, 1, 1, { seg: 5 });
+  b.cyl(0.42, 0.42, 0.14, 0xffe9a0, 1.2, 2.5, 2.2, PI / 2, 0.45, 0, { seg: 10, glow: true, grad: 1 }).tor(0.42, 0.06, 0xffffff, 1.2, 2.5, 2.26, 0, 0.45, 0, { seg: 10, tseg: 4 });
+  b.cyl(0.14, 0.2, 1.1, ORCH.bark, 0.2, 5.0, 0, 0, 0, 0.25, { seg: 6 }).sph(0.8, ORCH.leaf, 0.9, 5.3, 0, 1.5, 0.25, 0.8, { seg: 7 });
+  for (let i = 0; i < 3; i++) b.sph(0.2 + i * 0.07, 0xffffff, 0.0 + i * 0.16, 5.7 + i * 0.4, 0, 1, 1, 1, { seg: 6 });
+  for (let i = 0; i < 4; i++) b.cyl(0.34, 0.34, 0.06, 0xd9d2c4, -0.3 + (i % 2) * 0.2, 0.03, 3.3 + i * 0.8, 0, 0, 0, { seg: 7 });
+};
+// Everything that stands still in one stretch of Orchard Land, as one model.
+const orchSet = (k) => prefab('orchSet' + k, () => {
+  const b = new Builder(0.86), rng = makeRng(2510 + k);
+  const clear = k === 0 ? (sd, row, z) => sd > 0 && row === 0 && z === -12
+    : k === 1 ? (sd, row, z) => (sd < 0 && row === 0 && z === -12) || (sd > 0 && row < 2 && (z === -28 || (row === 0 && z === -20)))
+      : (sd, row, z) => (sd > 0 && row < 2 && (z === -20 || z === -28)) || (sd < 0 && row === 0 && (z === -12 || z === -20));
+  orchRowsInto(b, rng, clear);
+  if (k === 0) {
+    // a picker's ladder against a tree, and what has been picked so far
+    for (const sx of [-1, 1]) b.box(0.07, 3.2, 0.07, 0xc8964a, -7.6, 1.5, -28 + sx * 0.3, 0, 0, 0.3);
+    for (let i = 0; i < 8; i++) b.box(0.06, 0.05, 0.6, 0xc8964a, -7.14 - i * 0.115, 0.3 + i * 0.37, -28);
+    fruitCrateInto(b, -6.6, 0, -26.4, 1.0, 1, 0.5); fruitCrateInto(b, -6.9, 0, -29.8, 1.0, 1, -0.3);
+  } else if (k === 1) {
+    // beehives in a row (the bees are added by populate)
+    for (let i = 0; i < 3; i++) { const z = -10 - i * 1.9; b.box(0.9, 0.3, 0.8, 0x8a5a3c, -9, 0.15, z).box(0.86, 0.5, 0.76, [0xfff3d6, 0xffe27a, 0xa8dcf0][i], -9, 0.55, z).box(0.86, 0.5, 0.76, [0xffe27a, 0xa8dcf0, 0xfff3d6][i], -9, 1.06, z).prism(1.0, 0.3, 0.9, 0xc94a3a, -9, 1.31, z, 0).box(0.04, 0.05, 0.24, 0x24262c, -8.56, 0.4, z); }
+  } else {
+    b.at(11.5, 0, -24, -PI / 2, () => appleHouseInto(b));
+    b.at(-9.5, 0, -14, 0.25, () => tractorInto(b));
+  }
+  return b.build({ cast: true, receive: true });
+});
+// A big old apple tree with a tree house in it; one apple (the part named 'fall') keeps dropping off.
+const oldTree = () => prefab('oldTree', () => {
+  const b = new Builder(0.86), g = new THREE.Group();
+  b.cyl(0.5, 0.8, 3.4, ORCH.bark, 0, 1.7, 0, 0, 0, 0.05, { seg: 8 });
+  for (const [a, l] of [[0.9, 2.6], [-0.8, 2.4], [0.1, 2.0]]) b.cyl(0.2, 0.34, l, ORCH.bark, Math.sin(a) * l * 0.45, 3.2 + Math.cos(a) * l * 0.45, a * 0.3, 0, 0, -a, { seg: 6 });
+  for (const [x, y, z, r] of [[0, 5.8, 0, 2.6], [-2.2, 4.8, 0.6, 1.8], [2.3, 4.9, -0.4, 1.9], [0.4, 4.6, 1.8, 1.6], [-0.6, 7.2, -0.3, 1.5]]) b.add(new THREE.IcosahedronGeometry(1, 1), y > 5.5 ? ORCH.leaf : ORCH.leafD, x, y, z, 0, x, 0, r, r * 0.85, r, { grad: 0.72 });
+  for (let i = 0; i < 16; i++) { const u = (i + 0.5) / 16, ph = Math.acos(0.8 - 1.3 * u), th = i * 2.4; fruitInto(b, 0, Math.sin(ph) * Math.cos(th) * 2.9, 5.6 + Math.cos(ph) * 2.3, Math.sin(ph) * Math.sin(th) * 2.7, 0.2, 5); }
+  // the tree house, and the rope ladder up to it
+  b.box(2.2, 0.14, 1.8, 0xc8964a, -0.2, 3.3, 1.0).box(1.7, 1.3, 1.3, 0xfff3d6, -0.2, 4.0, 0.9, 0, 0, 0, { grad: 0.9 }).prism(2.0, 0.7, 1.6, 0xc94a3a, -0.2, 4.65, 0.9, 0).box(0.45, 0.8, 0.05, 0x7a4a2e, -0.5, 3.78, 1.56).box(0.4, 0.4, 0.05, 0xffe9a0, 0.3, 4.1, 1.56, 0, 0, 0, { glow: true, grad: 1 });
+  for (const sx of [-1, 1]) b.cyl(0.02, 0.02, 3.3, 0xe8d8a0, 0.7 + sx * 0.22, 1.65, 1.86, 0, 0, 0, { seg: 3 });
+  for (let i = 0; i < 8; i++) b.box(0.5, 0.04, 0.06, 0xc8964a, 0.7, 0.3 + i * 0.4, 1.86);
+  g.add(b.build({ cast: true, receive: false }));
+  const f = new Builder(0.9); fruitInto(f, 0, 0, 0, 0, 0.24, 7);
+  const m = f.build({ cast: true, receive: false }); m.name = 'fall'; m.position.set(2.6, 4.2, 1.6); g.add(m);
+  return g;
+});
+// Things that fly round and round (the part named 'spin' turns): 0 bees, 1 butterflies.
+const flutter = (v) => prefab('flutter' + v, () => {
+  const g = new THREE.Group(), b = new Builder(1);
+  for (let i = 0; i < 5; i++) {
+    const a = i * 1.257, r = v ? 1.2 + (i % 2) * 0.7 : 0.6 + (i % 3) * 0.4, x = Math.cos(a) * r, z = Math.sin(a) * r, y = (i % 3) * (v ? 0.5 : 0.35);
+    b.at(x, y, z, -a, () => {
+      if (v) { const c = [0xff8fb0, 0xffd23f, 0x5ad0e0, 0xffffff, 0xa070e0][i]; b.cap(0.025, 0.14, 0x24262c, 0, 0, 0, PI / 2, 0, 0, { seg: 4 }); for (const sx of [-1, 1]) b.sph(0.16, c, sx * 0.12, 0.08, 0.03, 0.9, 0.12, 1.1, { seg: 6 }).sph(0.1, c, sx * 0.1, 0.06, -0.12, 0.9, 0.12, 1, { seg: 5 }); }
+      else { b.sph(0.08, 0xffd23f, 0, 0, 0, 1, 1, 1.4, { seg: 6 }).sph(0.062, 0x24262c, 0, 0, -0.03, 1.02, 1.02, 0.4, { seg: 5 }).sph(0.05, 0x24262c, 0, 0, 0.1, 1, 1, 1, { seg: 5 }); for (const sx of [-1, 1]) b.sph(0.07, 0xffffff, sx * 0.07, 0.07, 0, 1.2, 0.2, 0.8, { seg: 4 }); }
+    });
+  }
+  const m = b.build({ cast: false, receive: false }); m.name = 'spin'; g.add(m);
+  return g;
+});
+// The worm who lives in the apple house, looking out of an upstairs window (it bobs up and down).
+const appleWorm = () => prefab('appleWorm', () => {
+  const b = new Builder(0.9);
+  for (let i = 0; i < 5; i++) b.sph(0.26, i % 2 ? 0xa8e070 : 0x8fd058, i * 0.05, i * 0.3, i * 0.1, 1, 1, 1, { seg: 8 });
+  for (const sx of [-1, 1]) b.sph(0.06, 0xffffff, sx * 0.1 + 0.2, 1.3, 0.6, 1, 1.2, 0.6, { seg: 6 }).sph(0.03, 0x1b1f24, sx * 0.1 + 0.2, 1.29, 0.64, 1, 1.2, 0.6, { seg: 5 });
+  b.tor(0.08, 0.016, 0x1b1f24, 0.2, 1.17, 0.63, 0.2, 0, PI, { arc: PI, seg: 7, tseg: 3 }).cone(0.2, 0.3, 0xe5383b, 0.22, 1.56, 0.4, 0, 0, -0.2, { seg: 8 }).sph(0.06, 0xffffff, 0.27, 1.72, 0.4, 1, 1, 1, { seg: 5 });
+  return b.build({ cast: false, receive: false });
+});
+// An arbour over the boards, covered in blossom, with fruit hanging from it.
+const orchArch = () => prefab('orchArch', () => {
+  const b = new Builder(0.88);
+  for (const sx of [-1, 1]) for (const dz of [-0.6, 0.6]) b.box(0.2, 5.6, 0.2, 0xfff3d6, sx * 5.3, 2.8, dz);
+  for (let i = 0; i <= 16; i++) {
+    const a = PI * i / 16, x = Math.cos(a) * 5.3, y = 5.4 + Math.sin(a) * 2.0;
+    for (const dz of [-0.6, 0.6]) b.box(1.1, 0.14, 0.14, 0xfff3d6, x, y, dz, 0, 0, a + PI / 2);
+    if (i % 2 === 0) b.box(0.1, 0.1, 1.3, 0xfff3d6, x, y, 0);
+    b.add(new THREE.IcosahedronGeometry(1, 0), [ORCH.blossom, ORCH.blossomW, ORCH.leaf][i % 3], x * 1.03, y + 0.2, (i % 2 ? 0.3 : -0.3), 0, i, 0, 0.75, 0.55, 0.9, { grad: 0.8 });
+    if (i > 2 && i < 14 && i % 3 === 0) { b.cyl(0.012, 0.012, 0.5, ORCH.bark, x, y - 0.4, 0, 0, 0, 0, { seg: 3 }); fruitInto(b, (i / 3) % 5 | 0, x, y - 0.8, 0, 0.2, 6); }
+  }
+  for (const sx of [-1, 1]) for (let i = 0; i < 5; i++) b.add(new THREE.IcosahedronGeometry(1, 0), i % 2 ? ORCH.blossom : ORCH.leaf, sx * (5.3 + (i % 2) * 0.2), 0.8 + i * 1.1, (i % 2 ? 0.4 : -0.4), 0, i, 0, 0.5, 0.6, 0.6, { grad: 0.8 });
+  return b.build({ cast: true, receive: false });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -2932,7 +3061,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); if (zone === 23) s.rotation.z = PI;   // (the sign for the Upside-Down World is upside down, of course)
   g.add(s);
   return g;
@@ -2945,7 +3074,7 @@ export function populate(group, rawIndex, zone, anim) {
   const rng = makeRng(index * 7919 + 13);
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
-  if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19) place(group, rail40(), L, 0, 0); }
+  if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19 && zone !== 25) place(group, rail40(), L, 0, 0); }
   const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && zone !== 23 && zone !== 24 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
@@ -3182,6 +3311,14 @@ export function populate(group, rawIndex, zone, anim) {
     else if (k === 1) { nod(0, -11.6, -0.45, -11, PI / 2 - 0.2, 1.05); nod(1, 7.9, -4.3, -34, -PI / 2, 1.55); }
     else nod(1, -7.9, -4.3, -12, PI / 2, 1.55);
     if (k !== 1) anim.push({ o: place(group, giraffeBalloon(), (index % 2 ? 1 : -1) * (20 + rng() * 6), 9 + rng() * 4, -8 - rng() * 24, rng() * 6.28), kind: 'bob', p: rng() * 6, amp: 2.2 });
+  } else if (zone === 25) {
+    // Orchard Land: the boards run between rows and rows of fruit trees, with grass either side
+    const k = index % 3;
+    place(group, orchSet(k), 0, 0, 0);
+    if (index % 2 === 1) place(group, orchArch(), 0, 0, -20);
+    if (k === 0) { place(group, fruitStall(), 9.6, 0, -12, -PI / 2); anim.push({ o: place(group, flutter(1), -6.5, 1.3, -14), kind: 'spin', v: 0.9 }); }
+    else if (k === 1) { anim.push({ o: place(group, flutter(0), -8.8, 1.3, -11.9), kind: 'spin', v: 2.6 }); anim.push({ o: place(group, oldTree(), 11.5, 0, -27, -PI / 2), kind: 'fall', p: rng() }); }
+    else { anim.push({ o: place(group, appleWorm(), 10.0, 3.9, -24, -PI / 2), kind: 'bob', p: rng() * 6, amp: 2 }); anim.push({ o: place(group, flutter(1), 6.6, 1.4, -8), kind: 'spin', v: 0.9 }); }
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }
@@ -3322,6 +3459,10 @@ export function animate(anim, t, dt) {
       const amp = a.amp || 1;
       a.o.position.y = (a.baseY ?? (a.baseY = a.o.position.y)) + Math.sin(t * 1.3 + a.p) * 0.18 * amp;
       a.o.rotation.z = Math.sin(t * 1.1 + a.p * 1.7) * 0.07 * amp; a.o.rotation.x = Math.sin(t * 0.9 + a.p) * 0.04 * amp;
+    } else if (a.kind === 'fall') {
+      // an apple hangs for a while, drops, lies in the grass, and then there is another one
+      const c = a.c || (a.c = a.o.getObjectByName('fall')), y0 = a.y0 ?? (a.y0 = c.position.y), u = (t * 0.22 + a.p) % 1;
+      c.position.y = u < 0.6 ? y0 : u < 0.72 ? Math.max(0.24, y0 - (y0 - 0.24) * ((u - 0.6) / 0.12) ** 2) : 0.24;
     } else if (a.kind === 'nod') {
       // a giraffe: the neck sways, and every so often dips for a closer look
       const n = a.n || (a.n = a.o.getObjectByName('neck'));

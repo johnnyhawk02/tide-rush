@@ -2282,6 +2282,147 @@ def('oxpecker', 'deco', 2.0, 1.0, 1.2, (b) => {
   wings: (b, sx) => { b.sph(0.42, 0x8a6a4a, sx * 0.4, 0, 0, 1.2, 0.12, 0.6, { seg: 8 }).sph(0.26, 0x6a4f38, sx * 0.82, 0, -0.06, 1.3, 0.1, 0.5, { seg: 7 }); }, wingAt: [0.24, 0.06, 0],
 });
 
+// ---------- Orchard Land ----------
+export const ORCH = { leaf: 0x5fae3c, leafD: 0x4a9432, bark: 0x7a5a3c, apple: 0xe5383b, pear: 0xd8d04a, orange: 0xff9a2e, plum: 0x8a4fb0, cherry: 0xc8203a, blossom: 0xffc0d8, blossomW: 0xfff0f4, crate: 0xc8964a, crateD: 0xa87a3a, straw: 0xe8c860 };
+const FRUITS = [ORCH.apple, ORCH.pear, ORCH.orange, ORCH.plum, ORCH.cherry];
+// One fruit, r across: 0 an apple, 1 a pear, 2 an orange, 3 a plum, 4 a cherry.
+export function fruitInto(b, kind, x, y, z, r = 0.12, seg = 7) {
+  const c = FRUITS[kind];
+  if (kind === 1) b.sph(r, c, x, y, z, 1, 1, 1, { seg }).sph(r * 0.66, c, x, y + r * 0.8, z, 1, 1.1, 1, { seg });
+  else b.sph(r, c, x, y, z, 1, kind === 3 ? 1.2 : 0.92, 1, { seg });
+  b.cyl(r * 0.07, r * 0.07, r * 0.5, ORCH.bark, x, y + r * (kind === 1 ? 1.6 : 1.05), z, 0, 0, 0.3, { seg: 4 });
+  if (kind !== 2) b.sph(r * 0.4, ORCH.leaf, x + r * 0.4, y + r * (kind === 1 ? 1.7 : 1.15), z, 1.5, 0.3, 0.8, { seg: 5 });
+}
+// A slatted crate, w wide, heaped with fruit of one kind.
+export function fruitCrateInto(b, x, y, z, w = 1.0, kind = 0, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    const d = w * 0.7, h = w * 0.5;
+    b.box(w, h * 0.3, d, ORCH.crateD, 0, h * 0.15, 0);
+    for (let i = 0; i < 3; i++) b.box(w, h * 0.22, 0.04, ORCH.crate, 0, h * (0.14 + i * 0.36), d / 2).box(w, h * 0.22, 0.04, ORCH.crate, 0, h * (0.14 + i * 0.36), -d / 2).box(0.04, h * 0.22, d, ORCH.crate, w / 2, h * (0.14 + i * 0.36), 0).box(0.04, h * 0.22, d, ORCH.crate, -w / 2, h * (0.14 + i * 0.36), 0);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(0.06, h, 0.06, ORCH.crateD, sx * w / 2, h / 2, sz * d / 2);
+    const r = w * 0.13;
+    for (let i = 0; i < 3; i++) for (let k = 0; k < 2; k++) fruitInto(b, kind, (i - 1) * w * 0.29, h * 0.95 + (i === 1 ? r * 0.5 : 0), (k - 0.5) * d * 0.5 + (i % 2) * 0.03, r);
+    fruitInto(b, kind, w * 0.1, h * 0.95 + r * 1.5, 0, r);
+  });
+}
+// A fruit tree made of few, flat faces (there are whole rows of them): about 3.6 s high. `kind` is its fruit (see fruitInto), or 5 and
+// 6 for a tree all in pink or white blossom.
+export function orchTreeInto(b, x, y, z, s = 1, kind = 0, a0 = 0) {
+  const leaf = kind === 5 ? ORCH.blossom : kind === 6 ? ORCH.blossomW : (kind % 2 ? ORCH.leafD : ORCH.leaf);
+  b.cyl(0.13 * s, 0.2 * s, 1.5 * s, ORCH.bark, x, y + 0.75 * s, z, 0, 0, 0, { seg: 5 });
+  b.add(new THREE.IcosahedronGeometry(1, 1), leaf, x, y + 2.4 * s, z, 0, a0, 0, 1.35 * s, 1.15 * s, 1.35 * s, { grad: 0.72 });
+  b.add(new THREE.IcosahedronGeometry(1, 0), kind >= 5 ? 0xffffff : ORCH.leaf, x + 0.5 * s, y + 3.05 * s, z - 0.2 * s, 0, a0 * 2, 0, 0.75 * s, 0.6 * s, 0.75 * s, { grad: 0.8 });
+  if (kind < 5) for (let i = 0; i < 8; i++) { const u = (i + 0.5) / 8, ph = Math.acos(0.9 - 1.5 * u), th = i * 2.4 + a0; b.add(new THREE.OctahedronGeometry(1, 0), FRUITS[kind], x + Math.sin(ph) * Math.cos(th) * 1.33 * s, y + 2.4 * s + Math.cos(ph) * 1.1 * s, z + Math.sin(ph) * Math.sin(th) * 1.33 * s, 0, 0, 0, 0.14 * s, 0.14 * s, 0.14 * s); }
+}
+// A hedgehog facing +x, about 0.5 high, with something speared on its prickles.
+function hedgehogInto(b, x, y, z, s = 1) {
+  b.at(x, y, z, 0, () => {
+    b.sph(0.34, 0x6a4a32, 0, 0.3, 0, 1.25, 0.85, 1, { seg: 9 }).sph(0.2, 0xe0c090, 0.36, 0.22, 0, 1.3, 0.85, 0.9, { seg: 8 }).sph(0.045, 0x1b1f24, 0.62, 0.2, 0, 1, 1, 1, { seg: 5 });
+    for (const sz of [-1, 1]) { b.sph(0.03, 0x1b1f24, 0.46, 0.3, sz * 0.11, 1, 1, 1, { seg: 5 }).sph(0.06, 0x6a4a32, 0.3, 0.4, sz * 0.16, 0.6, 1, 1, { seg: 5 }); for (const sx of [-1, 1]) b.sph(0.06, 0xe0c090, sx * 0.2 + 0.05, 0.05, sz * 0.18, 1.3, 0.7, 1, { seg: 5 }); }
+    for (let i = 0; i < 22; i++) { const u = (i + 0.5) / 22, ph = Math.acos(1 - 1.15 * u), th = i * 2.4; const nx = Math.sin(ph) * Math.cos(th), ny = Math.cos(ph), nz = Math.sin(ph) * Math.sin(th); if (nx > 0.75) continue; b.cone(0.045, 0.2, 0x4a3424, nx * 0.42 - 0.02, 0.3 + ny * 0.3, nz * 0.34, nz * 1.2, 0, -nx * 1.2, { seg: 4 }); }
+  }, s);
+}
+def('fruitCrate', 'low', 1.4, 0.9, 1.0, (b) => {
+  // a crate heaped with apples, and a smaller one of pears on the side
+  fruitCrateInto(b, -0.12, 0, 0, 1.1, 0, 0.1); fruitCrateInto(b, 0.5, 0, 0.3, 0.5, 1, -0.5);
+});
+def('fruitBaskets', 'low', 1.5, 0.85, 1.0, (b) => {
+  // two baskets, one of plums and one of oranges
+  for (const sx of [-1, 1]) {
+    b.cyl(0.36, 0.28, 0.4, 0xc8964a, sx * 0.36, 0.2, 0, 0, 0, 0, { seg: 10 }).tor(0.36, 0.03, 0xa87a3a, sx * 0.36, 0.4, 0, PI / 2, 0, 0, { seg: 10, tseg: 4 }).tor(0.34, 0.025, 0xa87a3a, sx * 0.36, 0.4, 0, 0, 0.4, 0, { arc: PI, seg: 10, tseg: 4 });
+    for (let i = 0; i < 6; i++) fruitInto(b, sx > 0 ? 2 : 3, sx * 0.36 + Math.cos(i * 1.05) * (i < 5 ? 0.18 : 0), 0.44 + (i === 5 ? 0.14 : 0), Math.sin(i * 1.05) * (i < 5 ? 0.18 : 0), 0.11, 6);
+  }
+});
+def('wheelbarrow', 'low', 1.3, 0.95, 1.4, (b) => {
+  // a wheelbarrow full of oranges
+  b.box(0.8, 0.36, 1.0, 0x4f8f4a, 0, 0.52, 0, 0.12, 0, 0, { grad: 0.85 }).box(0.7, 0.04, 0.9, 0x3a6f38, 0, 0.36, 0, 0.12, 0, 0);
+  b.cyl(0.2, 0.2, 0.1, 0x24262c, 0, 0.2, 0.62, 0, 0, PI / 2, { seg: 10 }).cyl(0.07, 0.07, 0.12, 0xc8c0d8, 0, 0.2, 0.62, 0, 0, PI / 2, { seg: 6 });
+  for (const sx of [-1, 1]) b.cyl(0.03, 0.03, 0.9, 0x8a5a3c, sx * 0.34, 0.5, -0.76, PI / 2 - 0.25, 0, 0, { seg: 5 }).cyl(0.03, 0.03, 0.42, 0x3a4252, sx * 0.3, 0.2, -0.34, 0.2, 0, 0, { seg: 5 });
+  for (let i = 0; i < 9; i++) fruitInto(b, 2, (i % 3 - 1) * 0.24, 0.76 + (i > 5 ? 0.14 : 0), (Math.floor(i / 3) - 1) * 0.28 * (i > 5 ? 0.4 : 1), 0.13, 6);
+});
+def('wormApple', 'low', 1.2, 0.98, 1.1, (b) => {
+  // an enormous apple, and the worm who lives in it saying hello
+  b.sph(0.46, ORCH.apple, 0, 0.44, 0, 1.08, 0.96, 1.08, { seg: 12 }).sph(0.2, 0xff8a7a, 0.2, 0.62, 0.3, 1, 1, 0.5, { seg: 6 });
+  b.cyl(0.03, 0.03, 0.16, ORCH.bark, 0, 0.9, 0, 0, 0, 0.2, { seg: 5 }).sph(0.14, ORCH.leaf, 0.14, 0.94, 0, 1.5, 0.3, 0.8, { seg: 6 });
+  b.sph(0.11, 0x4a2c20, -0.14, 0.5, 0.46, 1, 1, 0.3, { seg: 7 });
+  for (let i = 0; i < 4; i++) b.sph(0.085, i % 2 ? 0xa8e070 : 0x8fd058, -0.14 - i * 0.012, 0.5 + i * 0.05, 0.5 + i * 0.075, 1, 1, 1, { seg: 7 });
+  for (const sx of [-1, 1]) b.sph(0.022, 0x1b1f24, -0.18 + sx * 0.04, 0.68, 0.79, 1, 1, 1, { seg: 4 });
+  b.tor(0.03, 0.008, 0x1b1f24, -0.18, 0.63, 0.795, 0, 0, PI, { arc: PI, seg: 6, tseg: 3 });
+});
+def('wateringCan', 'low', 1.4, 0.9, 1.0, (b) => {
+  // a watering can and three pots of seedlings
+  b.cyl(0.3, 0.3, 0.56, 0x5ad0e0, -0.3, 0.28, 0, 0, 0, 0, { seg: 10 }).cyl(0.045, 0.06, 0.6, 0x5ad0e0, 0.1, 0.4, 0, 0, 0, -0.9, { seg: 6 }).cyl(0.12, 0.05, 0.1, 0x5ad0e0, 0.36, 0.6, 0, 0, 0, -0.9, { seg: 8 }).tor(0.2, 0.03, 0x3ab0c0, -0.56, 0.36, 0, 0, 0, 0, { seg: 9, tseg: 4 });
+  for (let i = 0; i < 3; i++) { const x = 0.22 + i * 0.2, z = 0.36 - i * 0.26; b.cyl(0.1, 0.075, 0.16, 0xc8704a, x, 0.08, z, 0, 0, 0, { seg: 7 }).cyl(0.012, 0.012, 0.16, ORCH.leafD, x, 0.24, z, 0, 0, 0, { seg: 3 }); for (const s of [-1, 1]) b.sph(0.05, ORCH.leaf, x + s * 0.05, 0.32, z, 1.3, 0.3, 0.8, { seg: 5 }); }
+});
+def('stepLadder', 'tall', 1.4, 2.7, 1.2, (b) => {
+  // a picker's ladder with a basket of cherries on the top step
+  for (const sx of [-1, 1]) b.box(0.07, 2.5, 0.07, 0xc8964a, sx * 0.4, 1.2, 0.32, 0.26, 0, 0).box(0.07, 2.5, 0.07, 0xa87a3a, sx * 0.4, 1.2, -0.32, -0.26, 0, 0);
+  for (let i = 0; i < 6; i++) b.box(0.86, 0.05, 0.14, 0xc8964a, 0, 0.3 + i * 0.36, 0.56 - i * 0.097, 0.26, 0, 0);
+  b.box(0.95, 0.07, 0.4, 0xc8964a, 0, 2.38, 0).cyl(0.26, 0.2, 0.26, 0xc8964a, 0, 2.54, 0, 0, 0, 0, { seg: 9 });
+  for (let i = 0; i < 5; i++) fruitInto(b, 4, Math.cos(i * 1.257) * 0.12, 2.7, Math.sin(i * 1.257) * 0.12, 0.08, 6);
+});
+def('sapling', 'tall', 1.6, 2.8, 1.6, (b) => {
+  // a young tree in blossom, tied to its stake
+  orchTreeInto(b, 0, 0, 0, 0.8, 5, 0.4);
+  b.cyl(0.035, 0.045, 1.5, 0xc8964a, 0.24, 0.75, 0, 0, 0, 0, { seg: 5 }).tor(0.14, 0.02, 0xe5383b, 0.12, 1.0, 0, PI / 2, 0, 0, { seg: 8, tseg: 3 });
+  for (const [x, z] of [[0.5, 0.4], [-0.4, 0.5], [0.1, -0.5]]) b.sph(0.06, ORCH.blossom, x, 0.03, z, 1, 0.3, 1, { seg: 5 });
+});
+def('beeHives', 'tall', 1.3, 2.6, 1.2, (b) => {
+  // a tall stack of beehive boxes, with the bees at home
+  b.box(1.0, 0.1, 0.9, 0x8a5a3c, 0, 0.3, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(0.08, 0.3, 0.08, 0x8a5a3c, sx * 0.4, 0.15, sz * 0.34);
+  for (let i = 0; i < 4; i++) b.box(0.95 - (i % 2) * 0.04, 0.46, 0.85, [0xfff3d6, 0xffe27a, 0xfff3d6, 0xa8dcf0][i], 0, 0.58 + i * 0.47, 0, 0, 0, 0, { grad: 0.9 });
+  b.prism(1.1, 0.34, 1.0, 0xc94a3a, 0, 2.28, 0, PI / 2).box(0.3, 0.05, 0.04, 0x24262c, 0, 0.42, 0.44).box(0.4, 0.04, 0.16, 0x8a5a3c, 0, 0.37, 0.5);
+  for (const [x, y, z] of [[0.3, 1.0, 0.5], [-0.34, 1.7, 0.52], [0.1, 2.2, 0.56], [-0.2, 0.62, 0.56], [0.56, 1.9, 0.2]]) { b.sph(0.06, 0xffd23f, x, y, z, 1.4, 1, 1, { seg: 6 }).sph(0.045, 0x24262c, x - 0.04, y, z, 0.5, 1.02, 1.02, { seg: 5 }).sph(0.04, 0xffffff, x, y + 0.06, z, 1.2, 0.3, 1.6, { seg: 4 }); }
+});
+def('scareFriend', 'tall', 1.5, 2.8, 0.9, (b) => {
+  // a scarecrow who has made friends with the birds
+  b.cyl(0.05, 0.05, 2.3, 0x8a5a3c, 0, 1.15, 0, 0, 0, 0, { seg: 5 }).cyl(0.045, 0.045, 1.5, 0x8a5a3c, 0, 1.8, 0, 0, 0, PI / 2, { seg: 5 });
+  b.box(0.62, 0.8, 0.3, 0x4f8fe0, 0, 1.56, 0, 0, 0, 0, { grad: 0.85 }).box(0.5, 0.7, 0.34, 0xe5383b, 0, 1.2, 0.0).box(0.16, 0.16, 0.02, 0xffd23f, 0.12, 1.3, 0.18);
+  for (const sx of [-1, 1]) { b.box(0.5, 0.26, 0.26, 0x4f8fe0, sx * 0.5, 1.8, 0); for (let i = 0; i < 3; i++) b.cone(0.03, 0.2, ORCH.straw, sx * (0.8 + i * 0.02), 1.8 + (i - 1) * 0.06, 0, 0, 0, sx * -PI / 2 + (i - 1) * 0.3, { seg: 4 }); }
+  b.sph(0.28, 0xf0d8a8, 0, 2.2, 0, 1, 1, 1, { seg: 10 }).cone(0.5, 0.16, ORCH.straw, 0, 2.42, 0, 0, 0, 0, { seg: 12 }).cyl(0.2, 0.24, 0.2, ORCH.straw, 0, 2.54, 0, 0, 0, 0, { seg: 9 }).tor(0.23, 0.025, 0xe5383b, 0, 2.47, 0, PI / 2, 0, 0, { seg: 9, tseg: 3 });
+  for (const sx of [-1, 1]) b.sph(0.04, 0x1b1f24, sx * 0.1, 2.24, 0.26, 1, 1, 0.5, { seg: 5 });
+  b.cone(0.05, 0.16, 0xff8a3c, 0, 2.17, 0.3, PI / 2, 0, 0, { seg: 5 }).tor(0.1, 0.014, 0x7a2a2a, 0, 2.12, 0.25, 0.2, 0, PI, { arc: PI, seg: 7, tseg: 3 });
+  b.sph(0.08, 0x3a4252, 0.66, 1.98, 0, 1, 0.9, 1.3, { seg: 6 }).sph(0.05, 0x3a4252, 0.66, 2.06, 0.08, 1, 1, 1, { seg: 5 }).cone(0.02, 0.06, 0xffb347, 0.66, 2.05, 0.14, PI / 2, 0, 0, { seg: 4 });
+});
+def('juiceBarrels', 'tall', 1.4, 2.6, 1.2, (b) => {
+  // three barrels of apple juice, one on top of another, with a tap and a cup
+  for (let i = 0; i < 3; i++) {
+    const y = 0.42 + i * 0.84, r = 0.52 - i * 0.04;
+    b.cyl(r * 0.84, r * 0.84, 0.8, 0xb5814f, 0, y, 0, 0, 0, 0, { seg: 12 }).cyl(r, r, 0.36, 0xc8964a, 0, y, 0, 0, 0, 0, { seg: 12 });
+    for (const dy of [-0.3, 0.3]) b.tor(r * 0.9, 0.025, 0x4a4456, 0, y + dy, 0, PI / 2, 0, 0, { seg: 12, tseg: 3 });
+  }
+  b.cyl(0.03, 0.03, 0.2, 0xc8c0d8, 0, 0.36, 0.54, PI / 2, 0, 0, { seg: 5 }).box(0.1, 0.03, 0.03, 0xe5383b, 0, 0.42, 0.62).cyl(0.07, 0.055, 0.12, 0xffffff, 0, 0.06, 0.66, 0, 0, 0, { seg: 7 });
+  fruitInto(b, 0, 0, 2.62, 0, 0.16);
+});
+def('rollApple', 'low', 1.1, 1.0, 1.0, (b) => {
+  // a great big apple rolling down the lane
+  b.sph(0.5, ORCH.apple, 0, 0, 0, 1, 0.94, 1, { seg: 12 }).sph(0.3, 0xffd23f, 0.2, -0.1, 0.28, 1, 1, 0.5, { seg: 6 });
+  b.cyl(0.035, 0.035, 0.2, ORCH.bark, 0, 0.5, 0, 0, 0, 0.3, { seg: 5 }).sph(0.16, ORCH.leaf, 0.16, 0.54, 0, 1.5, 0.3, 0.8, { seg: 6 }).sph(0.07, 0x4a3424, 0, -0.46, 0, 1, 0.4, 1, { seg: 5 });
+}, { center: true });
+def('honeyPot', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the bumblebee drops: a pot of honey, rolling
+  b.sph(0.44, 0xe0a030, 0, 0, 0, 1, 0.92, 1, { seg: 11 }).cyl(0.3, 0.34, 0.14, 0xfff3d6, 0, 0.36, 0, 0, 0, 0, { seg: 10 }).sph(0.3, 0xffd23f, 0, 0.4, 0, 1, 0.3, 1, { seg: 8 });
+  b.box(0.36, 0.2, 0.02, 0xfff3d6, 0, 0, 0.43).sph(0.1, 0xffd23f, 0.3, 0.2, 0.22, 1, 1.6, 0.6, { seg: 6 });
+}, { center: true });
+def('hedgeTrot', 'low', 1.3, 0.95, 0.9, (b) => {
+  // a hedgehog hurrying home with an apple on its prickles; it faces +x
+  hedgehogInto(b, 0, 0, 0, 1.1);
+  fruitInto(b, 0, -0.08, 0.78, 0, 0.17);
+});
+def('bumble', 'deco', 2.0, 1.1, 1.3, (b) => {
+  // a bumblebee as big as a football, carrying a pot of honey
+  b.sph(0.4, 0xffd23f, 0, 0, 0, 1, 0.95, 1.25, { seg: 11 });
+  for (const z of [-0.2, 0.14]) b.cyl(0.39 - Math.abs(z) * 0.2, 0.39 - Math.abs(z) * 0.2, 0.14, 0x24262c, 0, 0, z, PI / 2, 0, 0, { seg: 12 });
+  b.sph(0.26, 0x24262c, 0, 0.04, 0.48, 1, 1, 0.9, { seg: 9 }).cone(0.07, 0.2, 0x24262c, 0, -0.02, -0.56, -PI / 2, 0, 0, { seg: 5 });
+  for (const sx of [-1, 1]) { b.sph(0.08, 0xffffff, sx * 0.12, 0.1, 0.68, 1, 1.15, 0.6, { seg: 7 }).sph(0.04, 0x1b1f24, sx * 0.12, 0.09, 0.73, 1, 1.15, 0.6, { seg: 5 }).sph(0.05, 0xff8fb0, sx * 0.2, -0.04, 0.66, 1, 0.7, 0.4, { seg: 5 }); b.cyl(0.012, 0.012, 0.26, 0x24262c, sx * 0.08, 0.36, 0.5, 0.3, 0, sx * -0.3, { seg: 3 }).sph(0.035, 0x24262c, sx * 0.12, 0.48, 0.54, 1, 1, 1, { seg: 4 }); }
+  b.tor(0.07, 0.014, 0xffffff, 0, -0.04, 0.7, 0.2, 0, PI, { arc: PI, seg: 6, tseg: 3 });
+  b.sph(0.22, 0xe0a030, 0, -0.56, 0.05, 1, 0.92, 1, { seg: 8 }).cyl(0.15, 0.17, 0.08, 0xfff3d6, 0, -0.38, 0.05, 0, 0, 0, { seg: 8 });
+  for (const sx of [-1, 1]) b.cyl(0.014, 0.014, 0.22, 0x24262c, sx * 0.12, -0.3, 0.05, 0, 0, sx * 0.3, { seg: 3 });
+}, {
+  wings: (b, sx) => { b.sph(0.36, 0xeaf6ff, sx * 0.3, 0.08, 0, 1.2, 0.08, 0.6, { seg: 8 }).sph(0.24, 0xd8ecfa, sx * 0.26, 0.04, -0.3, 1.1, 0.08, 0.55, { seg: 7 }); }, wingAt: [0.16, 0.3, 0],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -2884,10 +3025,12 @@ export const TALL_TYPES = {
   22: ['speakerStack', 'lavaLamp', 'jukebox', 'neonNote', 'ballStand', 'speakerStack'],
   23: ['upTree', 'upLamp', 'upHut', 'headTeddy', 'upBrolly', 'upTree'],
   24: ['youngGiraffe', 'acaciaTree', 'tallDoor', 'topiary', 'heightChart', 'youngGiraffe'],
+  25: ['stepLadder', 'sapling', 'beeHives', 'scareFriend', 'juiceBarrels', 'sapling'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
 export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'],
   21: ['pxCrate', 'cubeJelly', 'retroTV', 'joystick', 'pxBush', 'cubeJelly'],
   22: ['recordStack', 'boomBox', 'platformShoes', 'floorLights', 'miniBall', 'boomBox'],
   23: ['upCone', 'upBoat', 'upTable', 'upBucket', 'upHat', 'upCone'],
-  24: ['calfNap', 'leafBasket', 'hoofBoots', 'scarfPile', 'antHill', 'calfNap'] };
+  24: ['calfNap', 'leafBasket', 'hoofBoots', 'scarfPile', 'antHill', 'calfNap'],
+  25: ['fruitCrate', 'fruitBaskets', 'wheelbarrow', 'wormApple', 'wateringCan', 'fruitCrate'] };
