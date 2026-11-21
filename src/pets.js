@@ -1,74 +1,148 @@
 // Robyn's pets, who join her run every so often: Izzi the border collie and Pixel the black and white cat.
 // They follow the exact path Robyn took a moment ago, so they dodge and jump everything she did.
+// Like Robyn they are chunky cartoon animals sculpted from soft shapes (see sculpt.js): big heads, big eyes, fluffy tails.
 import * as THREE from 'three';
-import { Builder, C, MAT } from './kit.js';
+import { C } from './kit.js';
+import { Sculptor, Bendy, mix, sstep } from './sculpt.js';
 import { clamp, damp, lerp, smooth } from './config.js';
 
-const PI = Math.PI, K = 0x1d1d23, W = 0xf7f5ef, PINK = 0xf59aa8;
+const PI = Math.PI, K = 0x2a2a33, K_L = 0x41414f, W = 0xf7f5ef, PINK = 0xf59aa8, TONGUE = 0xf27c92, NOSE = 0x17171c;
+const FUR = 0.82, SHINY = 0.14;      // how the light catches fur, and wet noses and eyes
 const rand = (a, b) => a + Math.random() * (b - a);
-function part(fn) { const b = new Builder(0.86); fn(b); return b.build({ cast: true, receive: false, material: MAT.glossy }); }
-function limb(parent, x, y, z, fn) { const g = new THREE.Group(); g.position.set(x, y, z); g.add(part(fn)); parent.add(g); return g; }
+function part(fn) { const b = new Sculptor(0.86); fn(b); return b.part(); }
+function limb(parent, x, y, z, fn) { const g = new THREE.Group(); g.position.set(x, y, z); if (fn) g.add(part(fn)); parent.add(g); return g; }
+
+// A big cartoon eye at (x, y, z), r across, looking forwards and turned a little outwards (o.turn): a glossy dome with the
+// pupil, the iris and its rim painted on in rings, and two catch lights.
+//   o.white: show the white of the eye round the iris (a dog's eye); otherwise the iris fills it (a cat's)   o.slit: an upright oval pupil
+function eye(b, x, y, z, r, iris, o = {}) {
+  const I = o.white ? 0.8 : 0.9, oval = (a, ax, ay) => 1 / Math.hypot(Math.cos(a) / ax, Math.sin(a) / ay);
+  const P = (a) => I * (o.slit ? oval(a, 0.42, 0.9) : 0.64), bulge = 0.42;
+  const rows = [() => 0, P, (a) => P(a) + 0.03, (a) => (P(a) + I) / 2 + 0.02, () => I, () => I + 0.03, () => 1];
+  const dark = mix(iris, 0x000000, 0.5).getHex(), light = mix(iris, 0xffffff, 0.22).getHex(), rim = o.white ? 0xfdfbf6 : 0x0b0b0f;
+  const paint = [0x0b0b0f, 0x0b0b0f, light, iris, dark, rim, rim];
+  b.at(x, y, z, o.turn || 0, () => {
+    b.finish(SHINY, 0).surf(18, 6, (u, v, out) => {
+      const a = u * PI * 2, q = rows[Math.round(v * 6)](a);
+      out.set(Math.cos(a) * q * r, Math.sin(a) * q * r * 1.08, -r * bulge * Math.sqrt(Math.max(0, 1 - q * q)));
+    }, (u, v) => paint[Math.round(v * 6)], 0, 0, 0, { grad: 1 });
+    b.ball(r * 0.25, 0xffffff, r * 0.3, r * 0.36, -r * 0.38, 1, 1, 0.3, { seg: 6, grad: 1 });      // catch lights
+    b.ball(r * 0.11, 0xffffff, -r * 0.3, -r * 0.34, -r * 0.36, 1, 1, 0.3, { seg: 5, grad: 1 });
+  });
+}
+// a rounded paw at the bottom of a leg, with toes
+function paw(b, y, z, r, c) {
+  b.finish(FUR).ball(r, c, 0, y, z, 1, 0.64, 1.3, { seg: 10 });
+  for (const k of [-1, 0, 1]) b.ball(r * 0.36, c, k * r * 0.52, y - r * 0.12, z - r * 0.98 + Math.abs(k) * r * 0.2, 1, 0.9, 1.1, { seg: 6 });
+}
+const CHEEK = (r) => [r * 0.85, r, r * 0.62, r * 0.14];     // cheek fur comes to a soft point
+const CURL = [0, -0.2, -0.3, -0.38, -0.42];                   // how far each length of the cat's tail turns from the one before
 
 // Both animals are built facing -Z, like Robyn.
 function buildIzzi() {
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
   body.add(part((b) => {
-    b.sph(0.19, K, 0, 0.44, 0.03, 0.95, 0.95, 2.1, { seg: 12 });               // black back and sides
-    b.sph(0.17, W, 0, 0.4, -0.27, 0.95, 1.0, 1.1, { seg: 10 });                // white chest
-    b.sph(0.19, W, 0, 0.5, -0.29, 1.03, 0.92, 0.55, { seg: 10 });              // the white ruff round her neck
-    b.sph(0.13, W, 0, 0.32, 0.0, 0.8, 0.5, 1.9, { seg: 8 });                   // pale tummy
-    b.sph(0.175, K, 0, 0.47, 0.3, 1.0, 1.0, 0.9, { seg: 10 });                 // haunches
-    for (const sx of [-1, 1]) b.cap(0.04, 0.12, K, sx * 0.1, 0.36, 0.43, 0.5, 0, 0);   // feathery fur behind the back legs
-    b.tor(0.118, 0.022, C.red, 0, 0.56, -0.33, 1.15, 0, 0, { seg: 12 }).sph(0.03, C.gold, 0, 0.46, -0.41, 1, 1, 0.5);   // collar and tag
+    b.finish(FUR);
+    // black back and sides (a little paler along the top, where the light catches her coat), white chest and tummy
+    b.tube([[0, 0.455, -0.26], [0, 0.465, -0.1], [0, 0.455, 0.1], [0, 0.445, 0.3]], [0.15, 0.188, 0.172, 0.152, 0.166, 0.135],
+      (t, a, x, y, z) => mix(mix(K, K_L, sstep(0.52, 0.64, y)), W, Math.max(sstep(-0.1, -0.2, z) * sstep(0.5, 0.4, y), sstep(0.34, 0.3, y) * sstep(0.2, 0.05, z))), { seg: 18, len: 14, wide: 0.9 });
+    // her neck, and the thick white ruff round it that runs down her chest
+    b.tube([[0, 0.47, -0.25], [0, 0.6, -0.33], [0, 0.69, -0.4]], [0.15, 0.135, 0.112], W, { seg: 12, len: 6 });
+    b.ball(1, W, 0, 0.5, -0.295, 0.172, 0.165, 0.15, { seg: 14, rx: -0.55 });
+    for (let k = -2; k <= 2; k++) b.tuft(k * 0.06, 0.435 + Math.abs(k) * 0.04, -0.375 + Math.abs(k) * 0.04, k * 0.01, -0.075, 0.03, 0.082 - Math.abs(k) * 0.008, W);     // the fluffy edge of her bib
+    b.finish(0.5).ring(0.117, 0.02, C.red, 0, 0.652, -0.372, { seg: 18, tseg: 6, rx: -0.6 });       // collar and tag
+    b.finish(0.3).ball(0.03, C.gold, 0, 0.585, -0.48, 1, 1, 0.5, { seg: 8 });
   }));
-  const head = limb(body, 0, 0.66, -0.42, (b) => {
-    b.sph(0.135, K, 0, 0, 0, 1, 0.95, 1.05, { seg: 12 });
-    b.sph(0.05, W, 0, 0.055, -0.095, 0.55, 1.4, 1.1, { seg: 8 });              // white blaze up her forehead
-    b.sph(0.085, W, 0, -0.045, -0.14, 0.9, 0.75, 1.5, { seg: 10 });            // white muzzle
-    b.sph(0.032, 0x15151a, 0, -0.02, -0.265, 1.2, 0.9, 0.9, { seg: 8 });       // nose
-    b.box(0.05, 0.012, 0.1, 0xf07f95, 0, -0.105, -0.2, 0.3, 0, 0);             // tongue out
-    for (const sx of [-1, 1]) b.sph(0.024, 0x6b3f1d, sx * 0.062, 0.025, -0.115, 1, 1, 0.6, { seg: 7, grad: 1 }).sph(0.008, 0xffffff, sx * 0.066, 0.034, -0.132, 1, 1, 1, { seg: 5, grad: 1 });
+  const head = limb(body, 0, 0.745, -0.445, (b) => {
+    b.finish(FUR).ball(0.155, K, 0, 0, 0, 1.08, 0.97, 1.02, { seg: 18 });
+    for (const sx of [-1, 1]) for (const k of [0, 1]) b.tuft(sx * 0.118, -0.01 - k * 0.04, 0.005 - k * 0.02, sx * (0.06 - k * 0.025), -0.055 - k * 0.03, 0.075, 0.05, K, { r: CHEEK(0.05) });    // fluffy cheeks
+    b.tube([[0, -0.035, -0.08], [0, -0.043, -0.16], [0, -0.048, -0.225]], [0.104, 0.09, 0.074], W, { seg: 12, len: 6, wide: 1.06, deep: 0.88 });     // white muzzle
+    b.tube([[0, -0.01, -0.15], [0, 0.07, -0.149], [0, 0.13, -0.095], [0, 0.156, -0.02]], [0.044, 0.028, 0.018, 0.005], W, { seg: 8, len: 8, deep: 0.5, up: [0, 0, -1] });   // the white blaze up her forehead
+    b.finish(0.2).ball(0.04, NOSE, 0, -0.026, -0.258, 1.25, 0.9, 0.85, { seg: 10 });
+    for (const sx of [-1, 1]) {
+      eye(b, sx * 0.07, 0.03, -0.126, 0.047, 0xa9652b, { white: 1, turn: sx * -0.3 });
+      b.finish(FUR).ball(1, K, sx * 0.072, 0.082, -0.12, 0.044, 0.018, 0.03, { seg: 8, rz: sx * -0.32 });    // brows, lifted in the middle
+    }
   });
-  const ears = [-1, 1].map((sx) => limb(head, sx * 0.085, 0.09, 0.02, (b) => {
-    b.cone(0.055, 0.13, K, 0, 0.05, -0.012, -0.45, 0, sx * -0.3, { seg: 5 });   // half-pricked ears, tipped forward
+  // her mouth hangs open in a pant, tongue lolling out
+  const jaw = limb(head, 0, -0.088, -0.07, (b) => {
+    b.finish(FUR).tube([[0, 0, 0], [0, -0.01, -0.075], [0, -0.014, -0.14]], [0.064, 0.055, 0.044], W, { seg: 10, len: 5, deep: 0.55 });
+    b.finish(0.6).ball(1, 0x6a1c28, 0, 0.022, -0.075, 0.048, 0.012, 0.072, { seg: 8 });
+    b.finish(0.4).tube([[0, 0.018, -0.03], [0, 0.02, -0.105], [0, 0.004, -0.16], [0, -0.06, -0.176]], [0.037, 0.038, 0.036, 0.031], TONGUE, { seg: 8, len: 9, deep: 0.32, up: [0, 1, 0] });
+  });
+  const ears = [-1, 1].map((sx) => limb(head, sx * 0.1, 0.09, 0.02, (b) => {      // pricked ears whose tips flop forwards
+    b.finish(FUR).tube([[0, -0.035, 0], [sx * 0.03, 0.055, 0], [sx * 0.052, 0.108, -0.022], [sx * 0.062, 0.088, -0.078]], [0.068, 0.06, 0.044, 0.017], K, { seg: 8, len: 9, deep: 0.36, up: [0, 0, 1] });
+    b.tube([[sx * 0.008, 0, -0.022], [sx * 0.03, 0.05, -0.022], [sx * 0.046, 0.085, -0.032]], [0.03, 0.03, 0.014], 0x40343c, { seg: 6, len: 5, deep: 0.3, up: [0, 0, 1] });
   }));
-  const leg = (x, z) => limb(body, x, 0.36, z, (b) => {
-    b.cap(0.045, 0.14, K, 0, -0.1, 0).cap(0.036, 0.1, W, 0, -0.24, 0).sph(0.05, W, 0, -0.33, -0.015, 1, 0.6, 1.35, { seg: 7 });      // white socks
-  });
-  const legs = [leg(-0.1, -0.26), leg(0.1, -0.26), leg(-0.11, 0.3), leg(0.11, 0.3)];
-  const tail = limb(body, 0, 0.5, 0.4, (b) => {
-    b.cap(0.048, 0.2, K, 0, -0.035, 0.12, 1.85, 0, 0).cap(0.06, 0.12, K, 0, -0.06, 0.3, 1.45, 0, 0).sph(0.064, W, 0, -0.035, 0.43, 1, 1, 1.25, { seg: 8 });   // a plume of a tail with a white tip
-  });
-  return { root, body, head, ears, legs, tail, wag: 15, hip: 0.36 };
+  const leg = (x, z, back) => {
+    const hip = limb(body, x, back ? 0.412 : 0.378, z, (b) => {
+      if (back) b.finish(FUR).tube([[0, 0.04, 0], [0, -0.07, -0.03], [0, -0.17, -0.045]], [0.098, 0.082, 0.05], K, { seg: 12, len: 7 });
+      else b.finish(FUR).tube([[0, 0.05, 0], [0, -0.07, 0], [0, -0.18, 0.005]], [0.072, 0.06, 0.047], K, { seg: 10, len: 5 });
+    });
+    const knee = limb(hip, 0, back ? -0.17 : -0.18, back ? -0.045 : 0.005, (b) => {
+      if (back) { b.finish(FUR).tube([[0, 0, 0], [0, -0.08, 0.05], [0, -0.2, 0.035]], [0.05, 0.042, 0.041], (t) => mix(K, W, sstep(0.4, 0.55, t)), { seg: 8, len: 7 }); paw(b, -0.205, 0.012, 0.058, W); }
+      else { b.finish(FUR).tube([[0, 0, 0], [0, -0.09, 0], [0, -0.155, -0.004]], [0.047, 0.041, 0.043], W, { seg: 8, len: 5 }); paw(b, -0.16, -0.028, 0.058, W); }       // white socks
+    });
+    return { hip, knee };
+  };
+  const legs = [leg(-0.095, -0.2), leg(0.095, -0.2), leg(-0.105, 0.25, 1), leg(0.105, 0.25, 1)];
+  // a plume of a tail with a white tip: one piece, which bends at three joints
+  const tail = new Bendy(part((b) => {
+    b.finish(FUR).tube([[0, 0.5, 0.38], [0, 0.496, 0.46], [0, 0.492, 0.53], [0, 0.492, 0.67], [0, 0.504, 0.77], [0, 0.537, 0.87]], [0.052, 0.07, 0.086, 0.099, 0.092, 0.084, 0.062, 0.018],
+      (t, a) => mix(K, W, sstep(0.7, 0.765, t + 0.022 * Math.cos(a * 4))), { seg: 16, len: 22, deep: 1.16 });
+  }), [[0, 0.5, 0.38], [0, -0.008, 0.15], [0, 0, 0.14]]);
+  body.add(tail.mesh);
+  return { root, body, head, jaw, ears, legs, tail: tail.joints, skin: tail, wag: 15, reach: 0.95 };
 }
 function buildPixel() {
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
   body.add(part((b) => {
-    b.sph(0.12, K, 0, 0.28, 0.02, 0.95, 0.95, 2.0, { seg: 12 });
-    b.sph(0.1, W, 0, 0.25, -0.16, 0.9, 1.0, 1.0, { seg: 9 });                  // white bib
-    b.sph(0.085, W, 0, 0.21, 0.0, 0.8, 0.5, 1.7, { seg: 8 });                  // white tummy
-    b.sph(0.08, W, 0.07, 0.34, 0.1, 0.9, 0.7, 1.2, { seg: 8 });                // a white patch on her back
-    b.tor(0.075, 0.016, C.teal, 0, 0.36, -0.2, 1.2, 0, 0, { seg: 10 }).sph(0.022, C.gold, 0, 0.29, -0.26);   // collar and bell
+    b.finish(FUR);
+    // black, with a white bib and tummy
+    // (and a white patch on her back, a little to one side)
+    const patch = (x, y, z) => sstep(1.12, 0.8, Math.hypot((x - 0.038) / 0.07, (z - 0.085) / 0.085)) * sstep(0.325, 0.345, y);
+    b.tube([[0, 0.265, -0.15], [0, 0.288, -0.02], [0, 0.288, 0.1], [0, 0.265, 0.21]], [0.088, 0.114, 0.114, 0.106, 0.086],
+      (t, a, x, y, z) => mix(mix(K, K_L, sstep(0.34, 0.4, y)), W, Math.max(sstep(-0.04, -0.11, z) * sstep(0.31, 0.25, y), sstep(0.215, 0.19, y), patch(x, y, z))), { seg: 24, len: 20, wide: 0.92 });
+    b.tube([[0, 0.3, -0.13], [0, 0.4, -0.2]], [0.085, 0.08], (t, a, x, y, z) => mix(K, W, sstep(-0.14, -0.2, z - (y - 0.3) * 0.5)), { seg: 10, len: 3 });     // neck
+    b.tuft(0, 0.27, -0.21, 0, -0.08, 0.012, 0.06, W);                                 // chest fluff
+    b.finish(0.5).ring(0.083, 0.016, C.teal, 0, 0.368, -0.178, { seg: 16, tseg: 6, rx: -0.55 });      // collar and bell
+    b.finish(0.28).ball(0.024, C.gold, 0, 0.318, -0.245, 1, 1, 1, { seg: 8 }).ball(0.009, 0x6b4a10, 0, 0.306, -0.262, 1, 1, 1, { seg: 5 });
   }));
-  const head = limb(body, 0, 0.44, -0.25, (b) => {
-    b.sph(0.115, K, 0, 0, 0, 1.05, 0.92, 0.95, { seg: 12 });
-    b.sph(0.06, W, 0, -0.035, -0.085, 1.2, 0.7, 0.9, { seg: 8 }).sph(0.035, W, 0, 0.03, -0.09, 0.5, 1.3, 0.8, { seg: 6 });   // white muzzle and blaze
-    b.sph(0.014, PINK, 0, -0.018, -0.138, 1.2, 0.8, 1, { seg: 5 });
+  const head = limb(body, 0, 0.445, -0.225, (b) => {
+    b.finish(FUR).ball(0.128, K, 0, 0, 0, 1.13, 0.95, 0.97, { seg: 18 });
     for (const sx of [-1, 1]) {
-      b.sph(0.03, 0x9be05a, sx * 0.052, 0.02, -0.09, 1, 1.1, 0.5, { seg: 8, grad: 1 }).sph(0.012, 0x101014, sx * 0.052, 0.02, -0.105, 0.5, 1.6, 0.5, { seg: 5, grad: 1 });   // green eyes
-      b.cone(0.05, 0.11, K, sx * 0.07, 0.115, 0.0, 0, 0, sx * -0.2, { seg: 4 }).cone(0.028, 0.065, PINK, sx * 0.07, 0.105, -0.02, 0, 0, sx * -0.2, { seg: 4 });               // pointy ears
-      for (const a of [-0.2, 0.15]) b.box(0.14, 0.006, 0.006, 0xffffff, sx * 0.1, -0.03 + a * 0.1, -0.1, 0, sx * 0.3, sx * a);                                                // whiskers
+      for (const k of [0, 1]) b.finish(FUR).tuft(sx * 0.118, -0.012 - k * 0.035, -0.012, sx * (0.058 - k * 0.02), -0.03 - k * 0.032, 0.05, 0.04, K, { r: CHEEK(0.04) });      // cheek fluff
+      b.ball(0.043, W, sx * 0.03, -0.05, -0.1, 1.12, 0.82, 0.8, { seg: 10 });                // whisker pads
+      eye(b, sx * 0.058, 0.016, -0.104, 0.046, 0x8fdc50, { slit: 1, turn: sx * -0.3 });
+      for (const k of [-1, 0, 1]) b.finish(0.5, 0.3).tube([[sx * 0.05, -0.048, -0.118], [sx * 0.125, -0.04 + k * 0.022, -0.105], [sx * 0.19, -0.046 + k * 0.05, -0.085]], [0.0045, 0.003, 0.0012], 0xffffff, { seg: 4, len: 4 });   // whiskers
     }
+    b.finish(FUR).ball(0.034, W, 0, -0.078, -0.088, 1.1, 0.8, 0.9, { seg: 8 });     // chin
+    b.tube([[0, -0.03, -0.122], [0, 0.04, -0.124], [0, 0.092, -0.088]], [0.03, 0.017, 0.005], W, { seg: 8, len: 6, deep: 0.5, up: [0, 0, -1] });     // blaze
+    b.finish(0.3).ball(0.016, PINK, 0, -0.024, -0.143, 1.3, 0.8, 0.8, { seg: 6 });
   });
-  const leg = (x, z) => limb(body, x, 0.22, z, (b) => {
-    b.cap(0.03, 0.09, K, 0, -0.07, 0).cap(0.028, 0.04, W, 0, -0.15, 0).sph(0.035, W, 0, -0.2, -0.01, 1, 0.6, 1.25, { seg: 6 });
-  });
-  const legs = [leg(-0.06, -0.14), leg(0.06, -0.14), leg(-0.065, 0.17), leg(0.065, 0.17)];
-  const tail = limb(body, 0, 0.33, 0.24, (b) => {
-    b.cap(0.028, 0.16, K, 0, 0.1, 0.03, 0.25, 0, 0).cap(0.026, 0.14, K, 0, 0.28, 0.06, -0.1, 0, 0).sph(0.034, W, 0, 0.39, 0.05, 1, 1.2, 1, { seg: 7 });   // tail held high, white tip
-  });
-  root.scale.setScalar(1.22);
-  return { root, body, head, ears: [], legs, tail, wag: 5, hip: 0.22 };
+  const ears = [-1, 1].map((sx) => limb(head, sx * 0.076, 0.085, 0.0, (b) => {     // tall pointed ears, pink inside
+    b.finish(FUR).tube([[0, -0.03, 0], [sx * 0.012, 0.05, 0], [sx * 0.024, 0.125, 0.004]], [0.06, 0.047, 0.007], K, { seg: 8, len: 7, deep: 0.4, up: [0, 0, 1], round: 0.4 });
+    b.finish(0.6).tube([[sx * 0.002, 0, -0.016], [sx * 0.012, 0.045, -0.015], [sx * 0.021, 0.098, -0.007]], [0.036, 0.027, 0.004], PINK, { seg: 6, len: 5, deep: 0.3, up: [0, 0, 1], round: 0.4 });
+  }));
+  const leg = (x, z, back) => {
+    const hip = limb(body, x, back ? 0.242 : 0.216, z, (b) => {
+      if (back) b.finish(FUR).tube([[0, 0.03, 0], [0, -0.04, -0.02], [0, -0.1, -0.03]], [0.064, 0.054, 0.035], K, { seg: 10, len: 5 });
+      else b.finish(FUR).tube([[0, 0.03, 0], [0, -0.05, 0], [0, -0.1, 0]], [0.044, 0.037, 0.031], K, { seg: 8, len: 5 });
+    });
+    const knee = limb(hip, 0, -0.1, back ? -0.03 : 0, (b) => {
+      if (back) { b.finish(FUR).tube([[0, 0, 0], [0, -0.05, 0.03], [0, -0.116, 0.022]], [0.034, 0.029, 0.029], (t) => mix(K, W, sstep(0.38, 0.52, t)), { seg: 8, len: 7 }); paw(b, -0.12, 0.006, 0.037, W); }
+      else { b.finish(FUR).tube([[0, 0, 0], [0, -0.088, 0]], [0.031, 0.03], (t) => mix(K, W, sstep(0.25, 0.42, t)), { seg: 8, len: 5 }); paw(b, -0.093, -0.014, 0.037, W); }
+    });
+    return { hip, knee };
+  };
+  const legs = [leg(-0.055, -0.115), leg(0.055, -0.115), leg(-0.06, 0.17, 1), leg(0.06, 0.17, 1)];
+  // her tail, held high and curled over at the top like a question mark: one piece, which bends at five joints; the tip is white
+  const tail = new Bendy(part((b) => {
+    b.finish(FUR).tube([[0, 0.335, 0.205], [0, 0.762, 0.205]], [0.034, 0.033, 0.032, 0.031, 0.03, 0.029, 0.027, 0.021], (t) => mix(K, W, sstep(0.82, 0.88, t)), { seg: 10, len: 24 });
+  }), [[0, 0.335, 0.205], [0, 0.085, 0], [0, 0.085, 0], [0, 0.085, 0], [0, 0.085, 0]]);
+  body.add(tail.mesh);
+  root.scale.setScalar(1.2);
+  return { root, body, head, ears, legs, tail: tail.joints, skin: tail, wag: 5, reach: 1.05 };
 }
 
 const KINDS = {
@@ -79,21 +153,42 @@ const KINDS = {
 class Pet {
   constructor(kind) {
     Object.assign(this, KINDS[kind], KINDS[kind].build());
-    this.kind = kind; this.ph = Math.random() * 6; this.y = 0; this.hop = 0; this.state = 'away'; this.timer = 0; this.k = 0; this.left = 0;
+    this.kind = kind; this.ph = Math.random() * 6; this.y = 0; this.hop = 0; this.state = 'away'; this.timer = 0; this.k = 0; this.left = 0; this.twitch = 2;
   }
   // speed in m/s, air: off the ground
   animate(dt, t, speed, air) {
-    const run = clamp(speed / 10, 0, 1);
+    const run = clamp(speed / 10, 0, 1), still = 1 - run, dog = this.kind === 'izzi';
     this.ph += dt * (11 + speed * 0.4) * (run > 0.05 ? 1 : 0);
-    const ph = this.ph, L = this.legs, A = 0.95 * run;
-    const tgt = air ? [1.0, 1.0, -0.9, -0.9] : [A * Math.sin(ph), A * Math.sin(ph + 0.55), A * Math.sin(ph + PI), A * Math.sin(ph + PI + 0.55)];
-    for (let i = 0; i < 4; i++) L[i].rotation.x = damp(L[i].rotation.x, tgt[i], 22, dt);
-    this.body.position.y = air ? 0 : Math.abs(Math.sin(ph)) * 0.05 * run;
-    this.body.rotation.x = air ? 0.12 : Math.sin(ph + 0.8) * 0.09 * run;
-    this.head.rotation.x = Math.sin(ph + 1.2) * 0.07 * run; this.head.rotation.y = Math.sin(t * 1.3 + this.wag) * 0.12 * (1 - run);
-    for (const e of this.ears) e.rotation.x = Math.sin(ph * 1 + 0.5) * 0.25 * run;
-    if (this.kind === 'izzi') { this.tail.rotation.y = Math.sin(t * this.wag) * 0.55; this.tail.rotation.x = -0.3 * run; }
-    else { this.tail.rotation.z = Math.sin(t * this.wag) * 0.22; this.tail.rotation.x = Math.sin(t * 3.1) * 0.1 - 0.35 * run; }
+    const ph = this.ph, A = this.reach * run;
+    // a bounding run: the front pair land almost together, the back pair half a stride later, and each knee folds as its leg swings forwards
+    for (let i = 0; i < 4; i++) {
+      const L = this.legs[i], front = i < 2, p = ph + (front ? 0 : PI) + (i % 2) * 0.55;
+      const hip = air ? (front ? 1.0 : -0.9) : A * Math.sin(p) + (front ? 0.06 : -0.04) * run;
+      const knee = air ? (front ? -0.3 : -0.15) : -(0.12 + 1.1 * Math.max(0, Math.cos(p))) * run;
+      L.hip.rotation.x = damp(L.hip.rotation.x, hip, 22, dt); L.knee.rotation.x = damp(L.knee.rotation.x, knee, 22, dt);
+    }
+    const pitch = air ? 0.12 : Math.sin(ph + 0.8) * 0.09 * run;
+    this.body.position.y = air ? 0 : Math.abs(Math.sin(ph)) * 0.05 * run + Math.sin(t * 2.2 + this.wag) * 0.004 * still;
+    this.body.rotation.x = pitch;
+    // the head stays level while the body rocks; standing still, they look about and tilt their heads
+    this.head.rotation.set(-pitch * 0.8 + Math.sin(ph + 1.2) * 0.05 * run, Math.sin(t * 1.3 + this.wag) * 0.16 * still, Math.sin(t * 0.8 + this.wag * 2) * 0.12 * still);
+    const sweep = air ? 0.5 : 0.3 * run;          // ears swept back by the wind
+    if (dog) {
+      this.ears.forEach((e, i) => { e.rotation.x = sweep + Math.sin(ph + 0.5 + i * 0.4) * 0.22 * run; e.rotation.z = (i ? 1 : -1) * Math.sin(ph * 0.5 + i) * 0.06 * run; });
+      this.jaw.rotation.x = 0.12 + 0.07 * Math.sin(t * (9 + run * 6));              // panting
+      // a big wag when she is standing, a streaming plume when she runs; each length follows the one before
+      const wag = 0.6 - 0.3 * run, lift = -0.5 + 0.38 * run - (air ? 0.25 : 0);
+      this.tail.forEach((g, i) => { g.rotation.y = Math.sin(t * this.wag - i * 0.9) * wag * (i ? 0.75 : 1); g.rotation.x = i ? -0.14 + Math.sin(ph - i * 0.8) * 0.08 * run : lift; });
+    } else {
+      // every so often an ear flicks
+      this.twitch -= dt; if (this.twitch < -0.18) this.twitch = 1.5 + Math.random() * 3;
+      const flick = this.twitch < 0 ? Math.sin((-this.twitch / 0.18) * PI) : 0, which = Math.floor(this.wag + t * 0.31) % 2;
+      this.ears.forEach((e, i) => { e.rotation.x = sweep * 0.8; e.rotation.z = (i ? -1 : 1) * (0.12 + (i === which ? flick * 0.35 : 0)); });
+      // her tail is held high and sways from the root to the tip like a question mark; running, it streams back a little
+      const back = 0.45 + 0.3 * run + (air ? 0.25 : 0);
+      this.tail.forEach((g, i) => { g.rotation.x = (i ? CURL[i] : back) + Math.sin(t * 3.1 - i * 0.7) * 0.06; g.rotation.z = Math.sin(t * this.wag * 0.6 - i * 0.7) * (0.09 + i * 0.045); });
+    }
+    this.skin.update();
   }
 }
 

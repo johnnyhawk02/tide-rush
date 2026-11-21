@@ -88,11 +88,11 @@ Jumps are buffered and you can change lane in mid-air.
 | `src/track.js` | Endless track: scenery chunks, the deck, the fair pattern generator (obstacles, pads, portals, letters) |
 | `src/obstacles.js` | Obstacle, platform, pad, portal, shell, pearl, letter and power-up models, with pooling |
 | `src/scenery.js` | Scenery for the thirty-one levels |
-| `src/pets.js` | Izzi and Pixel: their models, animation, and when they join and leave |
+| `src/pets.js` | Izzi and Pixel: their models, their running, wagging and ear-flicking, and when they join and leave |
 | `src/invaders.js` | The alien invader waves: the marching formation and which one Robyn shoots next |
 | `src/santa.js` | Grumpy Santa: his model, his face (grumpy and jolly), how he moves, throws and is beaten |
 | `src/config.js` | Sizes, speeds, level length (`ZONE_CHUNKS`) and the order the levels are played in (`ZONE_ORDER`) |
-| `src/robyn.js` | Robyn's model, outfits, rocket and procedural animation |
+| `src/robyn.js` | Robyn's model, her drawn face, outfits, rocket and procedural animation |
 | `src/sky.js` | Sky, stars, northern lights, clouds, rain, snow, lightning, sea shader, and one lighting palette per level |
 | `src/skylife.js` | The banner plane, jet, geese and the Tide TV helicopter |
 | `src/fx.js` | Particles, the tide wave, ground shadow |
@@ -101,6 +101,17 @@ Jumps are buffered and you can change lane in mid-air.
 | `src/audio.js` | The synthesiser that plays the songbook, and every sound effect (Web Audio) |
 | `src/input.js`, `src/ui.js` | Keyboard and touch input, HUD and menus |
 | `src/kit.js` | Modelling kit that merges each model into one vertex-coloured mesh, the world bend, the corkscrew twist of Spiral Bay, and the hills |
+| `src/sculpt.js` | Sculpting kit for the three characters: soft shapes, one-piece tails and hair that bend, and the characters' material |
+
+## The characters
+
+Robyn, Izzi and Pixel are chunky cartoon figures sculpted in code, with no model files. `src/sculpt.js` adds soft shapes to the modelling kit (reshaped balls, tubes that taper along a curve, turned and free-form surfaces) and smooths their shading; each character is a handful of vertex-coloured meshes, one per moving part.
+
+- Every piece says how shiny it is (`finish`): a wet raincoat, rubber wellies, matt hair, wool and fur, glossy eyes and noses. The characters' material (`CHARACTER`) reads that, and adds a soft light from the sky round their edges, which lifts them off the background and shows the shape of dark hair and fur.
+- Robyn's face is flat cartoon features drawn on a canvas and wrapped round the front of her head: her big smile, a blink, and the shocked look she gives the camera when she stumbles (`drawFace` in `src/robyn.js`). Her head, face and hair all come from one function (`headShape`), so they always fit one another.
+- Her ponytail, the long end of her scarf and both tails are each a single piece that bends smoothly at a few joints (`Bendy`), instead of a chain of stiff lengths.
+- Everything they do is procedural: Robyn's coat swishes and lifts with her knees, her hood bobs and her ponytail swings; Izzi bounds along with her tongue out, ears and plume of a tail streaming; Pixel carries her tail like a question mark and flicks an ear now and then.
+- The app icon is a portrait of the Robyn model (`scripts/make-icons.cjs`), so redraw it after changing how she looks.
 
 ## Music and sound
 

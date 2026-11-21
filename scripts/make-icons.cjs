@@ -20,13 +20,17 @@ const fs = require('fs'), path = require('path');
     r.setPixelRatio(1); r.setSize(S, S); r.setClearColor(0x000000, 0);
     const scene = new T.Scene();
     g.robyn.update(0.016, { mode: 'idle', speed: 0, vy: 0, vx: 0, grounded: true, stumble: 0 });
-    const robyn = g.robyn.root.clone(true); robyn.position.set(0, 0, 0); robyn.rotation.set(0, 0.4, 0); scene.add(robyn);      // turned a little so that her ponytail shows
+    // swing her ponytail out to one side, so that it shows from the front
+    g.robyn.pony.rotation.z = 0.55; g.robyn.pony2.rotation.z = 0.25; g.robyn.pony3.rotation.z = 0.1; g.robyn.hair.update();
+    const robyn = g.robyn.root.clone(true); robyn.position.set(0, 0, 0); robyn.rotation.set(0, 0.4, 0); scene.add(robyn);      // turned a little to one side
     scene.add(new T.HemisphereLight(0xffffff, 0xffc9a0, 1.25));
     const sun = new T.DirectionalLight(0xfff1d6, 1.9); sun.position.set(-2.5, 3.5, -4); scene.add(sun);
     const rim = new T.DirectionalLight(0x9fe8ff, 0.9); rim.position.set(3, 2, 3); scene.add(rim);
-    const box = new T.Box3().setFromObject(robyn), top = box.max.y;
+    // the camera is placed from where her head is, so the picture follows any change to her proportions
+    robyn.updateMatrixWorld(true);
+    const head = new T.Vector3(); robyn.traverse((o) => { if (o.name === 'head') o.getWorldPosition(head); });
     const cam = new T.PerspectiveCamera(26, 1, 0.1, 50);
-    cam.position.set(0.1, top - 0.28, -2.6); cam.lookAt(-0.04, top - 0.42, 0);
+    cam.position.set(head.x + 0.14, head.y + 0.14, -2.75); cam.lookAt(head.x, head.y - 0.04, 0);
     r.render(scene, cam);
     // ---- the painted part ----
     const c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
