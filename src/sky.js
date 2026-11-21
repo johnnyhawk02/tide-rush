@@ -1,6 +1,7 @@
 // Sky dome, sun and stars, clouds, far headlands, gulls, the sea, rain and lightning, and the lighting for each level.
 import * as THREE from 'three';
 import { Builder, C, makeRng, puffTexture, BEND_GLSL } from './kit.js';
+import { WATER_GLSL, SWELL_GLSL, waterUniforms } from './water.js';
 import { WATER_Y, ZONE_LEN, zoneOfLevel, lerp, smooth } from './config.js';
 
 const col = (h) => new THREE.Color(h);
@@ -50,6 +51,23 @@ const PAL = [
   { top: 0x4a86d8, hor: 0xffd8a0, sun: 0xffe2b0, sunI: 3.0, hemiS: 0xffeeda, hemiG: 0xc8a878, hemiI: 1.35, deep: 0x2a6fa8, shal: 0x6fb8d8, foam: 0xffffff, cloud: 0xfff0dc, el: 0.5, az: 0.6, stars: 0, storm: 0 },
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
+
+// The sea is one big sheet, 700 m square, centred on Robyn. Its lines are close together near her (where the swell shows against
+// the pier, and where the tide's wave crosses the sea) and further and further apart towards the horizon.
+function seaGrid(k = 1) {
+  const axis = (lo, hi, step) => {
+    const side = (from, dir) => { const a = []; let v = from, st = 2.5 * k; while (Math.abs(v) < 350) { v += dir * st; if (Math.abs(v) > 80) st *= 1.3; a.push(Math.abs(v) > 350 ? dir * 350 : v); } return a; };
+    const mid = []; for (let v = lo; v < hi - step * k * 0.5; v += step * k) mid.push(v);
+    return [...side(lo, -1).reverse(), ...mid, hi, ...side(hi, 1)];
+  };
+  const xs = axis(-26, 26, 1), zs = axis(-14, 26, 0.8), nx = xs.length, nz = zs.length;
+  const pos = new Float32Array(nx * nz * 3), idx = [];
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) pos.set([xs[i], 0, zs[j]], (j * nx + i) * 3);
+  for (let j = 0; j < nz - 1; j++) for (let i = 0; i < nx - 1; i++) { const a = j * nx + i; idx.push(a, a + nx, a + 1, a + 1, a + nx, a + nx + 1); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setIndex(idx);
+  return g;
+}
 
 export class Sky {
   constructor(scene, quality) {
@@ -178,54 +196,65 @@ export class Sky {
       this.group.add(g); this.gulls.push(g);
     }
 
-    // sea
-    const seg = quality.low ? 72 : 120;
-    const geo = new THREE.PlaneGeometry(700, 700, seg, seg); geo.rotateX(-Math.PI / 2);
+    // sea: lit by the shared water code (water.js); the long swell moves the surface, and the ripples, glints and foam are drawn on it
+    const geo = seaGrid(quality.low ? 1.5 : 1);
     this.seaMat = new THREE.ShaderMaterial({
       side: THREE.DoubleSide,     // (seen from underneath in the Glass Tunnel)
       uniforms: {
-        uTime: { value: 0 }, uScroll: { value: 0 }, uDeep: { value: col(0) }, uShal: { value: col(0) }, uFog: { value: col(0) },
-        uSun: { value: col(0) }, uSky: { value: col(0) }, uSunDir: { value: this.sunDir }, uNear: { value: 70 }, uFar: { value: 300 }, uAmp: { value: 1 }, uFoam: { value: col(0xffffff) }, uMirror: { value: 0 }, uPixel: { value: 0 }, uTop: { value: col(0) }, uHor: { value: col(0) },
+        ...waterUniforms(), uSunDir: { value: this.sunDir }, uScroll: { value: 0 }, uAmp: { value: 1 }, uMirror: { value: 0 }, uPixel: { value: 0 }, uTop: { value: col(0) }, uHor: { value: col(0) },
+        uTide: { value: new THREE.Vector4(60, 0, 0, 0) },      // the tide's wave, set by Tide: (where its front is, how far the sea rises behind it, how high its crest stands, unused)
       },
-      vertexShader: `uniform float uTime, uScroll, uAmp, uMirror; varying vec2 vW; varying float vH; varying float vDepth; varying vec3 vPos; ${BEND_GLSL}
+      vertexShader: `uniform float uTime, uScroll, uAmp, uMirror; uniform vec4 uTide; varying vec2 vW; varying float vDepth; varying vec3 vPos; varying vec2 vTide; ${BEND_GLSL} ${SWELL_GLSL}
         void main(){ vec3 p = position; vec2 w = vec2(p.x, p.z - uScroll);
-          float fade = 1.0 - smoothstep(120.0, 300.0, length(p.xz));
-          float h = (sin(w.x * 0.21 + uTime * 0.9) * 0.2 + sin(w.y * 0.33 + uTime * 1.25 + w.x * 0.12) * 0.16 + sin((w.x - w.y) * 0.5 + uTime * 1.7) * 0.07) * fade * uAmp * (1.0 - 0.94 * uMirror);
-          p.y += h; vH = h; vW = w;
+          float fade = (1.0 - smoothstep(70.0, 190.0, length(p.xz))) * uAmp * (1.0 - 0.94 * uMirror);
+          // the tide: behind the front of its wave the whole sea stands higher, with a rolling crest along the front
+          float d = p.z - uTide.x, ramp = smoothstep(-2.6, 1.0, d), on = step(0.001, uTide.y);
+          p.y += seaSwell(w, uTime).x * fade * (1.0 - 0.8 * ramp * on) + uTide.y * ramp + uTide.z * exp(-(d - 0.2) * (d - 0.2) * 0.7) * on;
+          vW = w; vTide = vec2(d, on);
           vec4 wp = modelMatrix * vec4(p, 1.0); vPos = wp.xyz; wp = bendSea(wp);
           vec4 mv = viewMatrix * wp; vDepth = -mv.z; gl_Position = projectionMatrix * mv; }`,
-      fragmentShader: `uniform float uTime, uNear, uFar, uAmp, uMirror, uPixel; uniform vec3 uDeep, uShal, uFog, uSun, uSky, uSunDir, uFoam, uTop, uHor;
-        varying vec2 vW; varying float vH; varying float vDepth; varying vec3 vPos; ${BEND_GLSL}
+      fragmentShader: `uniform float uAmp, uMirror, uPixel; uniform vec3 uTop, uHor; uniform vec4 uTide;
+        varying vec2 vW; varying float vDepth; varying vec3 vPos; varying vec2 vTide; ${BEND_GLSL} ${SWELL_GLSL} ${WATER_GLSL}
         void main(){
-          // Pixel Land: the sea is laid in square tiles, each one a flat colour
-          vec2 W = vW; float H = vH;
-          if (uPixel > 0.5) { W = floor(vW / 1.6) * 1.6 + 0.8; H = floor(vH * 5.0 + 0.5) / 5.0; }
           // where the Glass Tunnel dives through the surface, the water stands back from the glass
           if (uHill.x < 0.0) { float sl = uHill.y - vPos.z; if (sl > 0.0 && sl < uHill.z) { float hg = ${WATER_Y.toFixed(1)} - hillAt(sl); if (hg > -0.4 && hg < 6.8) { float dy = max(hg - 1.2, 0.0); if (abs(vPos.x) < sqrt(max(31.36 - dy * dy, 0.0))) discard; } } }
-          float n1 = sin(W.x * 1.7 + uTime * 1.3) * sin(W.y * 1.3 - uTime * 1.1);
-          float n2 = sin(W.x * 0.63 - W.y * 0.9 + uTime * 0.7);
-          float n3 = sin(W.x * 4.3 + W.y * 3.1 + uTime * 2.3) * sin(W.x * 2.9 - W.y * 4.7 - uTime * 1.9);
-          vec3 c = mix(uDeep, uShal, clamp(smoothstep(-0.3, 0.35, H / uAmp) * 0.75 + n1 * 0.1 + n2 * 0.08, 0.0, 1.0));
-          vec3 N = normalize(vec3(cos(W.x * 1.7 + uTime * 1.3) * 0.22 + n3 * 0.12 + cos(W.x * 0.21 + uTime * 0.9) * 0.1, 1.0, cos(W.y * 1.3 - uTime * 1.1) * 0.22 + n3 * 0.12));
-          vec3 V = normalize(cameraPosition - vPos);
-          float fr = pow(1.0 - max(dot(N, V), 0.0), 3.0);
-          c = mix(c, uSky, fr * 0.55);
-          vec3 R = reflect(-uSunDir, N);
-          c += uSun * pow(max(dot(R, V), 0.0), 70.0) * 0.9;
-          float th = 0.3 + (uAmp - 1.0) * 0.25;
-          float foam = smoothstep(th, th + 0.1 * uAmp, H + n1 * 0.07 + n3 * 0.05);
-          c = mix(c, uFoam, foam * 0.55);
-          // the Land of Mirrors: the sea lies still and shows the sky (and, through it, the upside-down copies of the scenery)
-          float alpha = 1.0;
-          if (uMirror > 0.0) {
-            vec3 Nm = normalize(vec3(cos(W.x * 0.9 + uTime * 0.6) * 0.03 + n3 * 0.012, 1.0, cos(W.y * 0.7 - uTime * 0.5) * 0.03 + n3 * 0.012));
-            vec3 m = mix(mix(uHor, uTop, 0.3), uTop, pow(clamp(reflect(-V, Nm).y, 0.0, 1.0), 0.5));
-            m += uSun * pow(max(dot(reflect(-uSunDir, Nm), V), 0.0), 240.0) * 0.8 + vec3(0.06) * smoothstep(0.55, 0.9, n1 * n2);
-            c = mix(c, m, uMirror); alpha = 1.0 - 0.56 * uMirror;
+          vec3 V = normalize(cameraPosition - vPos), c;
+          float still = 1.0 - 0.94 * uMirror, fade = (1.0 - smoothstep(70.0, 190.0, length(vPos.xz))) * uAmp * still;
+          float ramp = smoothstep(-2.6, 1.0, vTide.x) * vTide.y, alpha = 1.0;
+          if (uPixel > 0.5) {
+            // Pixel Land: the sea is laid in square tiles, each one a flat colour
+            vec2 W = floor(vW / 1.6) * 1.6 + 0.8;
+            float H = floor(seaSwell(W, uTime).x * fade * 5.0 + 0.5) / 5.0;
+            float n1 = sin(W.x * 1.7 + uTime * 1.3) * sin(W.y * 1.3 - uTime * 1.1), n2 = sin(W.x * 0.63 - W.y * 0.9 + uTime * 0.7);
+            c = mix(uDeep, uShal, clamp(smoothstep(-0.3, 0.35, H / uAmp) * 0.75 + n1 * 0.1 + n2 * 0.08, 0.0, 1.0));
+            c = mix(c, uSky, pow(1.0 - max(V.y, 0.0), 3.0) * 0.5);
+            c = mix(c, uFoam, max(step(0.2, H + n1 * 0.09), step(0.5, ramp) * step(vTide.x, 2.4) * step(-0.4, n1)) * 0.6);
+          } else {
+            vec3 sw = seaSwell(vW, uTime) * fade * (1.0 - 0.8 * ramp);
+            vec4 rp = waterRipple(vW);
+            float rough = (0.16 + 0.07 * (uAmp - 1.0)) * still;
+            vec3 N = normalize(vec3(-sw.y - rp.x * rough, 1.0, -sw.z - rp.y * rough));
+            c = waterColour(N, V, 0.4 + sw.x * 1.7 / uAmp + (rp.w - 0.5) * 0.5 - rp.y * 0.12, 1.0);
+            // foam: white horses on the tops of the swell (more of them in a storm), and a little lace drifting in patches on calm water
+            float near = 1.0 - smoothstep(50.0, 130.0, vDepth);
+            float cap = smoothstep(0.2, 0.42, sw.x / uAmp + (rp.w - 0.5) * 0.35 + (uAmp - 1.0) * 0.07) * step(0.02, fade);
+            float amount = max(cap * 0.75, 0.6 * smoothstep(0.6, 0.86, rp.w + (rp.z - 0.4) * 0.3) * still) * near, strength = 0.62 + 0.3 * cap;
+            if (vTide.y > 0.5) {        // the tide's wave: a roll of foam along its front, and patches of it left behind on the raised water
+              float roll = smoothstep(-2.9, -1.6, vTide.x) * (1.0 - smoothstep(0.4, 2.2, vTide.x)), tf = max(roll * 1.05, foamWake(rp, vTide.x) * ramp);
+              if (tf > amount) { amount = tf; strength = 0.8 + 0.12 * roll; }
+            }
+            if (amount > 0.004) c = mix(c, uFoam, foamLace(vW, amount) * strength);
+            // the Land of Mirrors: the sea lies still and shows the sky (and, through it, the upside-down copies of the scenery)
+            if (uMirror > 0.0) {
+              vec3 Nm = normalize(vec3(rp.x * 0.022, 1.0, rp.y * 0.022));
+              vec3 m = mix(mix(uHor, uTop, 0.3), uTop, pow(clamp(reflect(-V, Nm).y, 0.0, 1.0), 0.5));
+              m += uSun * pow(max(dot(reflect(-uSunDir, Nm), V), 0.0), 240.0) * 0.8 + vec3(0.05) * smoothstep(0.62, 0.9, rp.w);
+              c = mix(c, m, uMirror); alpha = 1.0 - 0.56 * uMirror;
+            }
+            // from underneath: a bright ceiling with a net of light rippling across it
+            if (!gl_FrontFacing) c = mix(uShal * 1.1 + vec3(0.08, 0.2, 0.24), vec3(0.92, 1.0, 1.0), smoothstep(0.5, 0.72, rp.z) * 0.8 + smoothstep(0.45, 0.8, rp.w) * 0.35);
           }
-          // from underneath: a bright, rippling ceiling of light
-          if (!gl_FrontFacing) c = mix(uShal * 1.1 + vec3(0.08, 0.2, 0.24), vec3(0.92, 1.0, 1.0), smoothstep(0.1, 0.8, n1 * 0.55 + n3 * 0.4 + n2 * 0.3));
-          c = mix(c, uFog, smoothstep(uNear, uFar, vDepth));
+          c = waterFog(c, vDepth);
           gl_FragColor = vec4(c, alpha);
           #include <tonemapping_fragment>
           #include <colorspace_fragment>
@@ -373,7 +402,7 @@ export class Sky {
     su.uTime.value = t; su.uScroll.value = dist; su.uDeep.value.copy(c.deep); su.uShal.value.copy(c.shal); su.uFog.value.copy(this.scene.fog.color);
     su.uSun.value.copy(c.sun); su.uSky.value.copy(c.top).lerp(c.hor, 0.5); su.uAmp.value = 1 + 1.7 * c.storm;
     su.uMirror.value = c.mirror; su.uPixel.value = c.pixel; su.uTop.value.copy(c.top); su.uHor.value.copy(c.hor);
-    this.seaMat.transparent = c.mirror > 0.003; this.sea.renderOrder = this.seaMat.transparent ? -1 : 0;   // (see-through only here, so the reflections show)
+    this.seaMat.transparent = c.mirror > 0.003; this.sea.renderOrder = this.seaMat.transparent ? -1 : 1;   // (see-through only here, so the reflections show; otherwise drawn after the scenery, so that the parts hidden by the pier cost nothing)
     su.uFoam.value.copy(this._a.set(A.foam ?? 0xffffff)).lerp(this._b.set(B.foam ?? 0xffffff), k).lerp(c.hemiS, 0.5 * c.stars).multiplyScalar(1 - 0.5 * c.stars - 0.12 * c.storm);
     su.uNear.value = this.scene.fog.near; su.uFar.value = this.scene.fog.far;
     this.rain.visible = c.storm > 0.02 && !this.hidden;

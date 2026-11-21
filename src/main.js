@@ -5,7 +5,8 @@ import { laneX, WATER_Y, JUMP_H, ZONE_LEN, ROOFED, SPIRAL, MOUNTAIN, COASTER, DE
 import { Sky } from './sky.js';
 import { Track, zoneAtS, LETTERS, WARP_SPEED, PAD_BOOST } from './track.js';
 import { Robyn, OUTFITS } from './robyn.js';
-import { Particles, Tide, makeBlobShadow } from './fx.js';
+import { Particles, makeBlobShadow } from './fx.js';
+import { Tide } from './tide.js';
 import { Tunnel } from './startunnel.js';
 import { GameAudio } from './audio.js';
 import { Input } from './input.js';
@@ -52,7 +53,7 @@ const pickOf = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const fmt = (n) => Math.floor(n).toLocaleString('en-GB');
 const OVER_TEXT = {
   crash: ['Wiped out!', 'One bump too many, and the tide caught up.'],
-  tide: ['The tide got you!', 'Three stumbles in a row and the sea catches up.'],
+  tide: ['The tide got you!', 'Too many stumbles and the sea catches up.'],
   hole: ['Splash!', 'Mind the gaps in the planks.'],
 };
 
@@ -95,7 +96,7 @@ class Game {
     this.robyn = new Robyn(OUTFITS[this.outfit]); this.scene.add(this.robyn.root);
     this.blob = makeBlobShadow(); this.scene.add(this.blob);
     this.fx = new Particles(this.scene);
-    this.tideWave = new Tide(this.scene, this.fx);
+    this.tideWave = new Tide(this.scene, this.fx, this.sky);
     this.tunnel = new Tunnel(this.scene);
     this.skylife = new SkyLife(this.scene);
     this.skylife.onPlane = () => this.audio.plane();
@@ -407,7 +408,8 @@ class Game {
       // in the Glass Tunnel the road is under the sea: how deep it is, and how far under the surface the camera has gone
       this.depth = hill && hill[0] < 0 ? -HILL.value.w : 0; this.dive = smooth((this.depth - 3.2) / 3.8);
     }
-    this.audio.setSea(1 - Math.min(1, Math.max(this.sky.cur.under, this.sky.cur.space, (this.dive || 0) * 0.7)));
+    // the sound of the sea (none indoors, in space or under the water), which swells as the tide closes in on her
+    this.audio.setSea((1 - Math.min(1, Math.max(this.sky.cur.under, this.sky.cur.space, (this.dive || 0) * 0.7))) * (1 + 1.4 * (this.mode === 'run' || this.mode === 'dying' ? smooth(this.tide) : 0)));
     if (this.warp) {
       // inside the tunnel the lighting is the tunnel's own
       this.tunnel.update(this.dist, this.time, dt, this.warp.end - this.dist);
@@ -435,8 +437,7 @@ class Game {
 
     this.tide = Math.max(0, this.tide - (this.mode === 'run' ? dt / TIDE_FADE : 0));
     const surge = this.dy ? clamp((this.dy.t - (this.dy.cause === 'hole' ? 0.55 : 0.2)) / 0.9, 0, 1) : 0;
-    this.tideWave.update(dt, this.mode === 'title' ? 0 : this.tide, this.mode === 'dying' || this.mode === 'over' ? Math.max(surge, 0.001) : 0, this.speed);
-    if (this.warp) this.tideWave.group.visible = false;
+    this.tideWave.update(dt, this.mode === 'title' ? 0 : this.tide, this.mode === 'dying' || this.mode === 'over' ? Math.max(surge, 0.001) : 0, !this.warp);
     this.fx.update(dt, this.speed);
     this.updateCamera(dt);
   }

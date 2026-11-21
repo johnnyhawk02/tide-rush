@@ -93,9 +93,11 @@ Jumps are buffered and you can change lane in mid-air.
 | `src/santa.js` | Grumpy Santa: his model, his face (grumpy and jolly), how he moves, throws and is beaten |
 | `src/config.js` | Sizes, speeds, level length (`ZONE_CHUNKS`) and the order the levels are played in (`ZONE_ORDER`) |
 | `src/robyn.js` | Robyn's model, her drawn face, outfits, rocket and procedural animation |
-| `src/sky.js` | Sky, stars, northern lights, clouds, rain, snow, lightning, sea shader, and one lighting palette per level |
+| `src/sky.js` | Sky, stars, northern lights, clouds, rain, snow, lightning, the sea, and one lighting palette per level |
 | `src/skylife.js` | The banner plane, jet, geese and the Tide TV helicopter |
-| `src/fx.js` | Particles, the tide wave, ground shadow |
+| `src/fx.js` | Particles, ground shadow |
+| `src/tide.js` | The tide: the wave that chases Robyn, and the flood behind it |
+| `src/water.js` | What water looks like (ripples, light, foam), shared by the sea and the tide |
 | `src/startunnel.js` | The Star Tunnel: the wire tunnel, the starry sky, galaxies and the sights that sail past |
 | `src/music.js` | The songbook: one original tune per level, plus the Star Tunnel and rocket tunes |
 | `src/audio.js` | The synthesiser that plays the songbook, and every sound effect (Web Audio) |
@@ -112,6 +114,16 @@ Robyn, Izzi and Pixel are chunky cartoon figures sculpted in code, with no model
 - Her ponytail, the long end of her scarf and both tails are each a single piece that bends smoothly at a few joints (`Bendy`), instead of a chain of stiff lengths.
 - Everything they do is procedural: Robyn's coat swishes and lifts with her knees, her hood bobs and her ponytail swings; Izzi bounds along with her tongue out, ears and plume of a tail streaming; Pixel carries her tail like a question mark and flicks an ear now and then.
 - The app icon is a portrait of the Robyn model (`scripts/make-icons.cjs`), so redraw it after changing how she looks.
+
+## The tide and the sea
+
+The sea and the tide are drawn by the same water code (`src/water.js`), so they always match, and both take the colours of whichever world Robyn is in: the tide is melted chocolate on Chocolate Coast, strawberry milkshake on Marshmallow Shore and green slime in the Sewers.
+
+- The water's look comes from one small repeating picture that the game makes for itself when it starts (`waterNoise`). It is a set of ingredients, not something to look at: which way the ripples tilt, a field of round bubbles that the foam is cut from, and soft blotches. The shader code beside it lights the water from the sky and the sun (`waterColour`) and draws foam as lace: a net of white with round holes, which thickens to solid white (`foamNet`, and the finer `foamLace` for water that is seen close to).
+- The sea (`src/sky.js`) is a sheet of points that are close together near Robyn and spread out towards the horizon. A slow swell of four trains of waves moves it up and down (`seaSwell`), and the same sum lights every pixel, so the surface is smooth. Foam drifts in patches on calm water and tops the bigger waves at Storm Point. Pixel Land keeps its square tiles and the Land of Mirrors its looking-glass.
+- The tide (`src/tide.js`) is one sculpted wave: a long back, a crest, a lip that curls over and a hollow face. `crossSection` is its outline from back to front, with a note at each point of how much foam gathers there, how much light shows through the water and how far it moves when the lip curls. The crest wears a crown of foam that stands up in soft puffs, drops of spray fly off the lip, and the wave leaves patches of foam on the flood behind it.
+- Where the pier is at sea level, the whole sea rises behind the wave to the height of the flood (`uTide` in the sea's shader), so the flood joins the sea and the wave has no ends: beside the pier it slopes away into a swell that crosses the water. On the hills, in the Glass Tunnel and in the Upside-Down World there is no sea to join, so the water keeps to the road and pours off its sides.
+- The wave comes into view when Robyn is down to her last heart and the tide is right behind her. It rears up to twice its height as it breaks over her, and the sound of the sea swells as it closes in. How close it comes for each stumble is set in `main.js` (see Rules).
 
 ## Music and sound
 
