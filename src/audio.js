@@ -304,6 +304,7 @@ export class GameAudio {
     else if (kind === 'flyBox') this.scratch();
     else if (kind === 'oxpecker') this.tweet();
     else if (kind === 'bumble') this.buzz();
+    else if (kind === 'booFlyer') this.woo();
     else if (kind === 'flipGull') for (let i = 0; i < 3; i++) this.tone('sawtooth', 820, t + i * 0.17, 0.14, 0.07, null, { slide: 1350, lp: 2800, att: 0.02 });   // a gull's cry, backwards
     else if (kind === 'pteroBones') { this.rattle(); this.tone('sawtooth', 900, t + 0.1, 0.25, 0.03, null, { slide: 1300, lp: 2600, att: 0.03 }); }
     else if (kind === 'flashMirror') { this.twinkle(); this.tone('sine', 1320, t, 0.6, 0.04, null, { slide: 1980, att: 0.1 }); }
@@ -417,6 +418,10 @@ export class GameAudio {
   // ----- Dream Time -----
   // Orchard Land: a bee going by, a blackbird, and somebody biting an apple
   buzz() { if (this.ok) { const t = this.ctx.currentTime; this.tone('sawtooth', 170, t, 0.9, 0.09, null, { slide: 215, lp: 1400, att: 0.15, vib: 0.08, vibHz: 28 }); this.tone('sawtooth', 340, t, 0.9, 0.03, null, { slide: 430, lp: 2400, att: 0.15, vib: 0.08, vibHz: 28 }); } }
+  // the Friendly Ghost World: a friendly "woo-oo", a giggle, and teacups
+  woo() { if (this.ok) { const t = this.ctx.currentTime; this.tone('sine', 400, t, 0.5, 0.09, null, { slide: 640, att: 0.08, vib: 0.02, vibHz: 6 }); this.tone('sine', 640, t + 0.45, 0.6, 0.09, null, { slide: 470, att: 0.03, vib: 0.03, vibHz: 6 }); } }
+  giggle() { if (this.ok) { const t = this.ctx.currentTime; [0, 4, 2, 5, 7, 9].forEach((n, i) => this.tone('sine', midi(84 + n), t + i * 0.085, 0.07, 0.06, null, { slide: midi(87 + n), att: 0.01 })); } }
+  teaClink() { if (this.ok) { const t = this.ctx.currentTime; for (let i = 0; i < 2; i++) { this.tone('sine', 2500 + i * 420, t + i * 0.16, 0.3, 0.05, null, { att: 0.003 }); this.tone('sine', 5100 + i * 600, t + i * 0.16, 0.15, 0.02, null, { att: 0.003 }); } } }
   birdsong() { if (this.ok) { const t = this.ctx.currentTime + 0.2; [[88, 0, 0.12], [91, 0.14, 0.1], [95, 0.26, 0.2], [91, 0.52, 0.08], [93, 0.62, 0.08], [96, 0.72, 0.26]].forEach(([n, d, l]) => this.tone('sine', midi(n), t + d, l, 0.05, null, { slide: midi(n + 1), att: 0.015, vib: 0.01, vibHz: 9 })); } }
   appleBite() { if (this.ok) { const t = this.ctx.currentTime; this.noise(t, 0.07, 0.16, { type: 'highpass', f: 1800 }); this.noise(t + 0.05, 0.12, 0.1, { type: 'bandpass', f: 900, q: 1 }); for (let i = 0; i < 3; i++) this.noise(t + 0.3 + i * 0.16, 0.07, 0.06, { type: 'bandpass', f: 800 + i * 150, q: 1.5 }); } }
   // Giraffe World: somebody munching leaves, a little bird, and the low hum that giraffes make to each other
@@ -479,6 +484,7 @@ export class GameAudio {
     else if (zone === 7) run([87, 91, 94, 99, 103], 'sine', 0.06, 0.06);
     else if (zone === 20) { run([79, 76, 72, 67, 72, 76, 84], 'sine', 0.11, 0.09); this.hoot(); }
     else if (zone === 25) { run([74, 78, 81, 86, 81, 86, 90], 'triangle', 0.09, 0.09); this.birdsong(); }
+    else if (zone === 26) { run([76, 79, 83, 88, 83, 91, 88], 'sine', 0.1, 0.1); this.woo(); }
     else if (zone === 24) { run([67, 71, 74, 79, 83, 86, 91], 'triangle', 0.09, 0.09); this.tweet(); }
     else if (zone === 23) { run([84, 79, 76, 72, 76, 79, 84, 72], 'triangle', 0.08, 0.09); this.whistle(false); }
     else if (zone === 22) { run([69, 72, 76, 81, 79, 76, 81, 84], 'sawtooth', 0.08, 0.05); this.whoop(); }

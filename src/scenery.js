@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -3050,10 +3050,150 @@ const orchArch = () => prefab('orchArch', () => {
   return b.build({ cast: true, receive: false });
 });
 
+// ---------- the Friendly Ghost World ----------
+const GH_ROCK = 0x5a5a8a, GH_GRASS = 0x5fae8a;
+const LANTERNS = [BOO.glow, BOO.wisp, 0xffa8c0, 0xb8a0ff];
+// A grassy rock in the sea, with toadstools that glow.
+const ghIsleInto = (b, x, z, r, rng) => {
+  const y0 = WATER_Y - 1.2, y = -0.5;
+  b.cyl(r, r * 1.1, y - y0, GH_ROCK, x, (y + y0) / 2, z, 0, 0, 0, { seg: 12, grad: 0.75 }).cyl(r * 0.96, r, 0.14, GH_GRASS, x, y + 0.02, z, 0, 0, 0, { seg: 12, grad: 1 });
+  for (let i = 0; i < 7; i++) { const a = rng() * 6.28, d = r * (0.6 + rng() * 0.33), px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d, s = 0.7 + rng() * 0.7; b.cyl(0.05 * s, 0.07 * s, 0.3 * s, 0xfff8e0, px, y + 0.2 * s, pz, 0, 0, 0, { seg: 5 }).sph(0.2 * s, LANTERNS[i % 4], px, y + 0.36 * s, pz, 1, 0.6, 1, { seg: 7, glow: true, grad: 0.85 }); }
+};
+// The ghosts' guest house: wonky and purple, with a tower, every window lit and somebody floating out of most of them. It faces +z.
+const ghostHouseInto = (b) => {
+  b.box(5.0, 3.6, 4.0, BOO.purple, 0, 1.8, 0, 0, 0, 0.02, { grad: 0.85 }).box(3.8, 3.0, 3.4, BOO.purpleL, 0.3, 5.0, 0, 0, 0, -0.03, { grad: 0.9 });
+  b.box(5.5, 0.22, 4.5, BOO.purpleD, 0, 3.66, 0, 0, 0, 0.02).prism(4.6, 2.4, 3.9, BOO.purpleD, 0.25, 6.45, 0, 0);
+  b.cyl(1.1, 1.2, 7.2, BOO.purpleL, -2.7, 3.6, 0.7, 0, 0, 0, { seg: 10, grad: 0.85 }).cone(1.6, 2.6, BOO.purpleD, -2.7, 8.5, 0.7, 0, 0, 0.05, { seg: 10 }).sph(0.22, 0xffd23f, -2.76, 9.85, 0.7, 1, 1, 1, { seg: 6 });
+  b.box(0.6, 1.7, 0.6, BOO.purple, 1.6, 7.9, -0.6, 0, 0, -0.12).box(0.8, 0.18, 0.8, BOO.purpleD, 1.7, 8.75, -0.6, 0, 0, -0.12);
+  for (let i = 0; i < 3; i++) b.sph(0.3 + i * 0.12, 0xffffff, 1.85 + i * 0.3, 9.3 + i * 0.6, -0.6, 1, 0.9, 1, { seg: 7 });
+  b.box(1.0, 1.7, 0.12, 0xff8fb0, 0.2, 0.85, 2.02).cyl(0.5, 0.5, 0.12, 0xff8fb0, 0.2, 1.7, 2.02, PI / 2, 0, 0, { seg: 12 }).sph(0.07, 0xffd23f, 0.52, 0.9, 2.1, 1, 1, 1, { seg: 5 }).box(1.5, 0.12, 0.7, 0xd9d2c4, 0.2, 0.06, 2.35);
+  const win = (x, y, z, r) => b.cyl(r, r, 0.1, BOO.glow, x, y, z, PI / 2, 0, 0, { seg: 12, glow: true, grad: 1 }).tor(r, 0.07, 0xffffff, x, y, z + 0.05, 0, 0, 0, { seg: 12, tseg: 4 }).box(0.05, r * 2, 0.04, 0xffffff, x, y, z + 0.07).box(r * 2, 0.05, 0.04, 0xffffff, x, y, z + 0.07);
+  win(1.75, 2.1, 2.0, 0.6); win(-1.3, 2.1, 2.0, 0.6); win(-0.5, 5.1, 1.7, 0.55); win(1.2, 5.1, 1.7, 0.55); win(-2.7, 5.6, 1.86, 0.5); win(0.25, 7.2, 1.93, 0.4);
+  ghostInto(b, 1.75, 1.57, 2.0, 0.85, { wave: true, hat: 1, hatC: 0x5ad0e0 });
+  ghostInto(b, -0.5, 4.6, 1.72, 0.8, { face: 1 });
+  ghostInto(b, -2.7, 5.13, 1.9, 0.75, { hat: 4, hatC: 0xff8fb0 });
+  pumpkinInto(b, -0.8, 0, 2.6, 0.36, 0.2); pumpkinInto(b, 1.2, 0, 2.75, 0.26, -0.3);
+};
+const ghostHouse = () => prefab('ghostHouse', () => {
+  const b = new Builder(0.88), g = new THREE.Group();
+  ghostHouseInto(b); g.add(b.build({ cast: true, receive: false }));
+  const s = signMesh('BOO & BREAKFAST', 3.6, 0.56, '#fff3d6', '#4a3280', '#ff8fb0'); s.position.set(0.2, 3.14, 2.08); g.add(s);
+  return g;
+});
+// Washing day: a line strung along the water at x, from z0 back to z1, with sheets, socks and the odd ghost pegged out to dry.
+const washLineInto = (b, x, z0, z1) => {
+  for (const z of [z0, z1]) b.cyl(0.1, 0.13, 6.5, 0xc8964a, x, 0.65, z, 0, 0, 0, { seg: 6 }).sph(0.17, 0xffd23f, x, 3.95, z, 1, 1, 1, { seg: 6 });
+  b.cyl(0.02, 0.02, z0 - z1, 0xe8d8a0, x, 3.5, (z0 + z1) / 2, PI / 2, 0, 0, { seg: 3 });
+  const n = Math.floor((z0 - z1 - 1.4) / 2);
+  for (let i = 0; i < n; i++) b.at(x, 0, z0 - 1.7 - i * 2, PI / 2, () => {
+    const kind = i % 4;
+    if (kind === 0 || kind === 3) {
+      const c = kind ? [0xffc0d8, 0xbfe8ff][(i >> 2) % 2] : 0xffffff;
+      b.box(1.4, 1.9, 0.04, c, 0, 2.55, 0, 0.05, 0, 0, { grad: 0.88 });
+      if (kind) for (let q = 0; q < 6; q++) b.sph(0.1, 0xffffff, -0.4 + (q % 3) * 0.4, 2.2 + (q > 2 ? 0.7 : 0), 0.03, 1, 1, 0.3, { seg: 5 });
+      for (const sx of [-1, 1]) b.box(0.06, 0.14, 0.08, 0xffd23f, sx * 0.5, 3.5, 0);
+    } else if (kind === 1) {
+      ghostInto(b, 0, 2.12, 0, 1.5, (i >> 2) % 2 ? { hat: 1, hatC: 0x5ad0e0, wave: true } : { face: 1 });
+      for (const sx of [-1, 1]) b.box(0.06, 0.14, 0.08, 0xffd23f, sx * 0.2, 3.5, 0);
+    } else {
+      for (const sx of [-1, 1]) {
+        const c = sx > 0 ? 0xe5383b : 0x5ad0e0;
+        b.box(0.2, 0.55, 0.06, c, sx * 0.3, 3.2, 0).box(0.36, 0.18, 0.06, c, sx * 0.3 + 0.08, 2.86, 0).box(0.21, 0.08, 0.07, 0xffffff, sx * 0.3, 3.3, 0).box(0.21, 0.08, 0.07, 0xffffff, sx * 0.3, 3.1, 0).box(0.06, 0.14, 0.08, 0xffd23f, sx * 0.3, 3.5, 0);
+      }
+    }
+  });
+};
+// A round table that floats, laid for a tea party: a big teapot, a cake with candles and a cup for everybody.
+const teaTableInto = (b, x, z) => {
+  const y = 0.9;
+  b.cyl(1.7, 1.7, 0.1, 0xffffff, x, y, z, 0, 0, 0, { seg: 16 }).cyl(1.72, 1.9, 0.7, 0xffffff, x, y - 0.4, z, 0, 0, 0, { seg: 16, grad: 0.85 }).tor(1.9, 0.08, 0xff8fb0, x, y - 0.75, z, PI / 2, 0, 0, { seg: 16, tseg: 4 });
+  b.sph(0.5, 0x5ad0e0, x, y + 0.5, z, 1, 0.9, 1, { seg: 10 }).cyl(0.09, 0.14, 0.6, 0x5ad0e0, x + 0.6, y + 0.6, z, 0, 0, -0.9, { seg: 6 }).tor(0.26, 0.06, 0x5ad0e0, x - 0.6, y + 0.5, z, 0, 0, 0, { seg: 8, tseg: 4 }).sph(0.12, 0xffd23f, x, y + 1.0, z, 1, 1, 1, { seg: 6 });
+  for (let i = 0; i < 5; i++) b.sph(0.07, 0xffffff, x + Math.cos(i * 1.257) * 0.4, y + 0.55 + Math.sin(i * 1.257) * 0.2, z + 0.44, 1, 1, 0.4, { seg: 5 });
+  b.cyl(0.5, 0.5, 0.32, 0xff8fb0, x - 0.2, y + 0.21, z + 1.0, 0, 0, 0, { seg: 12 }).cyl(0.52, 0.52, 0.08, 0xffffff, x - 0.2, y + 0.4, z + 1.0, 0, 0, 0, { seg: 12 });
+  for (let i = 0; i < 3; i++) b.cyl(0.03, 0.03, 0.22, [0x5ad0e0, 0xffd23f, 0xb8a0ff][i], x - 0.2 + Math.cos(i * 2.1) * 0.25, y + 0.55, z + 1.0 + Math.sin(i * 2.1) * 0.25, 0, 0, 0, { seg: 4 }).sph(0.05, BOO.glow, x - 0.2 + Math.cos(i * 2.1) * 0.25, y + 0.72, z + 1.0 + Math.sin(i * 2.1) * 0.25, 1, 1.5, 1, { seg: 5, glow: true, grad: 1 });
+  for (let i = 0; i < 4; i++) { const a = 0.9 + i * 1.57, cx = x + Math.cos(a) * 1.25, cz = z + Math.sin(a) * 1.25; b.cyl(0.24, 0.24, 0.03, 0xffffff, cx, y + 0.07, cz, 0, 0, 0, { seg: 8 }).cyl(0.16, 0.12, 0.18, [0xffc0d8, 0xbfe8ff, 0xfff3a0, 0xd8c8ff][i], cx, y + 0.17, cz, 0, 0, 0, { seg: 8 }); }
+};
+// A brass telescope on a tripod, pointing up and out to sea (towards +x).
+const telescopeInto = (b, x, y, z) => {
+  for (let i = 0; i < 3; i++) { const a = i * 2.094 + 0.5; b.cyl(0.04, 0.05, 1.6, BOO.iron, x + Math.cos(a) * 0.34, y + 0.72, z + Math.sin(a) * 0.34, -Math.sin(a) * 0.45, 0, Math.cos(a) * 0.45, { seg: 5 }); }
+  b.cyl(0.15, 0.22, 1.9, 0xd8a84a, x + 0.2, y + 1.8, z, 0, 0, -0.9, { seg: 9 }).cyl(0.24, 0.24, 0.12, 0xfff3d6, x + 0.2 + 0.74, y + 1.8 + 0.59, z, 0, 0, -0.9, { seg: 9 }).cyl(0.1, 0.1, 0.3, BOO.iron, x + 0.2 - 0.86, y + 1.8 - 0.68, z, 0, 0, -0.9, { seg: 6 });
+};
+// A tree for an evening garden: a few leaves and a lantern hanging from every branch.
+const lanternTreeInto = (b, x, y, z, s = 1) => b.at(x, y, z, 0, () => {
+  b.cyl(0.22, 0.4, 3.0, 0x5a4a7a, 0, 1.5, 0, 0, 0, 0.05, { seg: 7 });
+  [[0.95, 2.0, 0.5], [-0.85, 1.8, -0.4], [0.35, 1.6, -0.7], [-0.3, 1.5, 0.6]].forEach(([a, l, dz], i) => {
+    const ex = Math.sin(a) * l, ey = 2.7 + Math.cos(a) * l;
+    b.cyl(0.08, 0.16, l, 0x5a4a7a, ex / 2, 2.7 + Math.cos(a) * l / 2, dz / 2, 0, 0, -a, { seg: 5 });
+    b.add(new THREE.IcosahedronGeometry(1, 0), i % 2 ? 0x6fd8b8 : 0x8fe8c8, ex, ey + 0.35, dz / 2, 0, i, 0, 0.95, 0.7, 0.95, { grad: 0.8 });
+    b.cyl(0.012, 0.012, 0.6, 0xe8d8a0, ex * 0.8, ey - 0.45, dz / 2, 0, 0, 0, { seg: 3 }).box(0.3, 0.38, 0.3, LANTERNS[i], ex * 0.8, ey - 0.9, dz / 2, 0, 0.6, 0, { glow: true, grad: 0.85 }).box(0.36, 0.05, 0.36, BOO.iron, ex * 0.8, ey - 0.69, dz / 2, 0, 0.6, 0);
+  });
+}, s);
+// Everything that stands still in one stretch of the Friendly Ghost World, as one model.
+const ghostSet = (k) => prefab('ghostSet' + k, () => {
+  const b = new Builder(0.86), rng = makeRng(2610 + k);
+  if (k === 0) {
+    ghIsleInto(b, 15.5, -22, 6.4, rng);     // the guest house stands here (populate adds it, with its sign)
+    washLineInto(b, -8, -7, -33);
+  } else if (k === 1) {
+    teaTableInto(b, -9.2, -16);
+    ghIsleInto(b, 14.5, -27, 4.4, rng); telescopeInto(b, 14.6, -0.45, -27.4);
+    ghostInto(b, 13.0, -0.4, -26.0, 1.5, { ry: -PI / 2 - 0.4, hat: 1, hatC: 0x5ad0e0, wave: true }); ghostInto(b, 15.4, -0.4, -29.6, 1.2, { ry: -PI / 2 + 0.3, scarf: 0xff8fb0 });
+  } else {
+    ghIsleInto(b, -14.5, -30, 4.2, rng); lanternTreeInto(b, -14.5, -0.45, -30, 1.5);
+  }
+  // hills far off, each with a little house on top and its light on
+  for (const sd of [-1, 1]) for (let i = 0; i < 3; i++) {
+    const x = sd * (34 + rng() * 10), z = -4 - i * 13 - rng() * 4, r = 8 + rng() * 5, sy = 0.55 + rng() * 0.2, top = WATER_Y - 1 + r * sy;
+    b.sph(r, i % 2 ? 0x3f6a8a : 0x4a5a9a, x, WATER_Y - 1, z, 1.3, sy, 1, { seg: 10, grad: 0.7 });
+    b.box(2.2, 2.4, 2.2, BOO.purpleL, x, top + 0.9, z).prism(2.8, 1.5, 2.6, BOO.purpleD, x, top + 2.1, z, 0).box(0.1, 0.8, 0.8, BOO.glow, x - sd * 1.12, top + 1.2, z, 0, 0, 0, { glow: true, grad: 1 });
+  }
+  // paper lanterns floating on the sea
+  for (const sd of [-1, 1]) for (let i = 0; i < 7; i++) { const x = sd * (6.5 + rng() * 17), z = -rng() * CHUNK, c = LANTERNS[(i + (sd > 0 ? 1 : 0)) % 4]; b.cyl(0.3, 0.3, 0.06, 0xfff3d6, x, WATER_Y + 0.08, z, 0, 0, 0, { seg: 7 }).box(0.34, 0.4, 0.34, c, x, WATER_Y + 0.32, z, 0, rng() * 3, 0, { glow: true, grad: 0.85 }); }
+  return b.build({ cast: true, receive: false });
+});
+// Ghosts to stand about and bob: four of them, each dressed differently.
+const GHOSTS = [{ hat: 1, hatC: 0xe5383b, wave: true }, { hat: 3, hatC: 0xffd23f, face: 1 }, { hat: 2, hatC: 0xff8fb0, bow: 0xe5383b }, { hat: 5, hatC: 0xff8fb0, scarf: 0x5ad0e0, wave: true }];
+const ghost = (v) => prefab('ghost' + v, () => { const b = new Builder(0.9); ghostInto(b, 0, 0, 0, 1, { ...GHOSTS[v], seg: 14 }); return b.build({ cast: false, receive: false }); });
+// A ghost as tall as a house, in a bobble hat and scarf, who comes up out of the sea to wave.
+const bigGhost = () => prefab('bigGhost', () => { const b = new Builder(0.9); ghostInto(b, 0, 0, 0, 9, { hat: 1, hatC: 0xe5383b, scarf: 0x5ad0e0, wave: true, seg: 22 }); return b.build({ cast: false, receive: false }); });
+// Two ghosts out in a rowing boat, fishing for stars. The ghosts face +z.
+const ghostBoat = () => prefab('ghostBoat', () => {
+  const b = new Builder(0.88);
+  b.sph(1, 0x8a5a3c, 0, 0, 0, 2.0, 0.55, 0.85, { seg: 10 }).sph(1, 0x5a3a2a, 0, 0.32, 0, 1.8, 0.2, 0.7, { seg: 9 }).tor(1, 0.06, 0xc8964a, 0, 0.3, 0, PI / 2, 0, 0, { seg: 14, tseg: 3 });
+  ghostInto(b, -0.75, 0.3, 0, 1.0, { hat: 1, hatC: 0xffd23f });
+  ghostInto(b, 0.6, 0.3, 0, 1.0, { scarf: 0xe5383b, wave: true });
+  b.cyl(0.02, 0.025, 2.0, 0xc8964a, 0.95, 1.5, 0.9, 0.7, 0, 0, { seg: 4 }).cyl(0.008, 0.008, 1.5, 0xffffff, 0.95, 1.51, 1.54, 0, 0, 0, { seg: 3 });
+  b.add(new THREE.OctahedronGeometry(1, 0), 0xffd23f, 0.95, 0.66, 1.54, 0, 0.5, 0, 0.22, 0.22, 0.22, { glow: true, grad: 1 });
+  b.cyl(0.16, 0.16, 0.3, 0xbfe8ff, -0.05, 0.6, 0.1, 0, 0, 0, { seg: 7 });
+  for (let i = 0; i < 3; i++) b.add(new THREE.OctahedronGeometry(1, 0), 0xffd23f, -0.05 + (i - 1) * 0.06, 0.55 + i * 0.09, 0.1, 0, i, 0, 0.07, 0.07, 0.07, { glow: true, grad: 1 });
+  return b.build({ cast: false, receive: false });
+});
+// Two ghosts on barber's poles hold a string of ghost-shaped bunting and lanterns over the boards, and a sign to say hello.
+const ghostArch = () => prefab('ghostArch', () => {
+  const b = new Builder(0.88), g = new THREE.Group();
+  for (const sx of [-1, 1]) {
+    b.cyl(0.4, 0.5, 0.5, BOO.purpleD, sx * 5.4, 0.25, 0, 0, 0, 0, { seg: 8 });
+    for (let i = 0; i < 6; i++) b.cyl(0.2, 0.2, 1.0, i % 2 ? 0xffffff : BOO.purpleL, sx * 5.4, 1.0 + i, 0, 0, 0, 0, { seg: 8 });
+    b.cyl(0.5, 0.3, 0.2, BOO.purpleD, sx * 5.4, 6.6, 0, 0, 0, 0, { seg: 8 });
+    ghostInto(b, sx * 5.4, 6.65, 0, 1.4, sx > 0 ? { ry: -0.25, hat: 1, hatC: 0xe5383b } : { ry: 0.25, hat: 3, hatC: 0xffd23f, scarf: 0x5ad0e0, wave: true });
+  }
+  for (let i = 0; i <= 14; i++) {
+    const u = i / 14, x = -4.9 + u * 9.8, y = 7.5 - Math.sin(u * PI) * 0.7;
+    if (i < 14) { const u2 = (i + 1) / 14, y2 = 7.5 - Math.sin(u2 * PI) * 0.7; b.cyl(0.015, 0.015, 0.72, 0xe8d8a0, x + 0.35, (y + y2) / 2, 0, 0, 0, Math.atan2(y2 - y, 0.7) - PI / 2, { seg: 3 }); }
+    if (i === 0 || i === 14) continue;
+    if (i % 2) { b.box(0.44, 0.42, 0.05, 0xffffff, x, y - 0.3, 0); for (let q = 0; q < 3; q++) b.sph(0.085, 0xffffff, x - 0.15 + q * 0.15, y - 0.52, 0, 1, 1, 0.4, { seg: 5 }); b.sph(0.22, 0xffffff, x, y - 0.14, 0, 1, 0.7, 0.14, { seg: 7 }); for (const sx of [-1, 1]) b.sph(0.04, BOO.eye, x + sx * 0.09, y - 0.22, 0.04, 1, 1.3, 0.4, { seg: 4 }); }
+    else b.box(0.26, 0.32, 0.26, LANTERNS[(i / 2) % 4], x, y - 0.3, 0, 0, 0.6, 0, { glow: true, grad: 0.85 });
+  }
+  for (const sx of [-1, 1]) ghostInto(b, sx * 2.0, 7.75, 0, 0.8, { ry: sx * -0.2, hat: 5, hatC: sx > 0 ? 0xff8fb0 : 0x5ad0e0 });
+  g.add(b.build({ cast: true, receive: false }));
+  const s = signMesh('HELLO!', 3.2, 0.9, '#fff3d6', '#4a3280', '#ff8fb0'); s.position.set(0, 8.3, 0.02); g.add(s);
+  return g;
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -3061,7 +3201,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); if (zone === 23) s.rotation.z = PI;   // (the sign for the Upside-Down World is upside down, of course)
   g.add(s);
   return g;
@@ -3075,7 +3215,7 @@ export function populate(group, rawIndex, zone, anim) {
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
   if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19 && zone !== 25) place(group, rail40(), L, 0, 0); }
-  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && zone !== 23 && zone !== 24 && !coast);   // the right-hand side opens onto ground at deck level
+  const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && zone !== 23 && zone !== 24 && zone !== 26 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
     const flags = zone !== 4 && zone !== 6;
@@ -3319,6 +3459,19 @@ export function populate(group, rawIndex, zone, anim) {
     if (k === 0) { place(group, fruitStall(), 9.6, 0, -12, -PI / 2); anim.push({ o: place(group, flutter(1), -6.5, 1.3, -14), kind: 'spin', v: 0.9 }); }
     else if (k === 1) { anim.push({ o: place(group, flutter(0), -8.8, 1.3, -11.9), kind: 'spin', v: 2.6 }); anim.push({ o: place(group, oldTree(), 11.5, 0, -27, -PI / 2), kind: 'fall', p: rng() }); }
     else { anim.push({ o: place(group, appleWorm(), 10.0, 3.9, -24, -PI / 2), kind: 'bob', p: rng() * 6, amp: 2 }); anim.push({ o: place(group, flutter(1), 6.6, 1.4, -8), kind: 'spin', v: 0.9 }); }
+  } else if (zone === 26) {
+    const k = index % 3;
+    place(group, ghostSet(k), 0, 0, 0);
+    if (index % 2 === 1) place(group, ghostArch(), 0, 0, -20);
+    if (k === 0) {
+      place(group, ghostHouse(), 15.5, -0.45, -22, -PI / 2);
+      anim.push({ o: place(group, ghost(0), -6.4, 1.0, -20, PI / 2, 1.5), kind: 'bob', p: rng() * 6, amp: 2 });
+    } else if (k === 1) {
+      for (const [x, z, ry, v] of [[-11.6, -16, PI / 2, 2], [-10.2, -18.4, 0.5, 1], [-10, -13.6, 2.3, 3]]) anim.push({ o: place(group, ghost(v), x, 0.5, z, ry, 1.7), kind: 'bob', p: rng() * 6, amp: 1.5 });
+    } else {
+      anim.push({ o: place(group, bigGhost(), 17.5, -12.8, -22, -PI / 2), kind: 'peek', p: rng(), rise: 10.4 });
+      anim.push({ o: place(group, ghostBoat(), -10, WATER_Y + 0.2, -14, PI / 2), kind: 'bob', p: rng() * 6 });
+    }
   } else if (zone === 12) {
     for (const z of [-5, -25]) place(group, spiralHoop(((index * 2 + (z < -10 ? 1 : 0)) % 2)), 0, 0, z);
     for (const z of fz) { const r = rng(); if (r < 0.35) place(group, bench(), 3.95, 0, z, 0); else if (r < 0.5) place(group, lifeRing(), 4.2, 0, z, -PI / 2); }
@@ -3459,6 +3612,11 @@ export function animate(anim, t, dt) {
       const amp = a.amp || 1;
       a.o.position.y = (a.baseY ?? (a.baseY = a.o.position.y)) + Math.sin(t * 1.3 + a.p) * 0.18 * amp;
       a.o.rotation.z = Math.sin(t * 1.1 + a.p * 1.7) * 0.07 * amp; a.o.rotation.x = Math.sin(t * 0.9 + a.p) * 0.04 * amp;
+    } else if (a.kind === 'peek') {
+      // a very big ghost comes slowly up out of the sea, bobs there for a while to say hello, and sinks again
+      const u = (t * 0.09 + a.p) % 1, y0 = a.y0 ?? (a.y0 = a.o.position.y);
+      const up = u < 0.15 ? smoothStep(u / 0.15) : u < 0.8 ? 1 : u < 0.93 ? 1 - smoothStep((u - 0.8) / 0.13) : 0;
+      a.o.position.y = y0 + up * a.rise + Math.sin(t * 1.3) * 0.2 * up; a.o.rotation.z = Math.sin(t * 1.1) * 0.05 * up;
     } else if (a.kind === 'fall') {
       // an apple hangs for a while, drops, lies in the grass, and then there is another one
       const c = a.c || (a.c = a.o.getObjectByName('fall')), y0 = a.y0 ?? (a.y0 = c.position.y), u = (t * 0.22 + a.p) % 1;

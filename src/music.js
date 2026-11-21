@@ -580,4 +580,23 @@ THEMES[25] = theme('Apple Blossom', {
   drums: { thump: 'x.......x.......', tick: '..x...x...x...x.', rim: '....x.......x...' },
 });
 
+// ---- 26. the Friendly Ghost World: "Boo to You Too", a bouncy tune for a theremin that goes woo (E minor) ----
+THEMES[26] = theme('Boo to You Too', {
+  key: 4, scale: 'min', base: 64, gain: 1.65, tempo: 1.0, voice: 'theremin', bassVoice: 'pizz', stab: 'bell',
+  chords: 'i i iv i bVI bVII i V',
+  tune: [
+    "1:2 3:2 5:4 3:2 5:2 1':4",
+    "7:2 5:2 3:4 1:4 -:4",
+    "4:2 6:2 1':4 6:2 1':2 4':4",
+    "3':2 1':2 5:4 3:4 -:4",
+    "6:2 1':2 3':4 1':2 3':2 6:4",
+    "7:2 2':2 4':4 2':2 4':2 7:4",
+    "1':2 3':2 5':2 3':2 1':4 5:4",
+    "5:4 2':4 5:8",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 12, _, _, _, 7, _, _, _],
+  stabs: '....x.......x...',
+  drums: { thump: 'x.......x.......', tick: '..x...x...x...x.', rim: '....x.......x...' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));
