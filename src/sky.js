@@ -53,6 +53,8 @@ const PAL = [
   { top: 0x3f96f0, hor: 0xffe0f0, sun: 0xfff6dc, sunI: 3.1, hemiS: 0xf4f8ff, hemiG: 0x9ad070, hemiI: 1.4, deep: 0x2f88c8, shal: 0x7fd8e8, foam: 0xffffff, cloud: 0xffffff, el: 0.65, az: -0.5, stars: 0, storm: 0 },
   // 32 Pixel World: golden hour in a cottage garden, a warm lilac sky with honey-coloured light, the time cats like best
   { top: 0x6a7ad8, hor: 0xffd0b0, sun: 0xffe0b0, sunI: 2.9, hemiS: 0xfff0e8, hemiG: 0xa8c078, hemiI: 1.35, deep: 0x3a6ab0, shal: 0x88c0d8, foam: 0xfff8f0, cloud: 0xffe8f0, el: 0.42, az: 0.45, stars: 0, storm: 0 },
+  // 33 Blackpool: early evening by the sea, a pink and violet sky with the sun going down over the water and the lights coming on
+  { top: 0x3a3a8f, hor: 0xffa088, sun: 0xffb890, sunI: 2.3, hemiS: 0xffdcec, hemiG: 0x9a8aa8, hemiI: 1.35, deep: 0x2a4a8a, shal: 0x7a8ac8, foam: 0xfff4f4, cloud: 0xffbcc8, el: 0.14, az: -0.55, stars: 0.25, storm: 0 },
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 

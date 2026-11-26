@@ -3663,6 +3663,219 @@ def('planeMouse', 'deco', 2.2, 1.1, 1.4, (b) => {
   wings: (b, sx) => { b.box(0.8, 0.025, 0.55, 0xffffff, sx * 0.4, 0, -0.05, 0, sx * 0.35, 0).box(0.5, 0.03, 0.04, 0xd8e0ea, sx * 0.3, 0.01, 0.05, 0, sx * 0.35, 0); }, wingAt: [0.12, -0.06, 0],
 });
 
+// ---------- Blackpool ----------
+export const BPL = { sand: 0xf0d6a0, sandD: 0xd8ba80, wet: 0xc8a878, red: 0xd8323a, redD: 0xa82430, brick: 0xb8543a, brickD: 0x8f3f2c, cream: 0xfff2d8, creamD: 0xe8d8b8, green: 0x2f8a5a, greenD: 0x1f6a44,
+  rock: 0xff8ab8, rockD: 0xe8508f, donkey: 0x8f7f70, donkeyL: 0xc8bcae, donkeyD: 0x5a4c40, eye: 0x1b1f24, cheek: 0xff9ab0, gold: 0xf2c230, blue: 0x2f6fd8, navy: 0x22365c, straw: 0xf0d070, strawD: 0xc8a850,
+  wood: 0xa8784a, woodD: 0x7a5434, iron: 0xb0303a, ironD: 0x7a2026, glass: 0xbfe6ff, bulbs: [0xffe27a, 0xff6fae, 0x6ff0ff, 0x9dff6a, 0xffffff, 0xffb347] };
+// A seaside donkey with a saddle cloth and long soft ears, facing +x and about 1.7 s high (ears and all).
+// Options: ry, saddle (colour, or false), hat (a straw hat with holes for the ears), asleep (lying down with its eyes shut).
+export function donkeyInto(b, x, y, z, s = 1, o = {}) {
+  const c = o.col || BPL.donkey, l = BPL.donkeyL, d = BPL.donkeyD, low = o.asleep ? -0.5 : 0;
+  b.at(x, y, z, o.ry || 0, () => {
+    b.sph(0.42, c, 0, 0.78 + low, 0, 1.35, 0.8, 0.82, { seg: 10 }).sph(0.3, l, 0.02, 0.64 + low, 0, 1.2, 0.5, 0.8, { seg: 8 });
+    if (o.asleep) { for (const sx of [-0.36, 0.36]) for (const sz of [-1, 1]) b.cap(0.075, 0.36, c, sx + 0.18, 0.08, sz * 0.24, 0, 0, PI / 2, { seg: 6 }).sph(0.085, d, sx + 0.42, 0.08, sz * 0.24, 0.7, 1, 1, { seg: 5 }); }
+    else for (const sx of [-0.36, 0.36]) for (const sz of [-0.17, 0.17]) b.cyl(0.075, 0.065, 0.56, c, sx, 0.3, sz, 0, 0, 0, { seg: 6 }).sph(0.085, d, sx + 0.01, 0.04, sz, 1.1, 0.6, 1, { seg: 5 });
+    const hy = o.asleep ? 0.62 : 1.28, hx = o.asleep ? 0.78 : 0.72;
+    b.cyl(0.13, 0.18, 0.5, c, 0.5, (o.asleep ? 0.5 : 1.05), 0, 0, 0, o.asleep ? -1.1 : -0.6, { seg: 7 });
+    b.sph(0.2, c, hx, hy, 0, 1.25, 0.9, 0.85, { seg: 8 }).sph(0.14, l, hx + 0.2, hy - 0.08, 0, 1.1, 0.85, 0.95, { seg: 7 });
+    for (const sz of [-1, 1]) {
+      if (o.asleep) b.tor(0.04, 0.012, BPL.eye, hx + 0.09, hy + 0.08, sz * 0.15, 0, sz * 0.4, PI, { arc: PI, seg: 6, tseg: 3 });
+      else b.sph(0.048, 0xffffff, hx + 0.08, hy + 0.08, sz * 0.13, 1, 1, 0.6, { seg: 5 }).sph(0.027, BPL.eye, hx + 0.1, hy + 0.08, sz * 0.152, 1, 1, 0.6, { seg: 4 });
+      b.sph(0.035, BPL.cheek, hx + 0.14, hy - 0.03, sz * 0.13, 0.7, 0.6, 0.5, { seg: 4 }).sph(0.016, d, hx + 0.32, hy - 0.06, sz * 0.05, 1, 1, 1, { seg: 4 });
+      const ea = o.asleep ? 0.9 : 0.25;
+      b.cone(0.075, 0.42, c, hx - 0.08, hy + 0.34 - (o.asleep ? 0.1 : 0), sz * (0.1 + (o.asleep ? 0.12 : 0)), sz * ea, 0, 0.25, { seg: 5 }).cone(0.038, 0.28, BPL.cheek, hx - 0.06, hy + 0.32 - (o.asleep ? 0.1 : 0), sz * (0.11 + (o.asleep ? 0.12 : 0)), sz * ea, 0, 0.25, { seg: 4 });
+    }
+    b.tor(0.13, 0.018, BPL.red, hx + 0.2, hy - 0.06, 0, 0, PI / 2, 0, { seg: 9, tseg: 3 });
+    if (!o.asleep) for (let i = 0; i < 5; i++) b.box(0.05, 0.14, 0.06, d, 0.36 + i * 0.07, 0.98 + i * 0.07, 0, 0, 0, -0.6);
+    b.cyl(0.025, 0.02, 0.45, c, -0.6, 0.62 + low * 0.9, 0, 0, 0, -0.35, { seg: 4 }).sph(0.06, d, -0.68, 0.42 + low * 0.9, 0, 1, 1.6, 1, { seg: 5 });
+    if (o.saddle !== false) {
+      const sc = o.saddle || BPL.red;
+      b.sph(0.43, sc, -0.02, 0.83 + low, 0, 0.62, 0.86, 0.87, { seg: 9 }).box(0.06, 0.06, 0.78, BPL.gold, -0.02, 1.05 + low, 0);
+      for (const sz of [-1, 1]) b.sph(0.05, BPL.gold, -0.02, 0.66 + low, sz * 0.37, 1, 1, 0.5, { seg: 5 });
+    }
+    if (o.hat) b.cyl(0.26, 0.26, 0.03, BPL.straw, hx - 0.04, hy + 0.2, 0, 0, 0, 0, { seg: 12 }).dome(0.14, BPL.straw, hx - 0.04, hy + 0.21, 0, 0, 0, 0, 1, 0.9, 1, { seg: 10 }).cyl(0.145, 0.145, 0.04, o.hat === true ? BPL.blue : o.hat, hx - 0.04, hy + 0.24, 0, 0, 0, 0, { seg: 10 });
+  }, s);
+}
+// A stick of seaside rock standing on end, h high and r round: pink outside with a white swirl, white inside with pink letters
+// through it (just a ring of them here), and a paper label round the middle if wrapped.
+export function rockStickInto(b, x, y, z, h, r, o = {}) {
+  b.cyl(r, r, h, BPL.rock, x, y + h / 2, z, 0, 0, 0, { seg: 12, grad: 0.9 });
+  const n = Math.max(3, Math.round(h / (r * 1.4)));
+  for (let i = 0; i < n; i++) b.tor(r * 1.005, r * 0.12, 0xffffff, x, y + (i + 0.5) * h / n, z, PI / 2 + 0.35, 0, 0, { seg: 12, tseg: 3 });
+  b.cyl(r * 0.8, r * 0.8, 0.01, 0xffffff, x, y + h + 0.005, z, 0, 0, 0, { seg: 12 }).tor(r * 0.45, r * 0.08, BPL.rockD, x, y + h + 0.01, z, PI / 2, 0, 0, { seg: 10, tseg: 3 });
+  if (o.wrapped) b.cyl(r * 1.04, r * 1.04, h * 0.2, 0xffffff, x, y + h * 0.55, z, 0, 0, 0, { seg: 12, grad: 1 }).cyl(r * 1.06, r * 1.06, h * 0.05, BPL.blue, x, y + h * 0.55, z, 0, 0, 0, { seg: 12, grad: 1 });
+}
+// A strut, a thin box from point p to point q (for towers and frames).
+const _up = new THREE.Vector3(0, 1, 0), _d = new THREE.Vector3(), _sq = new THREE.Quaternion(), _se = new THREE.Euler();
+export function strutInto(b, p, q, t, c, o) {
+  _d.set(q[0] - p[0], q[1] - p[1], q[2] - p[2]); const L = _d.length(); _d.normalize();
+  _sq.setFromUnitVectors(_up, _d); _se.setFromQuaternion(_sq);
+  b.box(t, L, t, c, (p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2, _se.x, _se.y, _se.z, o);
+}
+// The great tower: a red iron lattice that tapers up from a brick building with a ballroom in it, and a lookout and a flag at the top.
+// It stands on (x, y, z) with its front to +z; the iron part is H high above the building. With bulbs on: lit up for the evening.
+export function bigTowerInto(b, x, y, z, H = 40, o = {}) {
+  b.at(x, y, z, o.ry || 0, () => {
+    const BH = 7, W = 15, D = 13;
+    // the building
+    b.box(W, BH, D, BPL.brick, 0, BH / 2, 0, 0, 0, 0, { grad: 0.85 }).box(W + 0.3, 0.4, D + 0.3, BPL.cream, 0, BH + 0.2, 0).box(W + 0.2, 0.3, D + 0.2, BPL.cream, 0, 3.4, 0);
+    for (let i = 0; i < 6; i++) {
+      const wx = -6 + i * 2.4;
+      b.box(1.2, 2.0, 0.1, 0xfff0c0, wx, 4.8, D / 2 + 0.02, 0, 0, 0, { glow: true }).cyl(0.6, 0.6, 0.1, 0xfff0c0, wx, 5.8, D / 2 + 0.02, PI / 2, 0, 0, { seg: 10, glow: true });
+      b.box(1.5, 0.2, 0.2, BPL.cream, wx, 3.75, D / 2 + 0.08).box(1.0, 2.2, 0.12, BPL.glass, wx, 1.6, D / 2 + 0.03);
+    }
+    for (const sx of [-1, 1]) b.cyl(1.0, 1.0, BH + 1.6, BPL.cream, sx * (W / 2), (BH + 1.6) / 2, D / 2, 0, 0, 0, { seg: 10 }).sph(1.1, BPL.green, sx * (W / 2), BH + 1.8, D / 2, 1, 1.3, 1, { seg: 10 }).cone(0.12, 1.0, BPL.gold, sx * (W / 2), BH + 3.3, D / 2, 0, 0, 0, { seg: 6 });
+    b.box(4.4, 3.2, 0.3, BPL.navy, 0, 1.6, D / 2 + 0.05).box(4.8, 0.3, 1.4, BPL.red, 0, 3.3, D / 2 + 0.6);
+    // the iron lattice: four legs leaning in, with rings and crosses every storey
+    const N = 9, w0 = 4.6, w1 = 1.3, top = BH + H * 0.84, iron = BPL.iron;
+    const hw = (k) => w0 + (w1 - w0) * Math.pow(k / N, 0.8), hy = (k) => BH + (top - BH) * k / N;
+    const corner = (k, i) => { const a = hw(k), sx = i === 0 || i === 3 ? -1 : 1, sz = i < 2 ? -1 : 1; return [sx * a, hy(k), sz * a]; };
+    for (let k = 0; k < N; k++) for (let i = 0; i < 4; i++) {
+      const j = (i + 1) % 4, t = 0.34 - k * 0.022;
+      strutInto(b, corner(k, i), corner(k + 1, i), t + 0.1, iron);
+      strutInto(b, corner(k + 1, i), corner(k + 1, j), t, iron);
+      strutInto(b, corner(k, i), corner(k + 1, j), t * 0.55, BPL.ironD); strutInto(b, corner(k, j), corner(k + 1, i), t * 0.55, BPL.ironD);
+    }
+    for (let i = 0; i < 4; i++) strutInto(b, corner(0, i), corner(0, (i + 1) % 4), 0.4, iron);
+    // the lookout, the crow's nest and the flag
+    b.box(w1 * 2 + 1.6, 1.8, w1 * 2 + 1.6, BPL.cream, 0, top + 0.9, 0).box(w1 * 2 + 1.7, 1.0, w1 * 2 + 1.7, 0x8fd0ff, 0, top + 1.0, 0, 0, 0, 0, { glow: true }).box(w1 * 2 + 2.2, 0.25, w1 * 2 + 2.2, iron, 0, top + 1.9, 0);
+    b.cyl(w1 * 0.8, w1 * 1.2, H * 0.1, iron, 0, top + 1.9 + H * 0.05, 0, 0, PI / 4, 0, { seg: 4 }).cyl(0.9, 0.9, 0.7, BPL.cream, 0, top + 2.2 + H * 0.1, 0, 0, 0, 0, { seg: 10 }).cone(0.95, 2.2, iron, 0, top + 3.6 + H * 0.1, 0, 0, 0, 0, { seg: 8 });
+    const fy = top + 4.7 + H * 0.1;
+    b.cyl(0.07, 0.07, 3.2, 0xffffff, 0, fy + 1.4, 0, 0, 0, 0, { seg: 5 }).box(0.04, 1.0, 1.7, BPL.red, 0, fy + 2.4, 0.86).sph(0.16, BPL.gold, 0, fy + 3.05, 0, 1, 1, 1, { seg: 6 });
+    if (o.bulbs !== false) {
+      // the lights: bulbs up all four legs and round the lookout
+      for (let i = 0; i < 4; i++) for (let k = 0; k <= N * 2; k++) { const c = corner(k / 2, i); b.sph(0.22, BPL.bulbs[(k + i) % 3], c[0] * 1.07, c[1], c[2] * 1.07, 1, 1, 1, { seg: 4, glow: true }); }
+      for (let i = 0; i < 16; i++) { const a = i * PI / 8, r = w1 * 1.6 + 1.1; b.sph(0.2, BPL.bulbs[i % 2 ? 0 : 1], Math.cos(a) * r, top + 2.0, Math.sin(a) * r, 1, 1, 1, { seg: 4, glow: true }); }
+    }
+  });
+}
+// A double-decker tram, cream with a green skirt, h about 4.4 and 8 long, running along z with its lights on.
+export function tramInto(b, x, y, z, col = BPL.green) {
+  b.at(x, y, z, 0, () => {
+    const L = 8, W = 2.3;
+    b.box(W - 0.3, 0.45, L - 1.2, 0x34343c, 0, 0.42, 0);
+    for (const sz of [-1, 1]) for (const sx of [-1, 1]) b.cyl(0.34, 0.34, 0.12, 0x24242a, sx * 0.86, 0.36, sz * 2.6, 0, 0, PI / 2, { seg: 10 });
+    b.box(W, 1.1, L, col, 0, 1.2, 0, 0, 0, 0, { grad: 0.85 }).box(W + 0.02, 0.85, L - 0.6, 0xfff0c8, 0, 2.15, 0, 0, 0, 0, { glow: true });
+    b.box(W, 0.32, L, BPL.cream, 0, 2.74, 0).box(W + 0.02, 0.8, L - 0.8, 0xfff0c8, 0, 3.3, 0, 0, 0, 0, { glow: true }).box(W, 0.36, L - 0.4, BPL.cream, 0, 3.88, 0);
+    for (let i = 0; i < 7; i++) for (const yy of [2.15, 3.3]) b.box(W + 0.05, yy > 3 ? 0.8 : 0.85, 0.1, BPL.cream, 0, yy, -L / 2 + 0.7 + i * (L - 1.4) / 6);
+    for (const sz of [-1, 1]) {
+      b.add(new THREE.CylinderGeometry(W / 2, W / 2, 1.1, 14, 1, false, 0, PI), col, 0, 1.2, sz * L / 2, 0, sz > 0 ? -PI / 2 : PI / 2, 0, 1, 1, 0.45);
+      b.add(new THREE.CylinderGeometry(W / 2, W / 2, 2.0, 14, 1, false, 0, PI), BPL.cream, 0, 2.75, sz * L / 2, 0, sz > 0 ? -PI / 2 : PI / 2, 0, 1, 1, 0.45);
+      b.add(new THREE.CylinderGeometry(W / 2 + 0.02, W / 2 + 0.02, 0.7, 14, 1, true, PI * 0.15, PI * 0.7), 0xfff0c8, 0, 2.2, sz * L / 2, 0, sz > 0 ? -PI / 2 : PI / 2, 0, 1, 1, 0.47, { glow: true });
+      b.box(1.0, 0.3, 0.06, 0x2a2a30, 0, 3.7, sz * (L / 2 + 0.47)).box(0.8, 0.18, 0.02, 0xffd23f, 0, 3.7, sz * (L / 2 + 0.5), 0, 0, 0, { glow: true });
+      b.sph(0.14, 0xfff8d0, 0, 0.9, sz * (L / 2 + 0.46), 1, 1, 0.5, { seg: 6, glow: true });
+    }
+    b.dome(W / 2, BPL.cream, 0, 4.05, 0, 0, 0, 0, 1, 0.18, L / W * 0.9, { seg: 14 });
+    b.cyl(0.04, 0.04, 2.4, 0x3a3a44, 0, 5.0, -0.6, 0.9, 0, 0, { seg: 4 }).box(0.6, 0.08, 0.08, 0x3a3a44, 0, 5.85, -1.5);
+    for (let i = 0; i < 12; i++) b.sph(0.08, BPL.bulbs[i % 4], W / 2 + 0.04, 4.02, -L / 2 + 0.4 + i * (L - 0.8) / 11, 1, 1, 1, { seg: 4, glow: true }).sph(0.08, BPL.bulbs[(i + 2) % 4], -W / 2 - 0.04, 4.02, -L / 2 + 0.4 + i * (L - 0.8) / 11, 1, 1, 1, { seg: 4, glow: true });
+  });
+}
+// An ice cream in a cone, standing up: a wafer cone h high with two scoops and a chocolate flake.
+export function iceConeInto(b, x, y, z, h, cols = [0xfff4dc, 0xff9ac0]) {
+  const r = h * 0.3;
+  b.cone(r, h, 0xe0a858, x, y + h / 2, z, PI, 0, 0, { seg: 10, grad: 0.85 });
+  for (let i = 0; i < 4; i++) b.tor(r * (0.35 + i * 0.17), r * 0.04, 0xc08848, x, y + h * (0.35 + i * 0.17), z, PI / 2, 0, 0, { seg: 10, tseg: 3 });
+  b.sph(r * 1.08, cols[0], x, y + h + r * 0.35, z, 1, 0.85, 1, { seg: 10 }).sph(r * 0.9, cols[1], x + r * 0.1, y + h + r * 1.2, z, 1, 0.9, 1, { seg: 10 });
+  b.box(r * 0.22, r * 1.1, r * 0.22, 0x7a4526, x - r * 0.35, y + h + r * 1.5, z + r * 0.2, 0.2, 0, 0.4);
+}
+def('rockCrate', 'low', 1.4, 0.92, 1.0, (b) => {
+  // a wooden crate full of sticks of rock, all standing up in their wrappers
+  b.box(1.3, 0.5, 0.86, BPL.wood, 0, 0.25, 0, 0, 0, 0, { grad: 0.85 }).box(1.34, 0.06, 0.9, BPL.woodD, 0, 0.5, 0).box(1.34, 0.06, 0.9, BPL.woodD, 0, 0.05, 0);
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) rockStickInto(b, -0.45 + i * 0.3 + (j % 2) * 0.08, 0.3, -0.24 + j * 0.24, 0.55 + ((i + j) % 3) * 0.05, 0.085, { wrapped: (i + j) % 2 === 0 });
+  b.box(0.6, 0.22, 0.02, 0xffffff, 0, 0.27, 0.44).box(0.5, 0.06, 0.03, BPL.rockD, 0, 0.27, 0.45);
+});
+def('bucketSpade', 'low', 1.4, 0.95, 1.0, (b) => {
+  // a giant red bucket, a sandcastle made with it, and a spade stuck in the sand
+  b.cyl(0.9, 0.9, 0.06, BPL.sand, 0, 0.03, 0, 0, 0, 0, { seg: 12 });
+  b.cyl(0.34, 0.26, 0.6, BPL.red, -0.32, 0.36, 0.05, 0, 0, 0.12, { seg: 12, open: true }).tor(0.34, 0.03, BPL.redD, -0.36, 0.66, 0.05, PI / 2, 0, 0.12, { seg: 12, tseg: 3 }).tor(0.32, 0.02, BPL.gold, -0.36, 0.66, 0.05, 0.3, 0, 0, { arc: PI, seg: 10, tseg: 3 });
+  b.cyl(0.26, 0.34, 0.5, BPL.sandD, 0.3, 0.3, -0.05, 0, 0, 0, { seg: 10 });
+  for (let i = 0; i < 6; i++) b.box(0.1, 0.1, 0.1, BPL.sandD, 0.3 + Math.cos(i * 1.047) * 0.22, 0.6, -0.05 + Math.sin(i * 1.047) * 0.22);
+  b.cyl(0.01, 0.01, 0.3, 0xffffff, 0.3, 0.8, -0.05, 0, 0, 0, { seg: 3 }).prism(0.02, 0.12, 0.2, BPL.blue, 0.3, 0.85, 0.05, PI / 2);
+  b.cyl(0.03, 0.03, 0.7, BPL.woodD, 0.55, 0.45, 0.32, -0.3, 0, -0.2, { seg: 5 }).box(0.24, 0.3, 0.03, BPL.blue, 0.5, 0.12, 0.22, -0.3, 0, -0.2).box(0.18, 0.05, 0.05, BPL.wood, 0.62, 0.8, 0.43, -0.3, 0, -0.2);
+});
+def('chipCone', 'low', 1.4, 0.95, 1.0, (b) => {
+  // a giant paper cone of chips with a little wooden fork stuck in, and a gull who would like one
+  b.cone(0.42, 0.7, 0xfff8ec, -0.15, 0.35, 0, PI, 0, 0, { seg: 10 });
+  b.add(new THREE.ConeGeometry(0.43, 0.42, 10, 1, true), (x, y, z, i) => (Math.floor(i / 3) % 2 ? BPL.blue : 0xffffff), -0.15, 0.48, 0, PI, 0, 0, 1, 1, 1, { grad: 1 });
+  for (let i = 0; i < 14; i++) { const a = i * 2.4, r = 0.08 + (i % 4) * 0.08; b.box(0.08, 0.36, 0.08, i % 3 ? 0xf2c860 : 0xe0a848, -0.15 + Math.cos(a) * r, 0.82 + (i % 3) * 0.04, Math.sin(a) * r, Math.sin(a) * 0.4, 0, Math.cos(a) * 0.4); }
+  b.box(0.03, 0.4, 0.03, 0xe8c890, 0.0, 0.95, 0.1, 0.3, 0, -0.3);
+  // the gull, hopeful
+  b.sph(0.17, 0xffffff, 0.48, 0.24, 0, 1.3, 0.9, 0.85, { seg: 8 }).sph(0.11, 0xffffff, 0.58, 0.44, 0, 1, 1, 1, { seg: 7 }).cone(0.035, 0.12, 0xf5a623, 0.7, 0.43, 0, 0, 0, -PI / 2, { seg: 4 });
+  b.sph(0.15, 0xc8d0d8, 0.42, 0.28, 0, 1.1, 0.6, 0.95, { seg: 7 }).sph(0.022, BPL.eye, 0.64, 0.48, 0.08, 1, 1, 0.6, { seg: 4 }).sph(0.022, BPL.eye, 0.64, 0.48, -0.08, 1, 1, 0.6, { seg: 4 });
+  for (const sz of [-1, 1]) b.cyl(0.015, 0.015, 0.12, 0xf5a623, 0.48, 0.06, sz * 0.06, 0, 0, 0, { seg: 3 });
+});
+def('donkeyNap', 'low', 1.5, 0.95, 1.0, (b) => {
+  // a donkey having a lie down in the sun, in its straw hat
+  donkeyInto(b, -0.25, 0, 0, 0.88, { asleep: true, hat: BPL.red, saddle: BPL.blue });
+  b.box(1.5, 0.03, 0.9, 0xd8423a, 0, 0.015, 0, 0, 0, 0, { grad: 1 });
+  for (let i = 0; i < 6; i++) b.box(0.08, 0.032, 0.9, 0xffffff, -0.6 + i * 0.24, 0.016, 0);
+});
+def('rockGiant', 'tall', 1.2, 2.9, 1.0, (b) => {
+  // a giant stick of rock, taller than Robyn, with its label on, on a little stand
+  b.cyl(0.55, 0.62, 0.2, BPL.navy, 0, 0.1, 0, 0, 0, 0, { seg: 12 }).tor(0.6, 0.04, BPL.gold, 0, 0.2, 0, PI / 2, 0, 0, { seg: 12, tseg: 3 });
+  rockStickInto(b, 0, 0.2, 0, 2.5, 0.42, { wrapped: true });
+});
+def('tramShelter', 'tall', 1.5, 2.8, 1.0, (b) => {
+  // a little green and cream tram shelter with a bench, a timetable and a lamp on top
+  b.box(1.5, 0.08, 0.9, 0xd8d0c0, 0, 0.04, 0);
+  for (const sx of [-1, 1]) b.box(0.08, 2.2, 0.08, BPL.green, sx * 0.68, 1.14, -0.36).box(0.08, 2.2, 0.08, BPL.green, sx * 0.68, 1.14, 0.36).box(0.04, 1.4, 0.7, BPL.glass, sx * 0.7, 1.3, 0, 0, 0, 0, { grad: 1 });
+  b.box(1.4, 1.5, 0.05, BPL.glass, 0, 1.25, -0.38, 0, 0, 0, { grad: 1 }).box(1.6, 0.14, 1.0, BPL.cream, 0, 2.3, 0).prism(1.6, 0.36, 1.0, BPL.green, 0, 2.37, 0, PI / 2);
+  b.box(1.2, 0.06, 0.32, BPL.wood, 0, 0.5, -0.2).box(1.2, 0.3, 0.05, BPL.wood, 0, 0.72, -0.34);
+  b.box(0.4, 0.5, 0.03, 0xffffff, 0.4, 1.4, -0.35).box(0.3, 0.05, 0.035, BPL.navy, 0.4, 1.55, -0.34);
+  b.cyl(0.04, 0.04, 0.3, BPL.green, 0, 2.7, 0, 0, 0, 0, { seg: 5 }).sph(0.14, 0xfff1c2, 0, 2.86, 0, 1, 1, 1, { seg: 8, glow: true });
+});
+def('iceCone', 'tall', 1.2, 2.9, 1.0, (b) => {
+  // a giant ice cream on a striped stand: vanilla and strawberry, and a flake
+  b.cyl(0.4, 0.5, 0.7, BPL.red, 0, 0.35, 0, 0, 0, 0, { seg: 12 });
+  for (let i = 0; i < 3; i++) b.tor(0.46 - i * 0.03, 0.04, 0xffffff, 0, 0.12 + i * 0.22, 0, PI / 2, 0, 0, { seg: 12, tseg: 3 });
+  iceConeInto(b, 0, 0.7, 0, 1.3);
+});
+def('towerModel', 'tall', 1.3, 2.9, 1.0, (b) => {
+  // a souvenir model of the big tower on a plinth, all lit up
+  b.box(1.1, 0.5, 0.9, BPL.navy, 0, 0.25, 0, 0, 0, 0, { grad: 0.9 }).box(1.16, 0.06, 0.96, BPL.gold, 0, 0.5, 0);
+  b.at(0, 0.5, 0, 0, () => bigTowerInto(b, 0, 0, 0, 40), 0.045);
+});
+def('lightPost', 'tall', 1.2, 2.9, 1.0, (b) => {
+  // an illuminations post: a green pole with a smiling star in bulbs on top
+  b.cyl(0.3, 0.36, 0.3, BPL.green, 0, 0.15, 0, 0, 0, 0, { seg: 10 }).cyl(0.08, 0.1, 1.9, BPL.green, 0, 1.2, 0, 0, 0, 0, { seg: 8 }).cyl(0.14, 0.14, 0.08, BPL.gold, 0, 0.6, 0, 0, 0, 0, { seg: 8 });
+  for (let i = 0; i < 10; i++) { const a = PI / 2 + i * PI / 5, r = i % 2 ? 0.26 : 0.6; b.sph(0.075, BPL.bulbs[i % 2 ? 1 : 0], Math.cos(a) * r, 2.35 + Math.sin(a) * r, 0.05, 1, 1, 1, { seg: 5, glow: true }); }
+  starInto(b, 0, 2.35, 0, 0.9, 0xffd23f, { glow: true, grad: 0.9 });
+  b.sph(0.03, BPL.eye, -0.09, 2.42, 0.16, 1, 1, 0.5, { seg: 4 }).sph(0.03, BPL.eye, 0.09, 2.42, 0.16, 1, 1, 0.5, { seg: 4 }).tor(0.07, 0.015, BPL.eye, 0, 2.32, 0.15, 0, 0, PI, { arc: PI, seg: 6, tseg: 3 });
+});
+def('rockRoll', 'low', 1.2, 1.0, 1.0, (b) => {
+  // a giant stick of rock lying on its side, rolling down the lane
+  b.cyl(0.4, 0.4, 1.1, BPL.rock, 0, 0, 0, 0, 0, PI / 2, { seg: 14, grad: 0.9 });
+  for (let i = 0; i < 4; i++) b.tor(0.402, 0.05, 0xffffff, -0.42 + i * 0.28, 0, 0, 0, PI / 2 + 0.3, 0, { seg: 14, tseg: 3 });
+  for (const sx of [-1, 1]) b.cyl(0.34, 0.34, 0.02, 0xffffff, sx * 0.555, 0, 0, 0, 0, PI / 2, { seg: 14 }).tor(0.17, 0.04, BPL.rockD, sx * 0.565, 0, 0, 0, PI / 2, 0, { seg: 10, tseg: 3 });
+}, { center: true });
+def('humbug', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the gull drops: a giant striped mint, rolling
+  b.sph(0.4, 0xffffff, 0, 0, 0, 1, 1, 1, { seg: 12, grad: 0.9 });
+  for (let i = 0; i < 4; i++) b.tor(0.4, 0.06, BPL.rockD, 0, 0, 0, 0, i * PI / 4, 0, { seg: 14, tseg: 3 });
+}, { center: true });
+def('donkeyTrot', 'low', 1.3, 0.98, 0.9, (b) => {
+  // a donkey in a sun hat trotting across to the beach; it faces +x
+  donkeyInto(b, -0.08, 0, 0, 0.56, { hat: true, saddle: BPL.red });
+});
+def('hankyGull', 'deco', 2.8, 1.0, 1.7, (b) => {
+  // a cheeky gull on its holidays, in a knotted hanky, with a stolen mint in its feet
+  b.sph(0.38, 0xffffff, 0, 0, 0, 0.95, 0.85, 1.5, { seg: 14 }).sph(0.36, 0xc8d0d8, 0, 0.1, -0.1, 0.9, 0.7, 1.3, { seg: 12 });
+  b.sph(0.27, 0xffffff, 0, 0.22, 0.5, 1, 1, 1, { seg: 12 });
+  b.cone(0.09, 0.36, 0xf5a623, 0, 0.16, 0.86, PI / 2, 0, 0, { seg: 8 }).sph(0.04, 0xd8362b, 0, 0.11, 0.93, 1, 1, 1, { seg: 5 });
+  b.dome(0.25, 0xffffff, 0, 0.36, 0.48, 0, 0, 0, 1.08, 0.7, 1.08, { seg: 10 });
+  for (let i = 0; i < 4; i++) b.sph(0.06, 0xffffff, Math.cos(i * PI / 2 + PI / 4) * 0.25, 0.4, 0.48 + Math.sin(i * PI / 2 + PI / 4) * 0.25, 1, 0.8, 1, { seg: 5 });
+  for (let i = 0; i < 4; i++) b.box(0.42, 0.012, 0.02, BPL.red, 0, 0.47, 0.36 + i * 0.08, 0, 0, 0);
+  for (const sx of [-1, 1]) {
+    b.sph(0.07, 0xffffff, sx * 0.12, 0.3, 0.72, 1, 1, 0.5, { seg: 6 }).sph(0.038, BPL.eye, sx * 0.12, 0.3, 0.76, 1, 1, 0.5, { seg: 5 });
+    b.sph(0.04, BPL.cheek, sx * 0.17, 0.18, 0.7, 0.7, 0.6, 0.5, { seg: 4 });
+    b.cap(0.028, 0.12, 0xf5a623, sx * 0.1, -0.33, 0.12, 0.6, 0, 0).sph(0.07, 0xf5a623, sx * 0.1, -0.4, 0.2, 1, 0.4, 1.3, { seg: 6 });
+  }
+  b.sph(0.16, 0xffffff, 0, -0.52, 0.15, 1, 1, 1, { seg: 8 }); for (let i = 0; i < 3; i++) b.tor(0.16, 0.03, BPL.rockD, 0, -0.52, 0.15, 0, i * PI / 3, 0, { seg: 10, tseg: 3 });
+  for (let i = 0; i < 3; i++) b.box(0.14, 0.03, 0.32, i % 2 ? 0x2a2e36 : 0xffffff, (i - 1) * 0.12, 0, -0.62, 0.1, (i - 1) * -0.25, 0);
+}, {
+  wings: (b, sx) => { for (let i = 0; i < 4; i++) b.sph(0.32 - i * 0.03, i === 3 ? 0x2a2e36 : i % 2 ? 0xc8d0d8 : 0xffffff, sx * (0.26 + i * 0.22), 0.02 - i * 0.01, -0.02 - i * 0.07, 1.1, 0.1, 0.62, { seg: 7 }); }, wingAt: [0.2, 0.08, -0.05],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -4273,6 +4486,7 @@ export const TALL_TYPES = {
   30: ['eagleStandard', 'victoryColumn', 'togaStatue', 'pinePlanter', 'archDoor', 'eagleStandard'],
   31: ['kennelTall', 'izziStatue', 'ballTree', 'boneTower', 'treatJar', 'kennelTall'],
   32: ['scratchPost', 'pixelStatue', 'catnipTall', 'boxTower', 'fishTins', 'scratchPost'],
+  33: ['rockGiant', 'tramShelter', 'iceCone', 'towerModel', 'lightPost', 'rockGiant'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
 export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'],
@@ -4287,4 +4501,5 @@ export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'b
   29: ['miniPyramid', 'catStatue', 'scarabChest', 'lotusPond', 'scribeDesk', 'miniPyramid'],
   30: ['helmetPair', 'mosaicFountain', 'grapeBowl', 'shieldStack', 'gooseGuards', 'breadTray'],
   31: ['bigBone', 'dogBowls', 'ballBasket', 'squeakyPile', 'dogBed', 'hurdleBar'],
-  32: ['yarnBasket', 'fishBowl', 'catBox', 'cushionPile', 'milkSaucer', 'toyMice'] };
+  32: ['yarnBasket', 'fishBowl', 'catBox', 'cushionPile', 'milkSaucer', 'toyMice'],
+  33: ['rockCrate', 'bucketSpade', 'chipCone', 'deckchair', 'donkeyNap', 'rockCrate'] };

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto, GRK, greekColInto, amphoraInto, oliveInto, owlInto, woodHorseInto, DINO, fernInto, cycadInto, dinoNeckInto, longNeckInto, trikeInto, rexInto, caveKidInto, EGY, pyramidInto, datePalmInto, sitCatInto, camelInto, obeliskInto, ROM, gooseInto, stonePineInto, cypressInto, archWallInto, shieldInto, IZ, boneInto, tennisBallInto, bowlInto, kennelInto, izziInto, pawPrintInto, ballTreeInto, PXW, catInto, yarnBallInto, goldfishInto, cardBoxInto, cushionInto, catnipInto } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto, GRK, greekColInto, amphoraInto, oliveInto, owlInto, woodHorseInto, DINO, fernInto, cycadInto, dinoNeckInto, longNeckInto, trikeInto, rexInto, caveKidInto, EGY, pyramidInto, datePalmInto, sitCatInto, camelInto, obeliskInto, ROM, gooseInto, stonePineInto, cypressInto, archWallInto, shieldInto, IZ, boneInto, tennisBallInto, bowlInto, kennelInto, izziInto, pawPrintInto, ballTreeInto, PXW, catInto, yarnBallInto, goldfishInto, cardBoxInto, cushionInto, catnipInto, BPL, donkeyInto, rockStickInto, bigTowerInto, tramInto } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -4029,10 +4029,156 @@ const yarnBalloon = () => prefab('yarnBalloon', () => {
   return b.build({ cast: false, receive: false });
 });
 
+// ---------- Blackpool ----------
+// A seaside town lit up for the evening. On the left a sea wall drops to the sands, where the donkeys give rides and the
+// piers stride out to sea; on the right, trams run both ways along the prom in front of a row of bright hotels and shops,
+// and once in every level the great tower rises over them. Strings of lights hang along the prom and arches of bulbs cross it.
+const BP_FRONTS = [0xfff2d8, 0xffc8d8, 0xbfe0ff, 0xc8f0d8, 0xfff0a8, 0xffd8b0, 0xe0d0ff];
+const BP_SIGNS = [['ROCK', '#e8508f'], ['FISH & CHIPS', '#2f6fd8'], ['ARCADE', '#7a3ab8'], ['HOTEL', '#22365c'], ['ICES', '#2f8a5a'], ['GIFTS', '#d8323a'], ['B & B', '#a8642a'], ['DONUTS', '#e07a20']];
+const blackpoolGroundInto = (b, rng) => {
+  // the left: a stone sea wall, then the sands, then wet sand running down into the sea
+  b.box(0.5, 2.6, CHUNK, 0xd8d0c0, -(DECK_HALF + 0.25), -1.3, -CHUNK / 2, 0, 0, 0, { grad: 0.75 });
+  for (let i = 0; i < 8; i++) b.box(0.52, 0.04, 0.04, 0xb8b0a0, -(DECK_HALF + 0.25), -0.4 - (i % 3) * 0.6, -2.5 - i * 5);
+  b.box(18, 1.2, CHUNK, BPL.sand, -(DECK_HALF + 9.5), -2.2, -CHUNK / 2);
+  b.box(12.4, 0.6, CHUNK, BPL.wet, -(DECK_HALF + 24.2), -2.5, -CHUNK / 2, 0, 0, 0.1);
+  for (let i = 0; i < 12; i++) b.sph(1, i % 2 ? BPL.sandD : 0xf8e4b8, -(DECK_HALF + 2 + rng() * 16), -1.62, -rng() * CHUNK, 1.2 + rng() * 2, 0.05 + rng() * 0.06, 0.8 + rng() * 1.5, { seg: 7 });
+  for (let i = 0; i < 10; i++) b.sph(0.07, i % 2 ? 0xffffff : 0xffc8b0, -(DECK_HALF + 2 + rng() * 18), -1.58, -rng() * CHUNK, 1, 0.5, 1, { seg: 4 });
+  // the right: the prom at deck level, with a tram line down the middle of it
+  b.box(50, 3.6, CHUNK, 0xd8ccb8, DECK_HALF + 25, -1.8, -CHUNK / 2);
+  b.box(0.3, 0.12, CHUNK, 0xb8ae9c, DECK_HALF + 0.15, 0.02, -CHUNK / 2);
+  b.box(6.6, 0.04, CHUNK, 0xa8a094, 9.1, 0.01, -CHUNK / 2);
+  for (const tx of [7.6, 10.6]) for (const sx of [-1, 1]) b.box(0.1, 0.05, CHUNK, 0x8a8e96, tx + sx * 0.72, 0.04, -CHUNK / 2);
+  for (const z of [-10, -30]) {
+    // a pole for the overhead wires, with a bulb on top
+    b.cyl(0.12, 0.16, 6.6, BPL.green, 9.1, 3.3, z, 0, 0, 0, { seg: 8 }).box(4.4, 0.1, 0.1, BPL.green, 9.1, 6.2, z).sph(0.2, 0xfff1c2, 9.1, 6.75, z, 1, 1, 1, { seg: 6, glow: true });
+    for (const sx of [-1, 1]) b.cyl(0.015, 0.015, 0.4, 0x3a3a44, 9.1 + sx * 1.5, 6.0, z, 0, 0, 0, { seg: 3 });
+  }
+  for (const tx of [7.6, 10.6]) b.box(0.03, 0.03, CHUNK, 0x3a3a44, tx, 5.8, -CHUNK / 2);
+  b.box(1.8, 0.14, CHUNK, 0xc8bca8, 13.2, 0.07, -CHUNK / 2);
+};
+// One building on the front: w wide (along the prom), h high, with its front at x = 0 facing -x, its windows lit and a shop below.
+const bpBuildingInto = (b, z, w, h, col, rng) => {
+  const D = 9;
+  b.box(D, h, w - 0.2, col, D / 2, h / 2, z, 0, 0, 0, { grad: 0.86 }).box(0.4, 0.3, w, 0xffffff, 0.1, h - 0.2, z).box(0.3, 0.2, w, 0xffffff, 0.05, 3.2, z);
+  if (rng() < 0.5) b.prism(w - 0.2, 2.2, D, shadeHex(col, 0.62), D / 2, h, z, PI / 2); else b.box(D, 0.6, w, 0xffffff, D / 2, h + 0.3, z);
+  b.box(0.6, 1.4, 0.6, 0xb8543a, D * 0.7, h + 1.0, z + w * 0.3);
+  const n = Math.max(2, Math.floor((w - 1) / 2.2)), floors = Math.floor((h - 4) / 2.3);
+  for (let f = 0; f < floors; f++) for (let i = 0; i < n; i++) {
+    const wz = z - (w - 1.6) / 2 + (i + 0.5) * (w - 1.6) / n, wy = 4.4 + f * 2.3, lit = rng() < 0.55;
+    b.box(0.08, 1.3, 1.0, lit ? 0xffe8b0 : 0x6a8ab8, -0.02, wy, wz, 0, 0, 0, { glow: lit, grad: 1 }).box(0.12, 0.12, 1.2, 0xffffff, -0.05, wy - 0.7, wz);
+  }
+  // the shop: a lit window, a striped awning and a string of bulbs along the top of the building
+  b.box(0.1, 2.0, w - 1.4, 0xffd890, -0.03, 1.4, z, 0, 0, 0, { glow: true }).box(0.14, 2.4, 0.3, 0xffffff, -0.06, 1.2, z - w / 2 + 0.45).box(0.14, 2.4, 0.3, 0xffffff, -0.06, 1.2, z + w / 2 - 0.45);
+  const ac = pick(rng, [BPL.red, BPL.blue, BPL.green, 0xe8508f, 0xe07a20]);
+  b.add(new THREE.BoxGeometry(1.4, 0.06, w - 0.6, 1, 1, 12), (x, y, zz) => (Math.floor((zz + 50) / 0.6) % 2 ? ac : 0xffffff), -0.6, 2.75, z, 0, 0, -0.35, 1, 1, 1, { grad: 1 });
+  for (let i = 0; i < Math.round(w / 0.8); i++) b.sph(0.1, BPL.bulbs[i % 4], -0.15, h + 0.05, z - w / 2 + 0.4 + i * 0.8, 1, 1, 1, { seg: 4, glow: true });
+};
+const blackpoolSet = (k) => prefab('bpSet' + k, () => {
+  const b = new Builder(0.86), rng = makeRng(4410 + k), g = new THREE.Group();
+  blackpoolGroundInto(b, rng);
+  const widths = [[10, 9, 11, 10], [9, 12, 9, 10], [11, 10, 8, 11]][k];
+  let z = 0;
+  const signs = [];
+  widths.forEach((w, i) => {
+    const col = BP_FRONTS[(k * 4 + i * 3) % BP_FRONTS.length], h = 9 + ((k + i) % 3) * 2.2;
+    b.at(14.2, 0, 0, 0, () => bpBuildingInto(b, z - w / 2, w, h, col, rng));
+    signs.push([z - w / 2, w, BP_SIGNS[(k * 3 + i) % BP_SIGNS.length]]); z -= w;
+  });
+  if (k === 0) {
+    // the donkeys' stand on the sands: a striped hut and three donkeys waiting their turn
+    b.at(-17, -1.6, -31, PI / 2, () => {
+      b.box(3, 2.4, 2.2, 0xffffff, 0, 1.2, 0).box(3.2, 0.12, 2.6, BPL.red, 0, 2.45, 0).prism(3.2, 0.8, 2.6, BPL.red, 0, 2.5, 0, 0);
+      for (let i = 0; i < 5; i++) b.box(0.3, 2.4, 2.22, BPL.blue, -1.2 + i * 0.6, 1.2, 0);
+    });
+    for (let i = 0; i < 3; i++) donkeyInto(b, -12.5 - i * 1.9, -1.6, -34.5, 1, { ry: -PI / 2, saddle: [BPL.red, BPL.blue, 0xe8508f][i], hat: i === 1 });
+  }
+  g.add(b.build({ cast: true, receive: true }));
+  for (const [sz, w, [txt, c]] of signs) { const s = signMesh(txt, Math.min(w - 2, 5.4), 0.8, '#fff3d6', c, '#ffc928'); s.position.set(14.08, 3.45, sz); s.rotation.y = -PI / 2; g.add(s); }
+  if (k === 0) { const s = signMesh('DONKEY RIDES', 2.8, 0.55, '#fff3d6', '#d8323a', '#2f6fd8'); s.position.set(-17, 0.15, -29.42); g.add(s); }
+  return g;
+});
+// The stretch with the great tower in it, with a building either side.
+const blackpoolTower = () => prefab('bpTower', () => {
+  const b = new Builder(0.86), rng = makeRng(4499), g = new THREE.Group();
+  blackpoolGroundInto(b, rng);
+  b.at(14.2, 0, 0, 0, () => { bpBuildingInto(b, -6.5, 12.5, 11.2, BP_FRONTS[1], rng); bpBuildingInto(b, -33.5, 12.5, 9, BP_FRONTS[2], rng); });
+  b.at(21, 0, -20, -PI / 2, () => bigTowerInto(b, 0, 0, 0, 44));
+  g.add(b.build({ cast: true, receive: true }));
+  const s = signMesh('THE TOWER', 5.5, 1.0, '#22365c', '#ffc928', '#ffc928'); s.position.set(14.38, 4.6, -20); s.rotation.y = -PI / 2; g.add(s);
+  for (const [sz, [txt, c]] of [[-6.5, BP_SIGNS[0]], [-33.5, BP_SIGNS[2]]]) { const t = signMesh(txt, 5, 0.8, '#fff3d6', c, '#ffc928'); t.position.set(14.08, 3.45, sz); t.rotation.y = -PI / 2; g.add(t); }
+  return g;
+});
+// A pier striding out to sea from the sands: iron legs, a long deck with railings and lamps, and at the far end a big wheel
+// (k = 0) or a pavilion with domes (k = 1). It runs along -x, 8 wide, centred on z = -20 of its stretch.
+const bpPier = (k) => prefab('bpPier' + k, () => {
+  const b = new Builder(0.86), g = new THREE.Group(), x0 = -6, x1 = -46, y = 0.5, zc = -20;
+  b.box(x0 - x1, 0.3, 8, C.woodDark, (x0 + x1) / 2, y - 0.15, zc).box(x0 - x1, 0.4, 0.3, BPL.cream, (x0 + x1) / 2, y - 0.4, zc + 4);
+  for (let x = x0 - 2; x > x1; x -= 5) for (const sz of [-1, 1]) b.cyl(0.18, 0.2, 4.4, 0x5a4a44, x, y - 2.4, zc + sz * 3.6, 0, 0, 0, { seg: 7 });
+  for (let x = x0 - 2; x > x1; x -= 5) b.box(0.2, 0.2, 7.4, 0x5a4a44, x, y - 1.6, zc, 0.5, 0, 0).box(0.2, 0.2, 7.4, 0x5a4a44, x, y - 1.6, zc, -0.5, 0, 0);
+  for (const sz of [-1, 1]) {
+    b.box(x0 - x1, 0.07, 0.07, 0xffffff, (x0 + x1) / 2, y + 1.0, zc + sz * 3.9).box(x0 - x1, 0.05, 0.05, 0xffffff, (x0 + x1) / 2, y + 0.55, zc + sz * 3.9);
+    for (let x = x0; x > x1; x -= 2) b.box(0.07, 1.0, 0.07, 0xffffff, x, y + 0.5, zc + sz * 3.9);
+    for (let x = x0 - 4; x > x1 + 4; x -= 8) b.cyl(0.06, 0.08, 3.4, BPL.green, x, y + 1.7, zc + sz * 3.6, 0, 0, 0, { seg: 6 }).sph(0.22, 0xfff1c2, x, y + 3.5, zc + sz * 3.6, 1, 1, 1, { seg: 6, glow: true });
+    for (let i = 0; i < 20; i++) b.sph(0.1, BPL.bulbs[i % 4], x0 - 1 - i * 2, y + 1.15, zc + sz * 3.9, 1, 1, 1, { seg: 4, glow: true });
+  }
+  // the end of the pier, wider, with something to do on it
+  b.box(16, 0.3, 14, C.woodDark, x1 + 2, y - 0.15, zc);
+  for (const [px, pz] of [[-6, -6], [6, -6], [-6, 6], [6, 6], [0, -6], [0, 6]]) b.cyl(0.22, 0.24, 4.4, 0x5a4a44, x1 + 2 + px, y - 2.4, zc + pz, 0, 0, 0, { seg: 7 });
+  b.at(x0 - 3, y, zc, 0, () => { for (const sz of [-1, 1]) b.box(0.9, 3.4, 0.9, BPL.cream, 0, 1.7, sz * 3.6).sph(0.55, BPL.green, 0, 3.6, sz * 3.6, 1, 1.4, 1, { seg: 10 }).cone(0.06, 0.6, BPL.gold, 0, 4.4, sz * 3.6, 0, 0, 0, { seg: 5 }); b.box(0.5, 0.6, 7.2, BPL.cream, 0, 3.1, 0); for (let i = 0; i < 9; i++) b.sph(0.1, BPL.bulbs[i % 4], 0.28, 3.1, -3.2 + i * 0.8, 1, 1, 1, { seg: 4, glow: true }); });
+  g.add(b.build({ cast: true, receive: true }));
+  const s = signMesh(k === 0 ? 'CENTRAL PIER' : 'NORTH PIER', 6.6, 0.85, '#22365c', '#fff3d6', '#ffc928'); s.position.set(-24, y + 1.7, zc + 4.08); g.add(s);
+  if (k === 0) { const f = ferris(); f.position.set(x1 + 2, y, zc); f.name = 'pierWheel'; g.add(f); }
+  else { const p = pavilion(); p.position.set(x1 + 3, y, zc); p.rotation.y = PI; p.scale.setScalar(0.95); g.add(p); }
+  return g;
+});
+// An arch of lights across the prom: two posts, a curve of coloured bulbs, and a crown in lights at the top.
+const illumArch = () => prefab('illumArch', () => {
+  const b = new Builder(0.88), R = 5.3, Y0 = 5.7, RISE = 1.7, cols = BPL.bulbs;
+  for (const sx of [-1, 1]) {
+    b.cyl(0.32, 0.38, 0.4, BPL.green, sx * R, sx < 0 ? -1.4 : 0.2, 0, 0, 0, 0, { seg: 10 });
+    b.cyl(0.13, 0.16, Y0 + (sx < 0 ? 1.6 : 0), BPL.green, sx * R, (Y0 - (sx < 0 ? 1.6 : 0)) / 2, 0, 0, 0, 0, { seg: 8 }).sph(0.22, BPL.gold, sx * R, Y0, 0, 1, 1, 1, { seg: 8 });
+    for (let i = 0; i < 6; i++) b.sph(0.11, cols[i % 3], sx * (R - 0.17), 0.8 + i * 0.85, 0.08, 1, 1, 1, { seg: 4, glow: true });
+  }
+  b.add(new THREE.TorusGeometry(R, 0.07, 5, 28, PI), BPL.green, 0, Y0, 0, 0, 0, 0, 1, RISE / R, 1);
+  b.add(new THREE.TorusGeometry(R - 0.5, 0.05, 5, 28, PI), BPL.green, 0, Y0, 0, 0, 0, 0, 1, (RISE - 0.35) / (R - 0.5), 1);
+  for (let i = 0; i <= 26; i++) { const a = i * PI / 26; b.sph(0.13, cols[i % cols.length], Math.cos(a) * R, Y0 + Math.sin(a) * RISE, 0.08, 1, 1, 1, { seg: 5, glow: true }); }
+  for (let i = 1; i < 18; i++) { const a = i * PI / 18; b.sph(0.1, cols[(i + 2) % cols.length], Math.cos(a) * (R - 0.5), Y0 + Math.sin(a) * (RISE - 0.35), 0.08, 1, 1, 1, { seg: 4, glow: true }); }
+  // the crown
+  const cy = Y0 + RISE + 0.25;
+  b.box(2.2, 0.4, 0.15, BPL.gold, 0, cy, 0, 0, 0, 0, { glow: true });
+  for (let i = 0; i < 5; i++) { const x = -0.9 + i * 0.45, h = i % 2 ? 0.55 : 0.9; b.cone(0.18, h, BPL.gold, x, cy + 0.2 + h / 2, 0, 0, 0, 0, { seg: 4, glow: true }).sph(0.1, i % 2 ? 0x6ff0ff : 0xff6fae, x, cy + 0.25 + h, 0, 1, 1, 1, { seg: 5, glow: true }); }
+  for (let i = 0; i < 4; i++) b.sph(0.08, [0xff4f6a, 0x6ff0ff, 0x9dff6a, 0xff4f6a][i], -0.68 + i * 0.45, cy, 0.1, 1, 1, 1, { seg: 5, glow: true });
+  return b.build({ cast: false, receive: false });
+});
+// A string of coloured bulbs, 20 m long, hanging in a curve between two lamp posts.
+const lights20 = () => prefab('lights20', () => {
+  const b = new Builder(1), N = 24, cols = BPL.bulbs;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N, y = -1.6 * t * (1 - t), z = -t * 20;
+    if (i < N) { const t2 = (i + 1) / N, y2 = -1.6 * t2 * (1 - t2); b.box(0.015, 0.015, Math.hypot(20 / N, y2 - y), 0x2a2a30, 0, (y + y2) / 2, z - 10 / N, Math.atan2(y2 - y, 20 / N), 0, 0); }
+    b.sph(0.1, cols[i % cols.length], 0, y - 0.1, z, 1, 1.2, 1, { seg: 5, glow: true });
+  }
+  return b.build({ cast: false, receive: false });
+});
+// The trams: one each way along the prom (see 'tram' in animate). Two cars, named for the animation.
+const bpTrams = () => prefab('bpTrams', () => {
+  const g = new THREE.Group();
+  const car = (col, x) => { const b = new Builder(0.86); tramInto(b, 0, 0, 0, col); const m = b.build({ cast: true, receive: false }); m.position.x = x; return m; };
+  const a = car(BPL.green, 7.6); a.name = 'car'; g.add(a);
+  const c = car(0xe8508f, 10.6); c.name = 'car2'; g.add(c);
+  return g;
+});
+// A donkey for the rides along the sands.
+const bpDonkey = (v) => prefab('bpDonkey' + v, () => {
+  const b = new Builder(0.86);
+  donkeyInto(b, 0, 0, 0, 1, { saddle: [BPL.red, BPL.blue, 0xe8508f][v], hat: v === 2 ? BPL.red : v === 0 });
+  return b.build({ cast: true, receive: false });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD', 'ANCIENT GREECE', 'ANCIENT TIME', 'ANCIENT EGYPT', 'ANCIENT ROME', 'IZZI WORLD', 'PIXEL WORLD'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD', 'ANCIENT GREECE', 'ANCIENT TIME', 'ANCIENT EGYPT', 'ANCIENT ROME', 'IZZI WORLD', 'PIXEL WORLD', 'BLACKPOOL'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8, 0x2f6fd8, 0x4f9a48, 0xd89a2a, 0xc8282a, 0xe0483a, 0x2fb8b0][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8, 0x2f6fd8, 0x4f9a48, 0xd89a2a, 0xc8282a, 0xe0483a, 0x2fb8b0, 0xd8323a][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -4040,7 +4186,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280', '#1f4fa8', '#2f6a2a', '#1f4a9a', '#8a1f24', '#2f5fa8', '#1f6a66'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280', '#1f4fa8', '#2f6a2a', '#1f4a9a', '#8a1f24', '#2f5fa8', '#1f6a66', '#22365c'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); if (zone === 23) s.rotation.z = PI;   // (the sign for the Upside-Down World is upside down, of course)
   g.add(s);
   return g;
@@ -4057,9 +4203,9 @@ export function populate(group, rawIndex, zone, anim) {
   const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && zone !== 23 && zone !== 24 && zone !== 26 && zone !== 27 && zone !== 29 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
-    const flags = zone !== 4 && zone !== 6;
-    place(group, lamp(), -4.05, 0, z, 0, 1.24); if (flags) place(group, bunting20(), -4.05, 4.86, z);
-    if (zone !== 2) { place(group, lamp(), open ? 4.75 : 4.05, 0, z, 0, 1.24); if (flags) place(group, bunting20(), open ? 4.75 : 4.05, 4.86, z); }
+    const flags = zone !== 4 && zone !== 6, garland = zone === 33 ? lights20 : bunting20;   // (Blackpool has strings of lights instead of flags)
+    place(group, lamp(), -4.05, 0, z, 0, 1.24); if (flags) place(group, garland(), -4.05, 4.86, z);
+    if (zone !== 2) { place(group, lamp(), open ? 4.75 : 4.05, 0, z, 0, 1.24); if (flags) place(group, garland(), open ? 4.75 : 4.05, 4.86, z); }
     if (zone === 3 || zone === 10) for (const x of [-4.05, 4.05]) place(group, lightPool(), x * 0.82, 0.03, z);
   }
   // furniture along the shoulders
@@ -4338,6 +4484,16 @@ export function populate(group, rawIndex, zone, anim) {
     if (k === 0) { place(group, kennelSign(), 9.6, 4.65, -14, -PI / 2); anim.push({ o: place(group, frisbee(), 0, 0, 0), kind: 'swim', c: [-14, 6.5, -18], r: [6, 0.6, 9], w: 0.9, p: rng() * 6 }); }
     else if (k === 1) anim.push({ o: place(group, ballBalloon(), (index % 2 ? 1 : -1) * (22 + rng() * 6), 10 + rng() * 4, -10 - rng() * 20, rng() * 6.28), kind: 'bob', p: rng() * 6, amp: 2.2 });
     else anim.push({ o: place(group, frisbee(), 0, 0, 0), kind: 'swim', c: [14, 5.5, -26], r: [5, 0.5, 6], w: -1.1, p: rng() * 6 });
+  } else if (zone === 33) {
+    // Blackpool: the sands and the piers on the left, the trams, the hotels and the great tower on the right
+    const j = index % ZONE_CHUNKS, k = index % 3;
+    place(group, j === 3 ? blackpoolTower() : blackpoolSet(k), 0, 0, 0);
+    anim.push({ o: place(group, bpTrams(), 0, 0, 0), kind: 'tram', p: (index % 2) * CHUNK });
+    if (j === 1 || j === 5) { const pier = place(group, bpPier(j === 1 ? 0 : 1), 0, 0, 0); if (j === 1) anim.push({ o: pier, kind: 'wheel' }); }
+    if (index % 2 === 1 && j !== ZONE_CHUNKS - 1) place(group, illumArch(), 0, 0, -20);
+    if (j === 0 || j === 4) for (let i = 0; i < 3; i++) anim.push({ o: place(group, bpDonkey(i), 0, 0, 0), kind: 'swim', c: [-13, -1.6, -18], r: [3.2, 0, 11], w: 0.14, p: i * 0.42 });
+    if (j === 2 || j === 6) { place(group, windbreak(), -12 - rng() * 4, -1.6, -10 - rng() * 6, 0.3 + rng() * 0.4); place(group, sandcastleBig(), -15 - rng() * 3, -1.6, -28 - rng() * 4, rng() * 6, 0.8); }
+    if (rng() < 0.6) anim.push({ o: place(group, buoy(pick(rng, [C.red, C.green])), -34 - rng() * 12, WATER_Y, -rng() * CHUNK), kind: 'bob', p: rng() * 6 });
   } else if (zone === 32) {
     // Pixel World: a cottage garden at golden hour, with grass and a low brick wall either side of the boards
     const k = index % 3;
@@ -4534,6 +4690,13 @@ export function animate(anim, t, dt) {
       const tr = a.tr || (a.tr = a.o.getObjectByName('train'));
       const z = -((t * 11) % CHUNK), y = coasterY(z), dy = coasterY(z - 0.5) - y;
       tr.position.set(0, y, z); tr.rotation.x = Math.atan2(dy, 0.5);
+    } else if (a.kind === 'tram') {
+      // the trams along the prom: one every 80 m on each line. Each stretch shows a tram only while it is in that stretch, and
+      // neighbouring stretches are half a lap apart (p), so the tram is handed on from one to the next without a jump.
+      const c = a.c || (a.c = [a.o.getObjectByName('car'), a.o.getObjectByName('car2')]), P = CHUNK * 2;
+      const u = (t * 5 + a.p) % P, w = (t * 4 + a.p + 31) % P;
+      c[0].visible = u < CHUNK; c[0].position.z = -u;
+      c[1].visible = w < CHUNK; c[1].position.z = w - CHUNK;
     } else if (a.kind === 'wheel') {
       const w = a.w || (a.w = a.o.getObjectByName('wheel'));
       if (w) { w.rotation.z += dt * 0.22; for (const c of w.children) if (c.name === 'gondola') c.rotation.z = -w.rotation.z; }

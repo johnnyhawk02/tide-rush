@@ -713,4 +713,23 @@ THEMES[32] = theme('Sunbeam Nap', {
   drums: { thump: 'x.......x.......', rim: '....x.......x...', shake: '..x...x...x...x.' },
 });
 
+// ---- 33. Blackpool: "Lights on the Prom", a bouncy seaside organ quickstep for a night out by the sea (F major) ----
+THEMES[33] = theme('Lights on the Prom', {
+  key: 5, scale: 'maj', base: 65, gain: 1.15, tempo: 1.08, swing: 0.3, echo: 0.2, voice: 'organ', bassVoice: 'tuba', stab: 'organ',
+  chords: 'I vi II7 V7 I IV V7 I',
+  tune: [
+    "5:2 6:2 5:2 3:2 1':6 -:2",
+    "6:2 1':2 6:2 3:2 6:6 -:2",
+    "#4:2 6:2 2':4 1':2 6:2 #4:4",
+    "5:4 7:2 2':2 4':6 -:2",
+    "3':3 2':1 1':2 5:2 3':3 2':1 1':4",
+    "4':3 3':1 2':2 6:2 4':6 -:2",
+    "2':2 7:2 5:2 7:2 2':2 4':2 3':2 2':2",
+    "1':6 5:2 1':8",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 0, _, _, _, 7, _, 12, _],
+  stabs: '..x...x...x...x.',
+  drums: { thump: 'x...x...x...x...', snare: '....x.......x...', hat: '..x...x...x...x.' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));
