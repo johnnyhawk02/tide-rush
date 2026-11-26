@@ -231,7 +231,7 @@ class Game {
       // the lights also have to be on layer 1, where the characters are drawn, or they would light nothing in the third pass
       this.scene.traverse((o) => { if (o.isLight) o.layers.enable(CHAR_LAYER); });
     }
-    if (n === 1) this.charLayers(1);   // back to layer 0, where everything else is
+    if (n === 1) this.charLayers(0);   // back to layer 0, where everything else is
     this.resize();
   }
   makeChunky() {
