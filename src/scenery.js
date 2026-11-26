@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto, GRK, greekColInto, amphoraInto, oliveInto, owlInto, woodHorseInto, DINO, fernInto, cycadInto, dinoNeckInto, longNeckInto, trikeInto, rexInto, caveKidInto, EGY, pyramidInto, datePalmInto, sitCatInto, camelInto, obeliskInto, ROM, gooseInto, stonePineInto, cypressInto, archWallInto, shieldInto } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto, GRK, greekColInto, amphoraInto, oliveInto, owlInto, woodHorseInto, DINO, fernInto, cycadInto, dinoNeckInto, longNeckInto, trikeInto, rexInto, caveKidInto, EGY, pyramidInto, datePalmInto, sitCatInto, camelInto, obeliskInto, ROM, gooseInto, stonePineInto, cypressInto, archWallInto, shieldInto, IZ, boneInto, tennisBallInto, bowlInto, kennelInto, izziInto, pawPrintInto, ballTreeInto } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -3754,10 +3754,139 @@ const triumphGate = () => prefab('triumphGate', () => {
   return b.build({ cast: true, receive: false });
 });
 
+// ---------- Izzi World ----------
+// A sunny dog park: grass either side of the boards with a white fence, paw prints and daisies, and in each stretch something
+// a border collie would love: a giant kennel, a field of sheep to round up, an agility course, a pond shaped like a dog bowl.
+const IZ_PATH = 0xe8dcc0;
+const izziGroundInto = (b, rng, clear) => {
+  for (const sd of [-1, 1]) {
+    b.box(46, 3.6, CHUNK, IZ.grass, sd * (DECK_HALF + 23), -1.82, -CHUNK / 2);
+    for (let i = 0; i < 20; i++) b.box(0.34, 0.18, 1.9, i % 2 ? 0xffffff : 0xe8e4dc, sd * (DECK_HALF + 0.17), 0.03, -1 - i * 2);
+    // a white fence along the edge of the boards, its posts topped with little bones
+    for (let i = 0; i < 10; i++) {
+      const z = -2 - i * 4;
+      b.box(0.12, 0.9, 0.12, 0xffffff, sd * (DECK_HALF + 0.9), 0.45, z).sph(0.06, IZ.bone, sd * (DECK_HALF + 0.9), 0.95, z, 1, 1, 1, { seg: 5 });
+    }
+    for (const y of [0.35, 0.7]) b.box(0.05, 0.08, CHUNK, 0xffffff, sd * (DECK_HALF + 0.9), y, -CHUNK / 2);
+    for (let i = 0; i < 9; i++) b.sph(1, i % 2 ? IZ.grassL : IZ.grassD, sd * (DECK_HALF + 2.5 + rng() * 24), -0.04, -rng() * CHUNK, 1.5 + rng() * 2.6, 0.07, 1 + rng() * 2, { seg: 7 });
+    for (let i = 0; i < 26; i++) { const x = sd * (DECK_HALF + 1.6 + rng() * 15), z = -rng() * CHUNK; if (!clear(x, z)) b.sph(0.08, [0xffffff, 0xffd23f, IZ.pink][i % 3], x, 0.1, z, 1, 0.5, 1, { seg: 5 }); }
+    // a trail of paw prints wandering off across the grass
+    for (let i = 0; i < 7; i++) { const x = sd * (DECK_HALF + 2.2 + i * 0.9 + Math.sin(i * 1.3) * 0.4), z = -6 - i * 1.6 - (sd > 0 ? 16 : 0); if (!clear(x, z)) pawPrintInto(b, x + (i % 2) * 0.35, 0.02, z, 0.34, IZ.grassD, sd * 0.6); }
+    // green hills far off
+    for (let i = 0; i < 2; i++) b.sph(15 + rng() * 5, i % 2 ? IZ.grassD : 0x6cb848, sd * (56 + rng() * 8), -2, -8 - i * 20 - rng() * 6, 1.2, 0.4 + rng() * 0.15, 1, { seg: 9, grad: 0.75 });
+    for (let i = 0; i < 3; i++) { const x = sd * (24 + rng() * 14), z = -rng() * CHUNK; if (!clear(x, z)) ballTreeInto(b, x, 0, z, 1.2 + rng() * 0.5, true); }
+  }
+};
+// A sheep pen: a wooden fence round a patch of grass. w across x and d along z, centred on (x, z).
+const penInto = (b, x, z, w, d) => {
+  for (const [px, pz, l, ry] of [[x, z - d / 2, w, 0], [x, z + d / 2, w, 0], [x - w / 2, z, d, PI / 2], [x + w / 2, z, d, PI / 2]]) {
+    b.at(px, 0, pz, ry, () => { for (const y of [0.4, 0.8]) b.box(l, 0.1, 0.08, IZ.wood, 0, y, 0); for (let i = 0; i <= Math.round(l / 1.5); i++) b.box(0.12, 1.0, 0.12, IZ.woodD, -l / 2 + i * l / Math.round(l / 1.5), 0.5, 0); });
+  }
+};
+// A giant kennel for a giant dog, with a bowl and a ball outside. It faces +z.
+const bigKennelInto = (b) => {
+  kennelInto(b, 0, 0, 0, 3.4, IZ.red);
+  bowlInto(b, 2.6, 0, 2.6, 0.7, IZ.blue); bowlInto(b, 4.0, 0, 2.2, 0.7, IZ.red, { water: true });
+  tennisBallInto(b, -2.8, 0.55, 3.0, 0.55, 0.4);
+  for (let i = 0; i < 4; i++) b.cyl(0.38, 0.38, 0.06, IZ_PATH, -0.1 + (i % 2) * 0.3, 0.03, 3.2 + i * 1.0, 0, 0, 0, { seg: 8 });
+};
+// An agility course: hurdles, a tyre to jump through, weaving poles and a see-saw, all along x. It faces +z.
+const agilityInto = (b) => {
+  for (const x of [-6, -3.5]) {
+    for (const sx of [-1, 1]) { b.cyl(0.06, 0.06, 1.2, 0xffffff, x, 0.6, sx * 0.9, 0, 0, 0, { seg: 6 }); for (let i = 0; i < 4; i++) b.cyl(0.065, 0.065, 0.14, i % 2 ? IZ.blue : IZ.red, x, 0.2 + i * 0.3, sx * 0.9, 0, 0, 0, { seg: 6 }); }
+    b.cyl(0.05, 0.05, 1.8, IZ.gold, x, 0.75, 0, PI / 2, 0, 0, { seg: 6 });
+  }
+  // the tyre, hung in a frame
+  for (const sz of [-1, 1]) b.box(0.14, 2.4, 0.14, IZ.blue, -0.6, 1.2, sz * 1.1);
+  b.box(0.14, 0.14, 2.36, IZ.blue, -0.6, 2.4, 0).tor(0.55, 0.16, 0x2a2a33, -0.6, 1.25, 0, 0, PI / 2, 0, { seg: 16, tseg: 6 });
+  for (const sz of [-1, 1]) b.cyl(0.015, 0.015, 0.6, 0xffffff, -0.6, 2.1, sz * 0.5, 0, 0, 0, { seg: 3 });
+  // weaving poles
+  for (let i = 0; i < 6; i++) b.cyl(0.04, 0.04, 1.1, i % 2 ? IZ.red : 0xffffff, 1.2 + i * 0.6, 0.55, (i % 2 ? 0.15 : -0.15), 0, 0, 0, { seg: 5 });
+  b.box(3.6, 0.06, 0.2, 0xffffff, 2.7, 0.03, 0);
+  // the see-saw
+  b.prism(0.6, 0.5, 0.6, IZ.woodD, 6.2, 0, 0, PI / 2).box(4, 0.1, 0.6, IZ.gold, 6.2, 0.55, 0, 0, 0, 0.2);
+  b.box(0.4, 0.11, 0.62, IZ.red, 4.4, 0.18, 0, 0, 0, 0.2).box(0.4, 0.11, 0.62, IZ.red, 8.0, 0.92, 0, 0, 0, 0.2);
+};
+// A pond shaped like a big dog bowl, with a bone fountain in the middle.
+const bowlPondInto = (b, x, z) => {
+  b.cyl(3.6, 3.9, 0.7, IZ.blue, x, 0.35, z, 0, 0, 0, { seg: 24, grad: 0.85 }).tor(3.6, 0.22, IZ.blueD, x, 0.7, z, PI / 2, 0, 0, { seg: 24, tseg: 5 }).cyl(3.4, 3.4, 0.04, 0x8fd8f8, x, 0.62, z, 0, 0, 0, { seg: 24 });
+  b.box(2.4, 0.5, 0.04, 0xffffff, x, 0.35, z + 3.75).box(2.2, 0.38, 0.05, IZ.red, x, 0.35, z + 3.76);
+  for (const sx of [-1, 1]) pawPrintInto(b, x + sx * 0.7, 0.35, z + 3.8, 0.16, 0xffffff);
+  b.cyl(0.3, 0.4, 1.0, IZ.bone, x, 1.0, z, 0, 0, 0, { seg: 10 });
+  boneInto(b, x, 1.9, z, 1.0, 0.18);
+  for (let i = 0; i < 6; i++) { const a = i * 1.047; for (let q = 1; q < 5; q++) b.sph(0.12 - q * 0.015, 0xd8f4ff, x + Math.cos(a) * q * 0.32, 2.1 + q * 0.2 - q * q * 0.12, z + Math.sin(a) * q * 0.32, 1, 1, 1, { seg: 5, glow: true }); }
+};
+// A street of little kennels in different colours, each with its own dog asleep in the doorway.
+const kennelRowInto = (b, x, z) => {
+  [IZ.red, IZ.blue, 0xffb347, 0x5fae56].forEach((c, i) => {
+    kennelInto(b, x, 0, z - i * 3, 1.2, c, PI / 2);
+    b.sph(0.22, [0xc8783a, 0xffffff, 0x2a2a33, 0xe0c080][i], x + 1.15, 0.16, z - i * 3, 1.4, 0.7, 1, { seg: 8 }).sph(0.12, [0xc8783a, 0xffffff, 0x2a2a33, 0xe0c080][i], x + 1.45, 0.2, z - i * 3 + 0.12, 1, 0.9, 1, { seg: 7 });
+  });
+};
+const izziSet = (k) => prefab('izziSet' + k, () => {
+  const b = new Builder(0.86), rng = makeRng(3110 + k);
+  const near = (x, z, x0, z0, r) => Math.hypot(x - x0, z - z0) < r;
+  const clear = k === 0 ? (x, z) => near(x, z, 12.5, -14, 7.5) || near(x, z, -12, -26, 7)
+    : k === 1 ? (x, z) => near(x, z, -12, -14, 9.5) || near(x, z, 13, -26, 5.5)
+      : (x, z) => near(x, z, -10, -20, 7) || near(x, z, 12, -12, 5);
+  izziGroundInto(b, rng, clear);
+  if (k === 0) {
+    b.at(12.5, 0, -14, -PI / 2, () => bigKennelInto(b));
+    penInto(b, -12, -26, 9, 8);
+    for (let i = 0; i < 5; i++) sheepInto(b, -14.5 + (i % 3) * 2.4 + rng(), 0, -28.5 + (i % 2) * 3 + rng(), 1.3, { ry: rng() * 6 });
+    izziInto(b, -7.6, 0, -24, 1.2, { ry: -PI / 2 + 0.3 });
+  } else if (k === 1) {
+    b.at(-12, 0, -14, PI / 2, () => agilityInto(b));
+    for (let i = 0; i < 3; i++) tennisBallInto(b, 11 + i * 1.4, 0.4, -24 - i * 1.7, 0.4, i);
+    boneInto(b, 14, 0.4, -28, 2.6, 0.32, IZ.bone, 0.5);
+  } else {
+    bowlPondInto(b, 12, -12);
+    kennelRowInto(b, -9, -15);
+  }
+  return b.build({ cast: true, receive: true });
+});
+// The big sign on the giant kennel.
+const kennelSign = () => prefab('izziKennelSign', () => {
+  const s = signMesh('IZZI', 2.1, 0.68, '#fff3d6', '#c8342c', '#3f7fd8');
+  const g = new THREE.Group(); s.position.set(0, 0, 0); g.add(s); return g;
+});
+// The way in: two giant bones standing up, a bone across the top, and paw-print flags.
+const boneArch = () => prefab('boneArch', () => {
+  const b = new Builder(0.88), H = 5.6;      // (kept low, so that Big Izzi can be seen over it)
+  for (const sx of [-1, 1]) {
+    b.cyl(0.32, 0.32, H - 0.5, IZ.bone, sx * 5.3, (H - 0.5) / 2, 0, 0, 0, 0, { seg: 12 });
+    for (const dx of [-1, 1]) b.sph(0.5, IZ.bone, sx * 5.3 + dx * 0.32, 0.25, 0, 1, 1, 1, { seg: 10 });
+    b.tor(0.36, 0.08, C.red, sx * 5.3, 2.4, 0, PI / 2, 0, 0, { seg: 12, tseg: 4 }).sph(0.14, IZ.gold, sx * 5.3, 2.2, 0.36, 1, 1, 0.5, { seg: 7 });
+  }
+  boneInto(b, 0, H, 0, 10.6, 0.36);
+  for (let i = 0; i < 9; i++) {
+    const x = -4 + i, y = H - 0.8 - Math.cos((i - 4) / 4 * 1.2) * 0.5;
+    b.cone(0.3, 0.6, [IZ.red, IZ.blue, 0xffd23f][i % 3], x, y, 0, PI, 0, 0, { seg: 3 }).sph(0.06, 0xffffff, x, y + 0.1, 0.17, 1, 1, 0.4, { seg: 5 });
+  }
+  for (const sx of [-1, 1]) tennisBallInto(b, sx * 5.3, H + 0.8, 0, 0.5);
+  return b.build({ cast: true, receive: false });
+});
+// A frisbee sailing round and round the park.
+const frisbee = () => prefab('frisbee', () => {
+  const b = new Builder(0.9);
+  b.cyl(0.6, 0.66, 0.1, 0xff4fa0, 0, 0, 0, 0, 0, 0, { seg: 18 }).tor(0.62, 0.05, 0xff8fc8, 0, 0.03, 0, PI / 2, 0, 0, { seg: 18, tseg: 3 });
+  pawPrintInto(b, 0, 0.06, 0, 0.45, 0xffffff);
+  return b.build({ cast: false, receive: false });
+});
+// A hot-air balloon that looks like a tennis ball.
+const ballBalloon = () => prefab('ballBalloon', () => {
+  const b = new Builder(0.9);
+  tennisBallInto(b, 0, 3.2, 0, 2.2);
+  b.box(1.0, 0.8, 1.0, IZ.wood, 0, 0, 0).box(1.06, 0.12, 1.06, IZ.woodD, 0, 0.4, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.02, 0.02, 1.6, 0x5a4a3a, sx * 0.45, 1.2, sz * 0.45, sz * 0.25, 0, -sx * 0.25, { seg: 3 });
+  izziInto(b, 0, 0.4, 0.1, 0.6);
+  return b.build({ cast: false, receive: false });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD', 'ANCIENT GREECE', 'ANCIENT TIME', 'ANCIENT EGYPT', 'ANCIENT ROME'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD', 'ANCIENT GREECE', 'ANCIENT TIME', 'ANCIENT EGYPT', 'ANCIENT ROME', 'IZZI WORLD'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8, 0x2f6fd8, 0x4f9a48, 0xd89a2a, 0xc8282a][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8, 0x2f6fd8, 0x4f9a48, 0xd89a2a, 0xc8282a, 0xe0483a][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -3765,7 +3894,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280', '#1f4fa8', '#2f6a2a', '#1f4a9a', '#8a1f24'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280', '#1f4fa8', '#2f6a2a', '#1f4a9a', '#8a1f24', '#2f5fa8'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); if (zone === 23) s.rotation.z = PI;   // (the sign for the Upside-Down World is upside down, of course)
   g.add(s);
   return g;
@@ -3778,7 +3907,7 @@ export function populate(group, rawIndex, zone, anim) {
   const rng = makeRng(index * 7919 + 13);
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
-  if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19 && zone !== 25 && zone !== 28 && zone !== 30) place(group, rail40(), L, 0, 0); }
+  if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19 && zone !== 25 && zone !== 28 && zone !== 30 && zone !== 31) place(group, rail40(), L, 0, 0); }
   const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && zone !== 23 && zone !== 24 && zone !== 26 && zone !== 27 && zone !== 29 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
@@ -4054,6 +4183,15 @@ export function populate(group, rawIndex, zone, anim) {
     if (k === 0) anim.push({ o: place(group, felucca(), -12.5, WATER_Y + 0.5, -18), kind: 'bob', p: rng() * 6 });
     else if (k === 1) anim.push({ o: place(group, crocodile(), 9.5, WATER_Y + 0.25, -9, -2.1, 1.3), kind: 'bob', p: rng() * 6, amp: 0.8 });
     else anim.push({ o: place(group, hippo(), -9.5, WATER_Y - 2.6, -14, PI / 2), kind: 'peek', p: rng(), rise: 3.1 });
+  } else if (zone === 31) {
+    // Izzi World: a sunny dog park, with grass and a white fence either side of the boards
+    const k = index % 3;
+    place(group, izziSet(k), 0, 0, 0);
+    // (not in the last stretch: the Glass Tunnel comes next, and the Sky view camera needs room to dive down into it)
+    if (index % 2 === 1 && index % ZONE_CHUNKS !== ZONE_CHUNKS - 1) place(group, boneArch(), 0, 0, -20);
+    if (k === 0) { place(group, kennelSign(), 9.6, 4.65, -14, -PI / 2); anim.push({ o: place(group, frisbee(), 0, 0, 0), kind: 'swim', c: [-14, 6.5, -18], r: [6, 0.6, 9], w: 0.9, p: rng() * 6 }); }
+    else if (k === 1) anim.push({ o: place(group, ballBalloon(), (index % 2 ? 1 : -1) * (22 + rng() * 6), 10 + rng() * 4, -10 - rng() * 20, rng() * 6.28), kind: 'bob', p: rng() * 6, amp: 2.2 });
+    else anim.push({ o: place(group, frisbee(), 0, 0, 0), kind: 'swim', c: [14, 5.5, -26], r: [5, 0.5, 6], w: -1.1, p: rng() * 6 });
   } else if (zone === 30) { const k = index % 3; place(group, romeSet(k), 0, 0, 0); if (index % 2 === 1) place(group, triumphGate(), 0, 0, -20);
     if (k === 0) anim.push({ o: place(group, legion(), -9.5, 0.13, -15, 0.25), kind: 'bob', p: rng() * 6, amp: 0.7 });
     else if (k === 1) { const o = chariot(); o.scale.setScalar(1.25); group.add(o); anim.push({ o, kind: 'swim', c: [17.5, 0, -20], r: [5.4, 0, 11.5], w: 0.5, p: rng() * 6 }); }

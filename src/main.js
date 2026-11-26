@@ -17,6 +17,7 @@ import { SkyLife } from './skylife.js';
 import { Pets } from './pets.js';
 import { Invaders } from './invaders.js';
 import { Santa } from './santa.js';
+import { BigIzzi } from './izzihead.js';
 import { VIEWS, VIEW_KEYS, viewIndex, Headroom } from './camera.js';
 
 const POWER_TIME = { magnet: 9, shield: 22, boots: 10, gem: 10, rocket: 6.5, board: 12, laser: 13 };
@@ -41,13 +42,14 @@ const SPACE = 9;
 // the flying attackers: what to call each one when it is zapped, and the colours of its puff
 const FLYER = {
   ufo: ['UFO', [0xff7ad9, 0x8ff0ff, 0xffe27a, 0xffffff]], gull: ['Bomber gull', [0xffffff, 0xf5a623, 0xdfe6ee, 0xffe27a]], bat: ['Slime bat', [0x8dff5a, 0xb59cff, 0xffe27a, 0xffffff]],
-  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]], flosscloud: ['Candyfloss cloud', [0xff9fd0, 0xffffff, 0xffe24a, 0x8fd8ff]], twister: ['Little twister', [0x9fece4, 0xffffff, 0xff8fd6, 0xffd23f]], eagle: ['Grumpy eagle', [0x6b4a2e, 0xffffff, 0xffb300, 0xd9c7a8]], bandit: ['Balloon bandit', [0xe5383b, 0xffc928, 0x2f7fe0, 0xff6fae]], inkOcto: ['Inky octopus', [0x9a6fe0, 0x3a2a6a, 0xffd23f, 0xffffff]], chocJug: ['Chocolate jug', [0x7a4526, 0xfff6ee, 0x4f8fe0, 0xffe27a]], crow: ['Bossy crow', [0x2a2a34, 0xffc928, 0xffffff, 0xf2c230]], flashMirror: ['Flying mirror', [0xf2c230, 0xffffff, 0x8fcaff, 0xfff3a8]], pteroBones: ['Bony pterodactyl', [0xf6eed8, 0xffffff, 0xdccfae, 0xffd23f]], nightOwl: ['Night owl', [0x9a7ab8, 0xffffff, 0x8fb8f5, 0xffe27a]], blockBird: ['Block bird', [0x4f8fe0, 0xffffff, 0xffb347, 0xe5383b]], flyBox: ['Flying stereo', [0xff3fa4, 0x2fe0ff, 0xffe23f, 0xffffff]], flipGull: ['Upside-down gull', [0xffffff, 0xb8c4d0, 0xffb347, 0x5ad0e0]], oxpecker: ['Cheeky oxpecker', [0x8a6a4a, 0xffd23f, 0xe5383b, 0xf0d8a8]], bumble: ['Bumblebee', [0xffd23f, 0x24262c, 0xffffff, 0xe0a030]], booFlyer: ['Cheeky ghost', [0xffffff, 0xbffff0, 0xe5383b, 0xffa8c0]], pegasus: ['Flying pony', [0xffffff, 0xf2c230, 0xeaf6ff, 0xffa8c0]], ptero: ['Pterosaur', [0xff9a4a, 0xffd23f, 0x9a7ad8, 0xfff0c8]], falcon: ['Crowned falcon', [0xf2c230, 0x2f5fd0, 0xffffff, 0xc89850]], aquila: ['Golden eagle', [0xf2c230, 0xc8282a, 0xffffff, 0x7a3a9a]],
+  stormcloud: ['Storm cloud', [0xffe27a, 0x9aa4c0, 0xffffff, 0x8ff0ff]], snowcloud: ['Snow cloud', [0xffffff, 0xcfeaff, 0x8ff0ff, 0xe6eef8]], flosscloud: ['Candyfloss cloud', [0xff9fd0, 0xffffff, 0xffe24a, 0x8fd8ff]], twister: ['Little twister', [0x9fece4, 0xffffff, 0xff8fd6, 0xffd23f]], eagle: ['Grumpy eagle', [0x6b4a2e, 0xffffff, 0xffb300, 0xd9c7a8]], bandit: ['Balloon bandit', [0xe5383b, 0xffc928, 0x2f7fe0, 0xff6fae]], inkOcto: ['Inky octopus', [0x9a6fe0, 0x3a2a6a, 0xffd23f, 0xffffff]], chocJug: ['Chocolate jug', [0x7a4526, 0xfff6ee, 0x4f8fe0, 0xffe27a]], crow: ['Bossy crow', [0x2a2a34, 0xffc928, 0xffffff, 0xf2c230]], flashMirror: ['Flying mirror', [0xf2c230, 0xffffff, 0x8fcaff, 0xfff3a8]], pteroBones: ['Bony pterodactyl', [0xf6eed8, 0xffffff, 0xdccfae, 0xffd23f]], nightOwl: ['Night owl', [0x9a7ab8, 0xffffff, 0x8fb8f5, 0xffe27a]], blockBird: ['Block bird', [0x4f8fe0, 0xffffff, 0xffb347, 0xe5383b]], flyBox: ['Flying stereo', [0xff3fa4, 0x2fe0ff, 0xffe23f, 0xffffff]], flipGull: ['Upside-down gull', [0xffffff, 0xb8c4d0, 0xffb347, 0x5ad0e0]], oxpecker: ['Cheeky oxpecker', [0x8a6a4a, 0xffd23f, 0xe5383b, 0xf0d8a8]], bumble: ['Bumblebee', [0xffd23f, 0x24262c, 0xffffff, 0xe0a030]], booFlyer: ['Cheeky ghost', [0xffffff, 0xbffff0, 0xe5383b, 0xffa8c0]], pegasus: ['Flying pony', [0xffffff, 0xf2c230, 0xeaf6ff, 0xffa8c0]], ptero: ['Pterosaur', [0xff9a4a, 0xffd23f, 0x9a7ad8, 0xfff0c8]], falcon: ['Crowned falcon', [0xf2c230, 0x2f5fd0, 0xffffff, 0xc89850]], aquila: ['Golden eagle', [0xf2c230, 0xc8282a, 0xffffff, 0x7a3a9a]], flySquirrel: ['Flying squirrel', [0xc8783a, 0xf0c890, 0xd8f03a, 0xffffff]],
 };
 // picking up a laser while one is already running powers it up: it fires faster and reaches further
 const LASER_LV = [null, { name: 'Laser zapper!', gap: 0.16, reach: 0, col: 0x6ff6ff, size: 1.1 }, { name: 'Double laser!', gap: 0.1, reach: 4, col: 0x9dff6a, size: 1.25 }, { name: 'Triple laser!', gap: 0.065, reach: 8, col: 0xffb347, size: 1.4 }];
 // what her footsteps sound like in each world
-const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal', 10: 'snow', 12: 'wood', 13: 'wood', 14: 'wood', 15: 'wood', 17: 'wood', 18: 'wood', 19: 'wood', 20: 'wood', 21: 'wood', 22: 'wood', 23: 'wood', 24: 'wood', 25: 'wood', 26: 'wood', 27: 'wood', 28: 'wood', 29: 'wood', 30: 'wood' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
+const STEP_SOUND = { 1: 'wood', 2: 'wood', 3: 'wood', 6: 'wet', 7: 'snow', 8: 'wet', 9: 'metal', 10: 'snow', 12: 'wood', 13: 'wood', 14: 'wood', 15: 'wood', 17: 'wood', 18: 'wood', 19: 'wood', 20: 'wood', 21: 'wood', 22: 'wood', 23: 'wood', 24: 'wood', 25: 'wood', 26: 'wood', 27: 'wood', 28: 'wood', 29: 'wood', 30: 'wood', 31: 'wood' };   // zone id of Space Pier, where Robyn's mega laser fires by itself
 const PET_POP = { izzi: ['Izzi is here! She rounds up shells', "Izzi's off for a sniff"], pixel: ['Pixel is here! Shells count double', 'Pixel wandered off'] };
+const GLOW_COLORS = [0xff4fd8, 0xffffff, 0xffe27a, 0x8ff0ff, 0xb98cff], GLOW_TIME = 5;   // the sparkles of Robyn's glow, and how many seconds it lasts
 const FW_COLORS = [0xffe27a, 0xff8ab0, 0x8ff0ff, 0xa6ff9a, 0xffb36b, 0xd9a6ff];
 const rnd = (a = 1) => (Math.random() - 0.5) * 2 * a;
 const pickOf = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -133,6 +135,13 @@ class Game {
         for (const o of this.track.obstacles) if (o.mover && o.mover.santa && o.mover.on && !o.zap && !o.flung) { o.zap = { t: 0 }; o.hit = true; this.glitter(o.x, 0.6, -(o.s - this.dist), 12); }
       } else if (what === 'fled' && this.mode === 'run') { this.ui.popup('Grumpy Santa zoomed off!'); this.audio.santaFlee(); }
     };
+    // Big Izzi, the giant Izzi head of Izzi World, whose laser eyes make Robyn glow
+    this.bigIzzi = new BigIzzi(this.scene);
+    this.bigIzzi.onEvent = (what) => {
+      if (what === 'charge') this.audio.eyeCharge(0.85);
+      else if (what === 'fire') this.audio.eyeBeam();
+      else if (what === 'bye' && this.mode === 'run') { this.ui.popup('Big Izzi says bye! Woof!'); this.audio.izziBye(); }
+    };
     this.pets.onEvent = (kind, what) => {
       if (what === 'join') { this.ui.popup(PET_POP[kind][0], 'gold'); if (kind === 'izzi') this.audio.bark(); else this.audio.meow(); }
       else { this.ui.power(kind, 0); if (this.mode === 'run' && !this.warp && this.pw.rocket <= 0) { if (kind === 'izzi') this.audio.whine(); else this.audio.mew(); } }
@@ -178,6 +187,7 @@ class Game {
     if (this.pets) this.pets.reset(); this.robyn.setBlaster(false);
     if (this.invaders) this.invaders.clear(); this.invT = 0; this.invN = 0;
     if (this.santa) this.santa.clear(); this.santaT = 0; this.santaN = 0;
+    if (this.bigIzzi) this.bigIzzi.clear(); this.glowT = 0; this.glowN = 0; this.robyn.setGlow(0);
     this.robyn.setBoots(false); this.robyn.setShield(false); this.robyn.setRocket(false); this.robyn.setBoard(false);
     if (this.skylife) this.skylife.reset();
     this.robyn.root.visible = true; this.robyn.root.rotation.set(0, 0, 0); this.robyn.root.position.set(0, 0, 0);
@@ -617,6 +627,7 @@ class Game {
     } else this.ui.power('mega', 0);
     this.updateInvaders(dt, fly, mega);
     this.updateSanta(dt, mega);
+    this.updateBigIzzi(dt);
     this.robyn.setBlaster((this.pw.laser > 0 || this.invaders.active || this.santa.fighting) && !fly && !this.warp, mega, LASER_LV[this.laserLv || 1].size);
     this.updateLaser(dt, mega);
     if (this.pw.shield > 0) this.robyn.shield.material.uniforms.uA.value = this.pw.shield < 3 ? 0.55 + 0.45 * Math.sin(this.time * 14) : 1;
@@ -695,6 +706,7 @@ class Game {
       else if (z === 6) { this.gullT = 2 + Math.random() * 4; if (r < 0.7) A.drip(); else A.squeak(3, 1.6); }
       else if (z === 9) A.blips();
       else if (z === 7) { if (r < 0.5) A.gust(); else A.chime(); }
+      else if (z === 31) { this.gullT = 3.5 + Math.random() * 4; if (r < 0.4) A.bark(); else if (r < 0.7) A.squeakToy(); else A.baa(); }
       else if (z === 30) { this.gullT = 3.5 + Math.random() * 4; if (r < 0.3) A.trumpets(); else if (r < 0.7) A.gooseHonk(); else A.marchDrum(); }
       else if (z === 29) { this.gullT = 3.5 + Math.random() * 4; if (r < 0.4) A.reedCall(); else if (r < 0.7) A.sistrum(); else A.camelGrunt(); }
       else if (z === 28) { this.gullT = 3.5 + Math.random() * 4; if (r < 0.4) A.dinoCall(); else if (r < 0.7) A.stomp(); else A.pteroCall(); }
@@ -728,9 +740,10 @@ class Game {
   // shoots the invaders down by herself, whether or not she has a laser pickup.
   updateInvaders(dt, fly, mega) {
     const iv = this.invaders, tr = this.track, s = this.dist, P = this.p, busy = !!this.warp;      // she can shoot from the rocket too
-    if (!iv.active && !this.santa.active && !busy) {
+    if (!iv.active && !this.santa.active && !this.bigIzzi.active && !busy) {
       const w = tr.waves.find((q) => !q.done && s >= q.s0 - 6 && s < q.s0 + 25);
-      if (w && w.santa) { w.done = true; this.santa.begin(w); this.santaN = 0; this.santaT = 0.3; this.ui.popup('Grumpy Santa!', 'warn'); this.audio.santaArrive(); }
+      if (w && w.izzi) { w.done = true; this.bigIzzi.begin(w); this.ui.popup('Big Izzi is here!', 'gold'); this.audio.izziArrive(); }
+      else if (w && w.santa) { w.done = true; this.santa.begin(w); this.santaN = 0; this.santaT = 0.3; this.ui.popup('Grumpy Santa!', 'warn'); this.audio.santaArrive(); }
       else if (w) { w.done = true; iv.begin(w); this.invN = 0; this.invT = 0.5; this.ui.popup('Alien invaders!', 'warn'); this.audio.invArrive(); }
     }
     // a bomb from the formation: mark where it came from with a flash
@@ -752,6 +765,29 @@ class Game {
     const cols = [[0xa56bff, 0xffe27a, 0xffffff], [0x2fc7b0, 0xffb347, 0xffffff], [0xff8a3c, 0x8dff5a, 0xffffff]][a.r];
     for (let i = 0; i < 14; i++) { const an = Math.random() * 6.28, u = Math.random() * 3.14, sp = 2 + Math.random() * 4; this.fx.emit({ x: a.wx, y: a.wy, z: a.wz, vx: Math.cos(an) * Math.sin(u) * sp, vy: Math.cos(u) * sp + 1, vz: Math.sin(an) * Math.sin(u) * sp, life: 0.4 + Math.random() * 0.3, size: i % 3 ? 0.22 : 0.4, color: cols[i % 3], g: 3, world: false }); }
     this.invaders.hit(a);
+  }
+
+  // ---------- Big Izzi ----------
+  // Her beams run down a lane towards Robyn. One that reaches her makes her glow for a few seconds: a treat, never a stumble.
+  updateBigIzzi(dt) {
+    const bi = this.bigIzzi, P = this.p;
+    if (bi.active) {
+      bi.update(dt, this.time, this.dist, !!this.warp, P.x, P.lane);
+      const sp = bi.spotAt;
+      if (sp) for (let i = 0; i < 2; i++) this.fx.emit({ x: sp.x + rnd(0.4), y: 0.1, z: sp.z + rnd(0.3), vx: rnd(1.5), vy: 1.5 + Math.random() * 2.5, vz: rnd(1), life: 0.4 + Math.random() * 0.3, size: 0.18 + Math.random() * 0.14, color: pickOf(GLOW_COLORS), g: 4 });
+      if (bi.result === 'hit' && this.mode === 'run') {
+        const fresh = this.glowT <= 0, pts = 100 * this.x2;
+        this.glowT = GLOW_TIME; this.glowN++; this.score += pts;
+        this.ui.popup(fresh ? 'Izzi zapped you! Robyn is glowing! +' + pts : 'Glowing even brighter! +' + pts, 'gold'); this.audio.glowUp();
+        for (let i = 0; i < 18; i++) { const an = Math.random() * 6.28, sp2 = 1.5 + Math.random() * 3; this.fx.emit({ x: P.x, y: P.y + 0.3 + Math.random() * 1.4, z: 0, vx: Math.cos(an) * sp2, vy: 1 + Math.random() * 3, vz: Math.sin(an) * sp2, life: 0.5 + Math.random() * 0.4, size: i % 3 ? 0.18 : 0.34, color: pickOf(GLOW_COLORS), g: 3, world: false }); }
+      }
+    }
+    // while she glows, Robyn sparkles a little too
+    if (this.glowT > 0) {
+      this.glowT = Math.max(0, this.glowT - dt);
+      if (Math.random() < 0.35) this.fx.emit({ x: P.x + rnd(0.35), y: P.y + 0.2 + Math.random() * 1.5, z: rnd(0.3), vx: rnd(0.4), vy: 0.6 + Math.random() * 0.6, life: 0.5, size: 0.13, color: pickOf(GLOW_COLORS), g: 0, world: false });
+    }
+    this.robyn.setGlow(clamp(this.glowT / 1.2, 0, 1));
   }
 
   // ---------- Grumpy Santa ----------
@@ -950,7 +986,7 @@ class Game {
     this.audio.firework(vol);
   }
   // is one of the big shows on (invaders, Grumpy Santa, or a flying attacker close ahead)? Pets, planes and geese wait until it is over
-  showOn() { const d = this.dist; return this.invaders.active || this.santa.active || this.track.ufos.some((u) => u.s - d > -5 && u.s - d < 70); }
+  showOn() { const d = this.dist; return this.invaders.active || this.santa.active || this.bigIzzi.active || this.track.ufos.some((u) => u.s - d > -5 && u.s - d < 70); }
   celebrate(n) { for (let i = 0; i < n; i++) this.firework(rnd(7), 5 + Math.random() * 5, -(12 + Math.random() * 18), pickOf(FW_COLORS), 26, 0.28, 0.9, i ? 0 : 0.8); }
   // Fireworks over the Midnight Funfair; lightning, thunder and sea spray at Storm Point.
   // Robyn has reached the top of a hill level.

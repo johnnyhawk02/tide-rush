@@ -145,6 +145,12 @@ function buildPixel() {
   return { root, body, head, ears, legs, tail: tail.joints, skin: tail, wag: 5, reach: 1.05 };
 }
 
+// Just Izzi's head, for the giant Izzi who floats over her own world (izzihead.js). It still faces -Z.
+export function buildIzziHead() {
+  const iz = buildIzzi(), head = iz.head;
+  head.parent.remove(head); head.position.set(0, 0, 0);
+  return { head, jaw: iz.jaw, ears: iz.ears };
+}
 const KINDS = {
   izzi: { build: buildIzzi, lag: 1.55, off: -0.42, stay: 16, first: [14, 22], again: [45, 70], title: [-1.2, 0.35] },
   pixel: { build: buildPixel, lag: 2.5, off: 0.46, stay: 13, first: [50, 65], again: [60, 90], title: [1.05, 0.7] },

@@ -303,6 +303,25 @@ export class Robyn {
     }));
     this.shield.position.y = 0.92; this.shield.visible = false; this.root.add(this.shield);
 
+    // ----- the glow from Big Izzi's laser beams (Izzi World) -----
+    // She gets her own copy of the characters' material, so that she can light up without the pets lighting up too,
+    // and a soft rainbow aura round her.
+    this.skinMat = CHARACTER.clone(); this.skinMat.onBeforeCompile = CHARACTER.onBeforeCompile; this.skinMat.customProgramCacheKey = CHARACTER.customProgramCacheKey;
+    this.root.traverse((o) => { if (o.material === CHARACTER) o.material = this.skinMat; });
+    this.aura = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uT: { value: 0 }, uA: { value: 0 } },
+      vertexShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP;
+        void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); vP = position; gl_Position = projectionMatrix*mv; }`,
+      fragmentShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP; uniform float uT; uniform float uA;
+        void main(){ float f = pow(1. - abs(dot(vN, vV)), 1.6);
+          float h = fract(vP.y * 0.5 - uT * 0.4);
+          vec3 col = clamp(abs(mod(h * 6. + vec3(0., 4., 2.), 6.) - 3.) - 1., 0., 1.);
+          col = mix(col, vec3(1.), 0.35);
+          gl_FragColor = vec4(col * (f * 0.9 + 0.08) * uA, 1.); }`,
+    }));
+    this.aura.scale.set(0.62, 1.02, 0.55); this.aura.position.y = 0.9; this.aura.visible = false; this.aura.renderOrder = 3; this.root.add(this.aura);
+    this.glowK = 0; this._glow = new THREE.Color();
+
     // ----- firework rocket she rides in rocket mode (lies along z, nose forward) -----
     this.rocket = prop((b) => {
       b.cyl(0.17, 0.17, 1.25, 0xe5383b, 0, 0, 0, PI / 2, 0, 0, { seg: 14 });
@@ -345,6 +364,8 @@ export class Robyn {
 
   setBoots(on) { this.legL.spring.visible = on; this.legR.spring.visible = on; }
   setShield(on) { this.shield.visible = on; }
+  // how brightly she glows after one of Big Izzi's beams reached her: 0 is not at all, 1 is fully lit
+  setGlow(k) { this.glowK = k; }
   setRocket(on) { this.rocket.visible = on; }
   setBoard(on) { this.board.visible = on; }
   // mega: the bigger space version
@@ -478,5 +499,12 @@ export class Robyn {
     }
     this.hair.update(); this.tail.update();
     if (this.shield.visible) { this.shield.material.uniforms.uT.value = this.t; this.shield.rotation.y = this.t * 0.6; }
+    // the glow: her colours light up and slowly run through the rainbow, with a shimmering aura round her
+    const gk = this.glowK;
+    this.aura.visible = gk > 0.01;
+    if (this.aura.visible) {
+      this.aura.material.uniforms.uT.value = this.t; this.aura.material.uniforms.uA.value = gk * (0.85 + 0.15 * Math.sin(this.t * 9));
+      this._glow.setHSL((this.t * 0.35) % 1, 1, 0.6); this.skinMat.emissive.copy(this._glow).multiplyScalar(0.5 * gk);
+    } else this.skinMat.emissive.setRGB(0, 0, 0);
   }
 }

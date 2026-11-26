@@ -49,6 +49,8 @@ const PAL = [
   { top: 0x2f8fe0, hor: 0xffe6b0, sun: 0xfff0c0, sunI: 3.1, hemiS: 0xfff0d0, hemiG: 0xd8b880, hemiI: 1.35, deep: 0x1f7a6a, shal: 0x5fc8a8, foam: 0xf4ffe8, cloud: 0xfff4dc, el: 0.75, az: -0.35, stars: 0, storm: 0 },
   // 30 Ancient Rome: a golden late afternoon
   { top: 0x4a86d8, hor: 0xffd8a0, sun: 0xffe2b0, sunI: 3.0, hemiS: 0xffeeda, hemiG: 0xc8a878, hemiI: 1.35, deep: 0x2a6fa8, shal: 0x6fb8d8, foam: 0xffffff, cloud: 0xfff0dc, el: 0.5, az: 0.6, stars: 0, storm: 0 },
+  // 31 Izzi World: a bright blue morning in the park, with a pinkish glow low down
+  { top: 0x3f96f0, hor: 0xffe0f0, sun: 0xfff6dc, sunI: 3.1, hemiS: 0xf4f8ff, hemiG: 0x9ad070, hemiI: 1.4, deep: 0x2f88c8, shal: 0x7fd8e8, foam: 0xffffff, cloud: 0xffffff, el: 0.65, az: -0.5, stars: 0, storm: 0 },
 ];
 const BLEND = 0.2;   // share of a level over which the sky changes to the next palette
 
