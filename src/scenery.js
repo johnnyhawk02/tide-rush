@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { Builder, C, MAT, makeRng, pick, signMesh, puffTexture, brickTexture, hillHeight, BEND_GLSL } from './kit.js';
 import { CHUNK, DECK_HALF, WATER_Y, ZONE_CHUNKS, ZONE_LEN, HILLS, lerp } from './config.js';
-import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto, GRK, greekColInto, amphoraInto, oliveInto, owlInto, woodHorseInto, DINO, fernInto, cycadInto, dinoNeckInto, longNeckInto, trikeInto, rexInto, caveKidInto, EGY, pyramidInto, datePalmInto, sitCatInto, camelInto, obeliskInto, ROM, gooseInto, stonePineInto, cypressInto, archWallInto, shieldInto, IZ, boneInto, tennisBallInto, bowlInto, kennelInto, izziInto, pawPrintInto, ballTreeInto } from './obstacles.js';
+import { crateInto, chestInto, crystalInto, ratInto, alienInto, giftInto, caneInto, mallowInto, donutInto, lollyInto, cupcakeInto, painted, helix, swirlDisc, swirlWheelInto, coilInto, turretInto, goatInto, pineInto, boulderInto, balloonsInto, SAND, SAND_D, dippedInto, sandwichInto, MILK, MILK_L, DARKC, WHITEC, FOIL, CARAMEL, BISC, cowInto, churnInto, bottleInto, baleInto, COW_W, COW_B, HOOF, HORN, STRAW, STRAW_D, glassCol, glassInto, ovalGlassInto, mirrorBallInto, gemInto, sparkleInto, MGOLD, MGOLD_D, MSILV, PEARL, GEMS, stanchionInto, ropeInto, plinthInto, columnInto, bustInto, vaseInto, armourInto, mummyInto, pictureInto, MARBLE, MARBLE_D, VELVET, BONE, BONE_D, DREAM, pillowInto, starInto, moonInto, zedInto, nightcapInto, teddyInto, sheepInto, PXART, pixelArtInto, cubeTreeInto, NEON, NEONS, discoBallInto, speakerInto, recordInto, noteInto, dancerInto, UPS, roundTreeInto, cottageInto, GIR, giraffeHeadInto, giraffeNeckInto, giraffeBodyInto, giraffeInto, acaciaInto, ORCH, fruitInto, fruitCrateInto, orchTreeInto, BOO, ghostInto, pumpkinInto, GRK, greekColInto, amphoraInto, oliveInto, owlInto, woodHorseInto, DINO, fernInto, cycadInto, dinoNeckInto, longNeckInto, trikeInto, rexInto, caveKidInto, EGY, pyramidInto, datePalmInto, sitCatInto, camelInto, obeliskInto, ROM, gooseInto, stonePineInto, cypressInto, archWallInto, shieldInto, IZ, boneInto, tennisBallInto, bowlInto, kennelInto, izziInto, pawPrintInto, ballTreeInto, PXW, catInto, yarnBallInto, goldfishInto, cardBoxInto, cushionInto, catnipInto } from './obstacles.js';
 
 const PI = Math.PI;
 const cache = new Map();
@@ -3883,10 +3883,156 @@ const ballBalloon = () => prefab('ballBalloon', () => {
   return b.build({ cast: false, receive: false });
 });
 
+// ---------- Pixel World ----------
+// Pixel the cat's own world: a cottage garden at golden hour. Grass and a low brick garden wall either side of the boards,
+// flower beds and stepping stones, and in each stretch something a cat would love: a cottage with a cat flap and cats on
+// the roof, a goldfish pond, a great cat tree, a heap of giant balls of wool, a fort made of cardboard boxes.
+const pixelGroundInto = (b, rng, clear) => {
+  for (const sd of [-1, 1]) {
+    b.box(46, 3.6, CHUNK, PXW.grass, sd * (DECK_HALF + 23), -1.82, -CHUNK / 2);
+    for (let i = 0; i < 20; i++) b.box(0.34, 0.18, 1.9, i % 2 ? 0xfff4e4 : 0xe8dcc8, sd * (DECK_HALF + 0.17), 0.03, -1 - i * 2);
+    // a low brick garden wall along the edge, capped with stone, with a cat asleep on it here and there
+    b.box(0.5, 0.6, CHUNK, PXW.brick, sd * (DECK_HALF + 0.9), 0.3, -CHUNK / 2, 0, 0, 0, { grad: 0.8 }).box(0.62, 0.1, CHUNK, 0xe8dcc8, sd * (DECK_HALF + 0.9), 0.65, -CHUNK / 2);
+    for (let i = 0; i < 8; i++) b.box(0.52, 0.03, 0.03, PXW.brickD, sd * (DECK_HALF + 0.9), 0.15 + (i % 3) * 0.15, -2.5 - i * 4.8);
+    if (rng() < 0.7) catInto(b, sd * (DECK_HALF + 0.9), 0.7, -8 - rng() * 24, 0.55, { asleep: true, coat: ['ginger', 'grey', 'pixel', 'cream'][Math.floor(rng() * 4)], ry: sd * PI / 2 });
+    for (let i = 0; i < 9; i++) b.sph(1, i % 2 ? PXW.grassL : PXW.grassD, sd * (DECK_HALF + 2.5 + rng() * 24), -0.04, -rng() * CHUNK, 1.5 + rng() * 2.6, 0.07, 1 + rng() * 2, { seg: 7 });
+    // flower beds of lavender and roses along the wall
+    for (let i = 0; i < 22; i++) { const x = sd * (DECK_HALF + 1.6 + rng() * 2.2), z = -rng() * CHUNK; if (!clear(x, z)) b.sph(0.14 + rng() * 0.08, [PXW.lav, PXW.blossom, 0xffffff, 0xff6f8f][i % 4], x, 0.25 + rng() * 0.2, z, 1, 1.2, 1, { seg: 5 }); }
+    for (let i = 0; i < 12; i++) { const x = sd * (DECK_HALF + 1.8 + rng() * 2), z = -rng() * CHUNK; if (!clear(x, z)) b.sph(0.3, PXW.grassD, x, 0.12, z, 1.3, 0.7, 1, { seg: 6 }); }
+    // stepping stones wandering off across the lawn
+    for (let i = 0; i < 6; i++) { const x = sd * (DECK_HALF + 4 + i * 1.3 + Math.sin(i * 1.1) * 0.6), z = -10 - i * 1.4 - (sd > 0 ? 14 : 0); if (!clear(x, z)) b.cyl(0.42, 0.46, 0.08, 0xd8d0c0, x, 0.02, z, 0, 0, 0, { seg: 9 }); }
+    // green hills far off, and round trees in blossom
+    for (let i = 0; i < 2; i++) b.sph(15 + rng() * 5, i % 2 ? PXW.grassD : 0x7ab858, sd * (56 + rng() * 8), -2, -8 - i * 20 - rng() * 6, 1.2, 0.4 + rng() * 0.15, 1, { seg: 9, grad: 0.75 });
+    for (let i = 0; i < 3; i++) {
+      const x = sd * (24 + rng() * 14), z = -rng() * CHUNK, h = 1.6 + rng() * 0.6;
+      if (!clear(x, z)) b.cyl(0.1, 0.14, h, PXW.woodD, x, h / 2, z, 0, 0, 0, { seg: 6 }).sph(1.2, i % 2 ? PXW.blossom : 0xffd0e4, x, h + 0.9, z, 1, 0.9, 1, { seg: 9, grad: 0.8 });
+    }
+  }
+};
+// A cottage with a cat flap, a window box and two cats on the roof. It faces +z.
+const catCottageInto = (b) => {
+  const w = 5.6, h = 3.4, d = 4.2;
+  b.box(w, h, d, PXW.cream, 0, h / 2, 0, 0, 0, 0, { grad: 0.88 }).prism(w * 1.12, 2.4, d * 1.12, 0x8a5a9a, 0, h, 0, 0);
+  b.box(0.7, 1.6, 0.4, PXW.brick, 1.6, h + 1.4, -0.6).box(0.8, 0.1, 0.5, PXW.brickD, 1.6, h + 2.2, -0.6);
+  b.box(1.1, 2.0, 0.06, PXW.teal, -1.2, 1.0, d / 2 + 0.03).sph(0.06, PXW.gold, -0.8, 1.0, d / 2 + 0.08, 1, 1, 1, { seg: 5 });
+  b.box(0.5, 0.42, 0.04, PXW.tealD, -1.2, 0.26, d / 2 + 0.07).box(0.44, 0.36, 0.03, 0x2a2a33, -1.2, 0.26, d / 2 + 0.08);   // the cat flap
+  for (const wx of [1.1, 2.2]) b.box(0.9, 0.9, 0.05, 0xfff4d8, wx - 0.55, 2.1, d / 2 + 0.03, 0, 0, 0, { glow: true }).box(1.0, 0.08, 0.1, 0xffffff, wx - 0.55, 2.1, d / 2 + 0.06).box(0.08, 1.0, 0.1, 0xffffff, wx - 0.55, 2.1, d / 2 + 0.06);
+  b.box(2.3, 0.3, 0.4, PXW.wood, 1.1, 1.5, d / 2 + 0.2);
+  for (let i = 0; i < 7; i++) b.sph(0.13, [PXW.blossom, PXW.lav, 0xff6f8f][i % 3], 0.1 + i * 0.32, 1.75, d / 2 + 0.2, 1, 1, 1, { seg: 5 });
+  catInto(b, -1.4, h + 0.9, 0.9, 1.1, { ry: 0.2 });
+  catInto(b, 0.3, h + 1.8, 0.1, 0.9, { coat: 'ginger', asleep: true, ry: -0.4 });
+  catInto(b, 2.2, 1.65, d / 2 + 0.25, 0.55, { coat: 'grey', ry: 0.1 });
+  for (let i = 0; i < 4; i++) b.cyl(0.36, 0.36, 0.06, 0xd8d0c0, -1.2 + (i % 2) * 0.2, 0.03, d / 2 + 0.8 + i * 0.95, 0, 0, 0, { seg: 8 });
+  b.cyl(0.4, 0.3, 0.12, 0xffffff, -2.4, 0.06, d / 2 + 1.0, 0, 0, 0, { seg: 12 }).cyl(0.34, 0.34, 0.02, PXW.milk, -2.4, 0.12, d / 2 + 1.0, 0, 0, 0, { seg: 12 });
+};
+// A round goldfish pond with lily pads, and a cat sitting at the edge who would very much like to go fishing.
+const fishPondInto = (b, x, z) => {
+  b.cyl(3.6, 3.8, 0.3, 0xd8d0c0, x, 0.15, z, 0, 0, 0, { seg: 24 }).cyl(3.2, 3.2, 0.04, PXW.water, x, 0.28, z, 0, 0, 0, { seg: 24, glow: true, grad: 1 });
+  for (let i = 0; i < 12; i++) { const a = i * 0.5236; b.sph(0.42, i % 2 ? 0xc8c0b0 : 0xe0d8c8, x + Math.cos(a) * 3.55, 0.3, z + Math.sin(a) * 3.55, 1, 0.45, 1, { seg: 6 }); }
+  for (let i = 0; i < 5; i++) { const a = i * 1.3 + 0.4, q = 1.2 + (i % 3) * 0.6; b.cyl(0.4, 0.4, 0.02, 0x5fae48, x + Math.cos(a) * q, 0.31, z + Math.sin(a) * q, 0, 0, 0, { seg: 9 }); if (i % 2) b.sph(0.12, 0xffd0e4, x + Math.cos(a) * q, 0.4, z + Math.sin(a) * q, 1, 0.7, 1, { seg: 6 }); }
+  for (let i = 0; i < 4; i++) b.at(x - 1 + i * 0.7, 0.3, z + 0.6 - (i % 2) * 1.2, i * 1.1, () => goldfishInto(b, 0, 0, 0, 1.3, i % 2 ? PXW.fishL : PXW.fish));
+  catInto(b, x, 0.3, z + 3.8, 1.3, { ry: PI });
+};
+// A great cat tree: rope posts, carpeted platforms at different heights, a hammock and a hidey-hole, with cats all over it.
+const catTreeInto = (b) => {
+  b.box(5, 0.2, 3.6, PXW.cushion, 0, 0.1, 0);
+  for (const [px, pz, ph] of [[-1.6, 0, 4.2], [1.4, -0.6, 3.0], [0.2, 0.9, 5.6]]) {
+    b.cyl(0.32, 0.32, ph, PXW.rope, px, ph / 2, pz, 0, 0, 0, { seg: 10 });
+    for (let i = 0; i < ph / 0.4; i++) b.tor(0.325, 0.03, PXW.ropeD, px, 0.3 + i * 0.4, pz, PI / 2, 0, 0, { seg: 10, tseg: 3 });
+    b.cyl(1.1, 1.1, 0.2, PXW.cushion, px, ph, pz, 0, 0, 0, { seg: 16 }).cyl(1.12, 1.12, 0.06, PXW.cushionL, px, ph + 0.12, pz, 0, 0, 0, { seg: 16 });
+  }
+  b.box(1.5, 1.2, 1.5, PXW.cushionL, 1.4, 0.8, -0.6).cyl(0.4, 0.4, 0.04, 0x3a2a4a, 1.4, 0.8, 0.16, PI / 2, 0, 0, { seg: 12 });
+  b.sph(0.9, PXW.teal, -0.6, 2.2, 0.4, 1, 0.3, 0.6, { seg: 10 });   // the hammock
+  catInto(b, -1.6, 4.3, 0, 1.0, { ry: 0.4 });
+  catInto(b, 0.2, 5.7, 0.9, 1.1, { coat: 'ginger', asleep: true });
+  catInto(b, 1.4, 3.1, -0.4, 0.9, { coat: 'grey', ry: -0.3 });
+  catInto(b, -0.6, 2.25, 0.4, 0.7, { coat: 'cream', asleep: true, ry: 1.2 });
+  for (const [px, ph] of [[-1.6, 4.2], [1.4, 3.0]]) { b.cyl(0.015, 0.015, 0.9, 0xffffff, px + 0.9, ph - 0.45, 0.3, 0, 0, 0, { seg: 3 }).sph(0.16, PXW.wool[2], px + 0.9, ph - 0.95, 0.3, 1, 1, 1, { seg: 6 }); }
+};
+// A heap of giant balls of wool, with two kittens playing in the loose ends.
+const yarnHeapInto = (b, x, z) => {
+  [[0, 0, 1.4], [2.4, 0.6, 1.0], [-2.0, -0.4, 1.1], [0.9, -2.2, 0.8], [1.2, 0.2, 0.9, 1.8]].forEach(([dx, dz, r, dy], i) => yarnBallInto(b, x + dx, (dy || 0) + r, z + dz, r, PXW.wool[i], { strand: false }));
+  for (let i = 0; i < 3; i++) b.tor(1.6 + i * 0.5, 0.06, PXW.wool[i], x + 1.5, 0.05, z + 2, PI / 2, 0, i, { arc: PI * 0.8, seg: 12, tseg: 3 });
+  catInto(b, x + 3.2, 0, z + 2.4, 0.75, { coat: 'ginger', ry: -0.6 });
+  catInto(b, x - 1.0, 0, z + 2.6, 0.7, { ry: 0.5 });
+};
+// A fort built of cardboard boxes, with cats peeping out of the holes and a paper flag on top.
+const boxFortInto = (b) => {
+  const boxes = [[-2.2, 0, 0, 2, 1.6, 1.8], [0, 0, 0, 2.2, 2.0, 2], [2.2, 0, 0.2, 2, 1.4, 1.8], [-1.0, 2.0, 0, 1.8, 1.4, 1.6], [1.2, 1.4, 0.1, 1.6, 1.2, 1.5], [0, 3.4, 0, 1.4, 1.1, 1.3]];
+  boxes.forEach(([x, y, z, w, h, d], i) => {
+    b.box(w, h, d, i % 2 ? PXW.box : 0xc8985e, x, y + h / 2, z, 0, (i % 3 - 1) * 0.06, 0, { grad: 0.82 }).box(w * 0.3, 0.04, 0.02, 0xc8a070, x, y + h * 0.7, z + d / 2 + 0.01);
+    if (i % 2 === 0) {
+      b.cyl(0.32, 0.32, 0.02, 0x2a1d14, x, y + h * 0.45, z + d / 2 + 0.01, PI / 2, 0, 0, { seg: 12 });
+      const c = ['pixel', 'grey', 'ginger'][i / 2 | 0], k = c === 'pixel' ? PXW.fur : c === 'grey' ? PXW.grey : PXW.ginger;
+      b.sph(0.2, k, x, y + h * 0.45, z + d / 2 - 0.05, 1.1, 1, 0.8, { seg: 8 });
+      for (const sx of [-1, 1]) b.sph(0.045, PXW.green, x + sx * 0.08, y + h * 0.48, z + d / 2 + 0.08, 1, 1.1, 0.5, { seg: 5 }).cone(0.06, 0.14, k, x + sx * 0.12, y + h * 0.45 + 0.24, z + d / 2 - 0.05, 0, 0, -sx * 0.3, { seg: 4 });
+    }
+  });
+  b.cyl(0.03, 0.03, 1.4, 0xffffff, 0, 5.2, 0, 0, 0, 0, { seg: 4 }).prism(0.04, 0.5, 0.8, PXW.teal, 0, 5.4, 0.42, PI / 2);
+};
+const catSet = (k) => prefab('catSet' + k, () => {
+  const b = new Builder(0.86), rng = makeRng(3210 + k);
+  const near = (x, z, x0, z0, r) => Math.hypot(x - x0, z - z0) < r;
+  const clear = k === 0 ? (x, z) => near(x, z, 13, -14, 7.5) || near(x, z, -12, -26, 5.5)
+    : k === 1 ? (x, z) => near(x, z, -12, -16, 5.5) || near(x, z, 12, -24, 5.5)
+      : (x, z) => near(x, z, -12, -18, 6) || near(x, z, 12, -10, 4);
+  pixelGroundInto(b, rng, clear);
+  if (k === 0) {
+    b.at(13, 0, -14, -PI / 2, () => catCottageInto(b));
+    fishPondInto(b, -12, -26);
+  } else if (k === 1) {
+    b.at(-12, 0, -16, PI / 2, () => catTreeInto(b));
+    yarnHeapInto(b, 12, -24);
+  } else {
+    b.at(-12, 0, -18, PI / 2, () => boxFortInto(b));
+    for (let i = 0; i < 4; i++) catnipInto(b, 10.5 + (i % 2) * 2, 0, -8 - i * 1.6, 1.4);
+    catInto(b, 13.2, 0, -13.2, 0.9, { coat: 'grey', asleep: true, ry: -1 });
+  }
+  return b.build({ cast: true, receive: true });
+});
+// The name plate on the cottage.
+const cottageSign = () => prefab('pixelCottageSign', () => {
+  const s = signMesh('PIXEL', 2.1, 0.62, '#fff3d6', '#1f8a86', '#2a2a33');
+  const g = new THREE.Group(); g.add(s); return g;
+});
+// The way in: two rope scratching posts with cat ears on top, a cushion across them, and toy mice hanging on strings.
+const scratchArch = () => prefab('scratchArch', () => {
+  const b = new Builder(0.88), H = 5.6;      // (kept low, so that Big Pixel can be seen over it)
+  for (const sx of [-1, 1]) {
+    b.cyl(0.6, 0.7, 0.3, PXW.cushion, sx * 5.3, 0.15, 0, 0, 0, 0, { seg: 12 });
+    b.cyl(0.32, 0.32, H - 0.4, PXW.rope, sx * 5.3, (H - 0.4) / 2, 0, 0, 0, 0, { seg: 12 });
+    for (let i = 0; i < 12; i++) b.tor(0.325, 0.035, PXW.ropeD, sx * 5.3, 0.45 + i * 0.42, 0, PI / 2, 0, 0, { seg: 12, tseg: 3 });
+    for (const ex of [-1, 1]) b.cone(0.26, 0.6, PXW.fur, sx * 5.3 + ex * 0.28, H + 0.72, 0, 0, 0, -ex * 0.2, { seg: 4 }).cone(0.14, 0.36, PXW.pink, sx * 5.3 + ex * 0.28, H + 0.66, 0.1, 0, 0, -ex * 0.2, { seg: 4 });
+  }
+  b.box(11.2, 0.5, 1.1, PXW.cushion, 0, H, 0, 0, 0, 0, { grad: 0.85 }).box(11.2, 0.12, 1.12, PXW.cushionL, 0, H + 0.28, 0);
+  for (let i = 0; i < 5; i++) {
+    const x = -3.2 + i * 1.6, l = 0.7 + (i % 2) * 0.5;
+    b.cyl(0.012, 0.012, l, 0xffffff, x, H - 0.25 - l / 2, 0.3, 0, 0, 0, { seg: 3 });
+    b.sph(0.18, [PXW.grey, 0xffb0c8][i % 2], x, H - 0.4 - l, 0.3, 0.8, 1.2, 0.8, { seg: 7 }).sph(0.06, PXW.pink, x, H - 0.6 - l, 0.3, 1, 1, 1, { seg: 4 });
+  }
+  return b.build({ cast: true, receive: false });
+});
+// A butterfly that the cats would love to catch.
+const butterfly = () => prefab('butterfly', () => {
+  const b = new Builder(0.95);
+  for (const sx of [-1, 1]) b.sph(0.32, 0xffb347, sx * 0.3, 0, 0.08, 1, 0.08, 0.8, { seg: 7 }).sph(0.22, 0xff6fa8, sx * 0.26, 0, -0.3, 1, 0.08, 0.8, { seg: 6 });
+  b.cyl(0.04, 0.04, 0.6, 0x2a2a33, 0, 0, 0, PI / 2, 0, 0, { seg: 4 });
+  return b.build({ cast: false, receive: false });
+});
+// A hot-air balloon that is a giant ball of wool, with a cat in the basket.
+const yarnBalloon = () => prefab('yarnBalloon', () => {
+  const b = new Builder(0.9);
+  yarnBallInto(b, 0, 3.2, 0, 2.2, PXW.wool[3], { strand: false });
+  b.box(1.0, 0.8, 1.0, PXW.wood, 0, 0, 0).box(1.06, 0.12, 1.06, PXW.woodD, 0, 0.4, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cyl(0.02, 0.02, 1.6, 0x5a4a3a, sx * 0.45, 1.2, sz * 0.45, sz * 0.25, 0, -sx * 0.25, { seg: 3 });
+  catInto(b, 0, 0.4, 0.1, 0.6);
+  return b.build({ cast: false, receive: false });
+});
+
 // ---------- zone gateways ----------
-const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD', 'ANCIENT GREECE', 'ANCIENT TIME', 'ANCIENT EGYPT', 'ANCIENT ROME', 'IZZI WORLD'];
+const ZONE_NAMES = ['THE PROMENADE', 'GRAND PIER', 'OLD HARBOUR', 'MIDNIGHT FUNFAIR', 'STORM POINT', 'SANDCASTLE BAY', "SMUGGLERS' COVE", 'FROSTY PIER', 'THE SEWERS', 'SPACE PIER', 'CHRISTMAS PIER', 'MARSHMALLOW SHORE', 'SPIRAL BAY', 'SKY-HIGH MOUNTAIN', 'ROLLERCOASTER WORLD', 'THE GLASS TUNNEL', 'CHOCOLATE COAST', 'MOO TOWN', 'LAND OF MIRRORS', 'THE MUSEUM', 'DREAM TIME', 'PIXEL LAND', 'DISCO LAND', 'UPSIDE-DOWN WORLD', 'GIRAFFE WORLD', 'ORCHARD LAND', 'FRIENDLY GHOST WORLD', 'ANCIENT GREECE', 'ANCIENT TIME', 'ANCIENT EGYPT', 'ANCIENT ROME', 'IZZI WORLD', 'PIXEL WORLD'];
 const gateway = (zone) => prefab('gate' + zone, () => {
-  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8, 0x2f6fd8, 0x4f9a48, 0xd89a2a, 0xc8282a, 0xe0483a][zone];
+  const b = new Builder(0.85), col = [C.coral, 0x2a7a72, C.navy, FUN_PURPLE, 0x3d4a57, 0xff8a3c, 0x245f6b, 0x6fa8dc, 0x4f6a3a, 0x3a2a8a, 0xc23b2e, 0xff7ab8, 0x7a4fe0, 0x4f8f4a, 0xe5383b, 0x1f8fb5, 0x7a4526, 0xc23b2e, 0x6f8fd8, 0x2f7f86, 0x7a5a9a, 0x4fae56, 0xff3fa4, 0x3f8fe0, 0xe0a030, 0xd8324a, 0x6a4aa8, 0x2f6fd8, 0x4f9a48, 0xd89a2a, 0xc8282a, 0xe0483a, 0x2fb8b0][zone];
   for (const sx of [-1, 1]) {
     b.box(0.7, 0.9, 0.7, C.white, sx * 4.15, 0.45, 0).box(0.45, 5.4, 0.45, col, sx * 4.15, 3.6, 0).box(0.6, 0.2, 0.6, C.gold, sx * 4.15, 6.3, 0).sph(0.32, C.gold, sx * 4.15, 6.7, 0);
     b.box(0.3, 0.3, 1.6, col, sx * 3.5, 5.2, 0, 0, 0, sx * 0.8);
@@ -3894,7 +4040,7 @@ const gateway = (zone) => prefab('gate' + zone, () => {
   b.box(8.6, 1.25, 0.3, col, 0, 5.85, 0).box(8.9, 0.14, 0.42, C.gold, 0, 6.52, 0).box(8.9, 0.14, 0.42, C.gold, 0, 5.2, 0);
   for (let i = 0; i < 15; i++) b.sph(0.11, zone === 3 || zone === 7 || zone === 9 || zone === 10 ? BULBS[i % 4] : zone === 6 ? XTAL[i % 4] : zone === 8 ? (i % 2 ? 0xc8ff9a : SLIME) : i % 2 ? 0xffe27a : 0xffffff, -3.9 + i * 0.557, 6.72, 0.1, 1, 1, 1, { glow: true, seg: 6, grad: 1 });
   const g = new THREE.Group(); g.add(b.build({ cast: true }));
-  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280', '#1f4fa8', '#2f6a2a', '#1f4a9a', '#8a1f24', '#2f5fa8'][zone], '#ffc928');
+  const s = signMesh(ZONE_NAMES[zone], 7.2, 0.95, '#fff3d6', ['#c4412f', '#17544f', '#22365c', '#4a1f86', '#2c3640', '#c9601c', '#143f4a', '#2f5f96', '#2f4a22', '#2a1a6a', '#1f6b3e', '#b8327e', '#5a2fb0', '#2f6b3a', '#1f4f9a', '#0f5f86', '#4a2412', '#2f7a34', '#3a4a8a', '#4a3a2a', '#3a2a6a', '#1f5a2a', '#5a1a6a', '#1f4a8a', '#7a4a1a', '#2f7a34', '#4a3280', '#1f4fa8', '#2f6a2a', '#1f4a9a', '#8a1f24', '#2f5fa8', '#1f6a66'][zone], '#ffc928');
   s.position.set(0, 5.86, 0.17); if (zone === 23) s.rotation.z = PI;   // (the sign for the Upside-Down World is upside down, of course)
   g.add(s);
   return g;
@@ -3907,7 +4053,7 @@ export function populate(group, rawIndex, zone, anim) {
   const rng = makeRng(index * 7919 + 13);
   const L = -DECK_HALF + 0.08, R = DECK_HALF - 0.08;
   const coast = zone === 14 || zone === 15;      // Rollercoaster World has coaster rails and its own frame in place of the pier's, and the Glass Tunnel has its tube
-  if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19 && zone !== 25 && zone !== 28 && zone !== 30 && zone !== 31) place(group, rail40(), L, 0, 0); }
+  if (!coast) { if (zone !== 23) place(group, under40(), 0, 0, 0); if (zone !== 19 && zone !== 25 && zone !== 28 && zone !== 30 && zone !== 31 && zone !== 32) place(group, rail40(), L, 0, 0); }
   const open = zone === 0 || zone === 5 || zone === 7 || (zone >= 9 && zone !== 12 && zone !== 18 && zone !== 20 && zone !== 21 && zone !== 22 && zone !== 23 && zone !== 24 && zone !== 26 && zone !== 27 && zone !== 29 && !coast);   // the right-hand side opens onto ground at deck level
   if (!open && zone !== 2 && !coast) place(group, rail40(), R, 0, 0);
   if (zone !== 8 && zone !== 15 && zone !== 19) for (const z of [-10, -30]) {
@@ -4192,6 +4338,15 @@ export function populate(group, rawIndex, zone, anim) {
     if (k === 0) { place(group, kennelSign(), 9.6, 4.65, -14, -PI / 2); anim.push({ o: place(group, frisbee(), 0, 0, 0), kind: 'swim', c: [-14, 6.5, -18], r: [6, 0.6, 9], w: 0.9, p: rng() * 6 }); }
     else if (k === 1) anim.push({ o: place(group, ballBalloon(), (index % 2 ? 1 : -1) * (22 + rng() * 6), 10 + rng() * 4, -10 - rng() * 20, rng() * 6.28), kind: 'bob', p: rng() * 6, amp: 2.2 });
     else anim.push({ o: place(group, frisbee(), 0, 0, 0), kind: 'swim', c: [14, 5.5, -26], r: [5, 0.5, 6], w: -1.1, p: rng() * 6 });
+  } else if (zone === 32) {
+    // Pixel World: a cottage garden at golden hour, with grass and a low brick wall either side of the boards
+    const k = index % 3;
+    place(group, catSet(k), 0, 0, 0);
+    // (not in the last stretch: the Glass Tunnel comes next, and the Sky view camera needs room to dive down into it)
+    if (index % 2 === 1 && index % ZONE_CHUNKS !== ZONE_CHUNKS - 1) place(group, scratchArch(), 0, 0, -20);
+    if (k === 0) { place(group, cottageSign(), 10.85, 3.0, -14, -PI / 2); anim.push({ o: place(group, butterfly(), 0, 0, 0), kind: 'swim', c: [-12, 2.2, -24], r: [3.5, 0.5, 3], w: 1.3, p: rng() * 6 }); }
+    else if (k === 1) anim.push({ o: place(group, yarnBalloon(), (index % 2 ? 1 : -1) * (22 + rng() * 6), 10 + rng() * 4, -10 - rng() * 20, rng() * 6.28), kind: 'bob', p: rng() * 6, amp: 2.2 });
+    else anim.push({ o: place(group, butterfly(), 0, 0, 0), kind: 'swim', c: [12, 1.8, -10], r: [2.5, 0.4, 3.5], w: -1.5, p: rng() * 6 });
   } else if (zone === 30) { const k = index % 3; place(group, romeSet(k), 0, 0, 0); if (index % 2 === 1) place(group, triumphGate(), 0, 0, -20);
     if (k === 0) anim.push({ o: place(group, legion(), -9.5, 0.13, -15, 0.25), kind: 'bob', p: rng() * 6, amp: 0.7 });
     else if (k === 1) { const o = chariot(); o.scale.setScalar(1.25); group.add(o); anim.push({ o, kind: 'swim', c: [17.5, 0, -20], r: [5.4, 0, 11.5], w: 0.5, p: rng() * 6 }); }

@@ -151,6 +151,12 @@ export function buildIzziHead() {
   head.parent.remove(head); head.position.set(0, 0, 0);
   return { head, jaw: iz.jaw, ears: iz.ears };
 }
+// And just Pixel's head, for the giant Pixel who floats over hers. It faces -Z too, and comes without the 1.2 scale of her body.
+export function buildPixelHead() {
+  const px = buildPixel(), head = px.head;
+  head.parent.remove(head); head.position.set(0, 0, 0);
+  return { head, jaw: null, ears: px.ears };
+}
 const KINDS = {
   izzi: { build: buildIzzi, lag: 1.55, off: -0.42, stay: 16, first: [14, 22], again: [45, 70], title: [-1.2, 0.35] },
   pixel: { build: buildPixel, lag: 2.5, off: 0.46, stay: 13, first: [50, 65], again: [60, 90], title: [1.05, 0.7] },
