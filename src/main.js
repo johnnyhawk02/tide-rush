@@ -31,6 +31,7 @@ const TWIST_MAX = 0.013;   // how tightly Spiral Bay corkscrews, in radians per 
 const CURVE_MAX = 0.0042, BANK_MAX = 0.1;   // Rollercoaster World: how sharply the road ahead bends sideways, and how far the view leans into each bend (radians)
 const TIDE_STEP = 0.2, TIDE_LIMIT = 0.81, TIDE_FADE = 40;
 const PIXEL = 21;   // zone id of Pixel Land, where the picture is drawn in chunky pixels
+const CHAR_LAYER = 1;   // in Pixel Land, Robyn and the pets are drawn on this layer, sharp, over the chunky picture
 const ROCKET_SPEED = 1.5, FLY_Y = 6.0, FLY_Y_TUBE = 3.9;
 // how high the rocket cruises at a point along the coast: lower inside the Glass Tunnel, so that she stays under its roof
 const flyYAt = (s) => {
@@ -218,19 +219,83 @@ class Game {
     this.audio.unlock(); this.audio.power(); this.sparkle(0, 1.1, 0, OUTFITS[i].coat, 22);
   }
 
-  // Pixel Land is drawn in big chunky pixels: the picture is rendered small and stretched without smoothing.
-  // `chunky` is how many screen points wide each of those pixels is (1 = the normal, sharp picture).
+  // Pixel Land is drawn in big chunky pixels: the land, the sea and the sky are rendered small into `pxTarget` and stretched
+  // without smoothing, while Robyn, Izzi and Pixel are drawn on top at the normal sharp size (Johnny asked for the characters
+  // to stay smooth, request 35). `chunky` is how many screen points wide each of those pixels is (1 = the normal, sharp picture).
   setChunky(on) {
     const h = Math.max(1, this.app.clientHeight), n = on ? clamp(Math.round(h / 250), 2, 4) : 1;
     if (n === this.chunky) return;
-    this.chunky = n; this.renderer.domElement.style.imageRendering = n > 1 ? 'pixelated' : '';
+    const was = this.chunky; this.chunky = n;
+    if (n > 1 && !this.pxTarget) this.makeChunky();
+    if (n > 1 && was === 1) {
+      // the lights also have to be on layer 1, where the characters are drawn, or they would light nothing in the third pass
+      this.scene.traverse((o) => { if (o.isLight) o.layers.enable(CHAR_LAYER); });
+    }
+    if (n === 1) this.charLayers(1);   // back to layer 0, where everything else is
     this.resize();
+  }
+  makeChunky() {
+    this.pxTarget = new THREE.WebGLRenderTarget(1, 1, {
+      type: THREE.HalfFloatType, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, generateMipmaps: false,
+      depthTexture: new THREE.DepthTexture(1, 1),
+    });
+    this.pxTarget.depthTexture.minFilter = this.pxTarget.depthTexture.magFilter = THREE.NearestFilter;
+    // copies the small picture onto the screen, blocky, and its depth too, so that a tree or an arch can still hide Robyn
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { tColor: { value: this.pxTarget.texture }, tDepth: { value: this.pxTarget.depthTexture } },
+      vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+      fragmentShader: `uniform sampler2D tColor; uniform sampler2D tDepth; varying vec2 vUv;
+        void main() {
+          gl_FragColor = vec4(texture2D(tColor, vUv).rgb, 1.0);
+          gl_FragDepth = texture2D(tDepth, vUv).x;
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }`,
+      depthTest: true, depthWrite: true, depthFunc: THREE.AlwaysDepth, toneMapped: true,
+    });
+    this.pxQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat); this.pxQuad.frustumCulled = false;
+    this.pxScene = new THREE.Scene(); this.pxScene.add(this.pxQuad);
+    this.pxCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    // three.js only lets things on the viewing camera's layers cast shadows, so the sun's shadows are drawn by a pass of their own
+    // through a camera that sees both layers but looks at an empty spot far below the world, into a one-pixel target
+    this.pxShadowCam = new THREE.PerspectiveCamera(1, 1, 0.1, 0.2); this.pxShadowCam.position.set(0, -1e5, 0); this.pxShadowCam.lookAt(0, -2e5, 0);
+    this.pxShadowCam.layers.enable(CHAR_LAYER); this.pxShadowCam.updateMatrixWorld();
+    this.pxDot = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: true });
+  }
+  // Puts Robyn and the pets on `layer` (1 = drawn sharp in Pixel Land's second pass, 0 = with everything else).
+  // Run every frame in Pixel Land, as her outfit can be swapped and parts of her come and go.
+  charLayers(layer) {
+    const m = 1 << layer;
+    const set = (o) => { o.layers.mask = m; };
+    this.robyn.root.traverse(set);
+    for (const p of this.pets.list) p.root.traverse(set);
+  }
+  draw() {
+    const r = this.renderer;
+    if (this.chunky === 1) { r.render(this.scene, this.camera); return; }
+    this.charLayers(CHAR_LAYER);
+    const bg = this.scene.background, auto = r.autoClear, shadows = r.shadowMap.autoUpdate;
+    // 0. the sun's shadows, with the characters in them
+    if (r.shadowMap.enabled && shadows) { r.setRenderTarget(this.pxDot); r.render(this.scene, this.pxShadowCam); r.shadowMap.autoUpdate = false; }
+    // 1. the land, sea and sky, small
+    r.setRenderTarget(this.pxTarget); r.render(this.scene, this.camera);
+    r.shadowMap.autoUpdate = false;
+    // 2. stretch that onto the screen, colour and depth
+    r.setRenderTarget(null); r.render(this.pxScene, this.pxCam);
+    // 3. the characters on top, at full size, hidden where the blocky land is nearer
+    this.scene.background = null; r.autoClear = false;
+    this.camera.layers.set(CHAR_LAYER);
+    r.render(this.scene, this.camera);
+    this.camera.layers.set(0);
+    this.scene.background = bg; r.autoClear = auto; r.shadowMap.autoUpdate = shadows;
   }
 
   resize() {
     const w = Math.max(1, this.app.clientWidth), h = Math.max(1, this.app.clientHeight), pr = this.chunky > 1 ? 1 / this.chunky : this.pr;
-    this.renderer.setPixelRatio(pr);
+    this.renderer.setPixelRatio(this.pr);
     this.renderer.setSize(w, h, false);
+    // (in Pixel Land the scenery is drawn at `pr`, a fraction of a pixel per point, and the characters at the full `this.pr`)
+    if (this.chunky > 1) this.pxTarget.setSize(Math.max(1, Math.round(w * pr)), Math.max(1, Math.round(h * pr)));
     this.sky.snowMat.uniforms.uScale.value = h * pr; this.sky.bubbleMat.uniforms.uScale.value = h * pr;
     const aspect = w / h;
     this.camera.aspect = aspect;
@@ -380,14 +445,14 @@ class Game {
     const dt = Math.min(0.05, Math.max(0, (now - this.last) / 1000)); this.last = now;
     if (this.mode !== 'pause') this.update(dt); else this.updateCamera(dt);      // (while paused only the camera moves, so that a view picked from the pause menu can be seen straight away)
     this.setChunky(zoneAtS(this.dist) === PIXEL);
-    this.renderer.render(this.scene, this.camera);
+    this.draw();
     // adapt resolution if the device is struggling
     if (this.mode === 'run') {
       this.acc += dt; this.frames++;
       if (this.frames >= 120) {
         const avg = this.acc / this.frames; this.acc = 0; this.frames = 0;
         if (avg > 1 / 44) {
-          if (this.chunky > 1) { /* already drawing very few pixels */ } else if (this.pr > 1.01) { this.pr = Math.max(1, this.pr - 0.25); this.resize(); }
+          if (this.pr > 1.01) { this.pr = Math.max(1, this.pr - 0.25); this.resize(); }
           else if (this.renderer.shadowMap.enabled) { this.renderer.shadowMap.enabled = false; this.sky.sun.castShadow = false; this.scene.traverse((o) => { if (o.material) o.material.needsUpdate = true; }); }
         }
       }
