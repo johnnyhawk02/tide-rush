@@ -3258,6 +3258,196 @@ def('aquila', 'deco', 2.2, 1.1, 1.4, (b) => {
   wings: (b, sx) => { for (let i = 0; i < 4; i++) b.sph(0.3 - i * 0.03, [0xd8a030, 0xf2c860, 0xd8a030, ROM.red][i], sx * (0.24 + i * 0.2), 0.02 - i * 0.01, -0.02 - i * 0.07, 1.1, 0.1, 0.62, { seg: 7 }); }, wingAt: [0.18, 0.08, -0.05],
 });
 
+// ---------- Izzi World ----------
+// Izzi the border collie's own world: a sunny dog park with kennels, giant bones, tennis balls and a flock of sheep to round up.
+export const IZ = { grass: 0x7cc850, grassL: 0x98d868, grassD: 0x5fae48, red: 0xe0483a, redD: 0xb8342c, blue: 0x3f7fd8, blueD: 0x2f5fa8, bone: 0xfff1d8, boneD: 0xe8d6b4, ball: 0xd8f03a, ballD: 0xb8d02a,
+  fur: 0x2a2a33, furL: 0x41414f, white: 0xf7f5ef, eye: 0x1b1f24, iris: 0xa9652b, tongue: 0xf27c92, nose: 0x17171c, gold: 0xf2c230, wood: 0xc8964a, woodD: 0x9a6a3a, pink: 0xff8fb8, purple: 0x9a6fe0, acorn: 0xb8783a, cap: 0x7a4f2e };
+// A cartoon bone: a shaft with two round knobs at each end, lying along x and `len` long.
+export function boneInto(b, x, y, z, len, r, c = IZ.bone, ry = 0, rz = 0) {
+  const cz = Math.cos(rz), sz = Math.sin(rz);
+  b.at(x, y, z, ry, () => {
+    b.cyl(r, r, len, c, 0, 0, 0, 0, 0, PI / 2 + rz, { seg: 10 });
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) { const u = sx * len / 2, v = sy * r * 0.95; b.sph(r * 1.45, c, u * cz - v * sz, u * sz + v * cz, 0, 1, 1, 1, { seg: 10 }); }
+  });
+}
+// A tennis ball: fuzzy yellow-green with its white seam.
+// (lo: a plainer one for far away, with fewer triangles)
+export function tennisBallInto(b, x, y, z, r, ry = 0, lo = false) {
+  b.sph(r, IZ.ball, x, y, z, 1, 1, 1, { seg: lo ? 7 : 12, grad: 0.85 });
+  b.tor(r * 1.005, r * 0.05, 0xffffff, x, y, z, 0.5, ry, 0.9, { seg: lo ? 9 : 18, tseg: lo ? 2 : 3 });
+  if (!lo) b.tor(r * 1.005, r * 0.05, 0xffffff, x, y, z, -0.5, ry + PI / 2, -0.9, { arc: PI * 1.1, seg: 12, tseg: 3 });
+}
+// A dog bowl of colour c, r across at the top, filled with kibble (or water, if o.water).
+export function bowlInto(b, x, y, z, r, c, o = {}) {
+  b.cyl(r, r * 1.15, r * 0.5, c, x, y + r * 0.25, z, 0, 0, 0, { seg: 14, grad: 0.85 }).tor(r, r * 0.08, c, x, y + r * 0.5, z, PI / 2, 0, 0, { seg: 14, tseg: 4 });
+  if (o.water) b.cyl(r * 0.92, r * 0.92, 0.02, 0x8fd8f8, x, y + r * 0.44, z, 0, 0, 0, { seg: 14, glow: true, grad: 1 });
+  else for (let i = 0; i < 9; i++) { const a = i * 2.4, q = Math.sqrt((i + 0.5) / 9) * r * 0.75; b.sph(r * 0.2, i % 2 ? 0xa86a3a : 0x8a5a30, x + Math.cos(a) * q, y + r * 0.5, z + Math.sin(a) * q, 1, 0.6, 1, { seg: 5 }); }
+}
+// A dog kennel facing +z, about 1.6 s high: walls of colour c, a blue roof, a round-topped doorway and a bone over the door.
+export function kennelInto(b, x, y, z, s = 1, c = IZ.red, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    b.box(1.4, 1.0, 1.4, c, 0, 0.5, 0, 0, 0, 0, { grad: 0.85 }).box(1.5, 0.08, 1.5, IZ.woodD, 0, 0.04, 0);
+    for (let i = 0; i < 4; i++) b.box(1.42, 0.02, 1.42, new THREE.Color(c).multiplyScalar(0.78).getHex(), 0, 0.22 + i * 0.22, 0);
+    b.prism(1.7, 0.75, 1.65, IZ.blue, 0, 1.0, 0, 0).box(0.1, 0.1, 1.7, IZ.blueD, 0, 1.74, 0);
+    b.box(0.6, 0.6, 0.04, 0x2a1d24, 0, 0.3, 0.7).cyl(0.3, 0.3, 0.04, 0x2a1d24, 0, 0.6, 0.7, PI / 2, 0, 0, { seg: 12 });
+    boneInto(b, 0, 1.22, 0.8, 0.46, 0.06);
+  }, s);
+}
+// Izzi herself, sitting up nicely and facing +z, about 1 s high: black and white, a white blaze, brown eyes, a red collar with a gold tag,
+// and her tongue out. (She is built from simple shapes here so that she can be copied all over her world cheaply; the Izzi who runs
+// with Robyn is in pets.js.)
+export function izziInto(b, x, y, z, s = 1, o = {}) {
+  const K = IZ.fur, W = IZ.white;
+  b.at(x, y, z, o.ry || 0, () => {
+    // body, sitting: haunches, a white chest and front legs with white socks
+    b.sph(0.26, K, 0, 0.26, -0.08, 1.05, 0.95, 1.15, { seg: 10 }).sph(0.2, K, 0, 0.5, 0.0, 0.95, 1.2, 0.9, { seg: 10 }).sph(0.17, W, 0, 0.46, 0.12, 0.85, 1.2, 0.6, { seg: 9 });
+    for (const sx of [-1, 1]) {
+      b.sph(0.14, K, sx * 0.17, 0.16, -0.06, 0.8, 0.9, 1.3, { seg: 7 }).cyl(0.055, 0.06, 0.34, K, sx * 0.09, 0.2, 0.13, 0, 0, 0, { seg: 6 }).sph(0.065, W, sx * 0.09, 0.04, 0.17, 1, 0.65, 1.3, { seg: 6 });
+    }
+    // the plume of a tail, curled round her feet, with a white tip
+    b.sph(0.1, K, 0.2, 0.06, 0.12, 1.4, 0.6, 0.8, { seg: 6 }).sph(0.07, W, 0.32, 0.05, 0.22, 1, 0.8, 1, { seg: 6 });
+    // collar and tag
+    b.tor(0.13, 0.025, C.red, 0, 0.66, 0.03, PI / 2 - 0.3, 0, 0, { seg: 12, tseg: 4 }).sph(0.035, IZ.gold, 0, 0.6, 0.16, 1, 1, 0.5, { seg: 6 });
+    // head: black, with a white muzzle and blaze, pricked ears with floppy tips
+    b.sph(0.17, K, 0, 0.84, 0.04, 1.08, 0.97, 1.0, { seg: 12 }).sph(0.1, W, 0, 0.78, 0.17, 1.05, 0.85, 1.1, { seg: 9 }).sph(0.04, W, 0, 0.92, 0.17, 0.7, 1.6, 0.6, { seg: 6 });
+    b.sph(0.035, IZ.nose, 0, 0.81, 0.27, 1.25, 0.9, 0.9, { seg: 7 }).sph(0.04, IZ.tongue, 0, 0.71, 0.21, 0.9, 1.3, 0.5, { seg: 6 });
+    for (const sx of [-1, 1]) {
+      b.sph(0.038, 0xffffff, sx * 0.07, 0.87, 0.16, 1, 1.05, 0.6, { seg: 7 }).sph(0.026, o.eyes || IZ.iris, sx * 0.07, 0.87, 0.18, 1, 1.05, 0.5, { seg: 6, glow: !!o.eyes }).sph(0.012, 0xffffff, sx * 0.07 + 0.01, 0.885, 0.195, 1, 1, 0.5, { seg: 4 });
+      b.cone(0.06, 0.15, K, sx * 0.1, 1.0, 0.0, 0.25, 0, -sx * 0.25, { seg: 6 }).sph(0.035, K, sx * 0.13, 1.06, 0.05, 1, 0.6, 1.2, { seg: 5 });
+    }
+  }, s);
+}
+// A paw print on the ground, s across: a pad and four toes.
+export function pawPrintInto(b, x, y, z, s, c, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    b.cyl(0.32, 0.32, 0.02, c, 0, 0, 0.05, 0, 0, 0, { seg: 10 });
+    for (let i = 0; i < 4; i++) { const a = -0.95 + i * 0.63; b.cyl(0.13, 0.13, 0.02, c, Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.45, 0, 0, 0, { seg: 8 }); }
+  }, s);
+}
+// A tree clipped into a round ball, with tennis balls caught in it, about 3 s high.
+export function ballTreeInto(b, x, y, z, s = 1, lo = false) {
+  b.at(x, y, z, 0, () => {
+    b.cyl(0.08, 0.12, 1.6, IZ.woodD, 0, 0.8, 0, 0, 0, 0, { seg: 6 }).sph(0.95, IZ.grassD, 0, 2.2, 0, 1, 0.95, 1, { seg: lo ? 9 : 12, grad: 0.75 }).sph(0.6, IZ.grass, 0.3, 2.6, 0.3, 1, 1, 1, { seg: lo ? 7 : 9 });
+    for (let i = 0; i < 7; i++) { const u = (i + 0.5) / 7, ph = Math.acos(0.7 - 1.2 * u), th = i * 2.4; tennisBallInto(b, Math.sin(ph) * Math.cos(th) * 0.98, 2.2 + Math.cos(ph) * 0.92, Math.sin(ph) * Math.sin(th) * 0.98, 0.13, th, lo); }
+  }, s);
+}
+
+def('bigBone', 'low', 1.4, 0.72, 0.8, (b) => {
+  // a giant bone that somebody left right across the lane
+  boneInto(b, 0, 0.32, 0, 0.9, 0.17);
+  b.sph(0.05, IZ.boneD, 0.1, 0.48, 0.1, 1.5, 0.3, 1, { seg: 5 }).sph(0.04, IZ.boneD, -0.2, 0.47, 0.06, 1.5, 0.3, 1, { seg: 5 });
+});
+def('dogBowls', 'low', 1.4, 0.62, 1.0, (b) => {
+  // Izzi's dinner: a bowl of biscuits and a bowl of water on a mat
+  b.box(1.36, 0.03, 0.8, IZ.blue, 0, 0.015, 0).box(1.2, 0.035, 0.64, 0x6fa8f0, 0, 0.02, 0);
+  bowlInto(b, -0.34, 0.03, 0, 0.3, IZ.red); bowlInto(b, 0.34, 0.03, 0, 0.3, IZ.blue, { water: true });
+  boneInto(b, -0.34, 0.24, 0.02, 0.22, 0.04, IZ.boneD, 0.6);
+  pawPrintInto(b, 0.0, 0.04, 0.3, 0.16, 0xffffff);
+});
+def('ballBasket', 'low', 1.3, 0.95, 1.0, (b) => {
+  // a wicker basket so full of tennis balls that they are spilling out
+  b.cyl(0.5, 0.42, 0.55, IZ.wood, 0, 0.275, 0, 0, 0, 0, { seg: 14, grad: 0.85 });
+  for (let i = 0; i < 3; i++) b.tor(0.47 - i * 0.03, 0.03, IZ.woodD, 0, 0.12 + i * 0.18, 0, PI / 2, 0, 0, { seg: 14, tseg: 3 });
+  for (let i = 0; i < 8; i++) { const a = i * 2.4, q = i ? 0.3 : 0; tennisBallInto(b, Math.cos(a) * q, 0.6 + (i % 3) * 0.06 + (i ? 0 : 0.14), Math.sin(a) * q, 0.14, a); }
+  tennisBallInto(b, 0.48, 0.14, 0.36, 0.14, 1); tennisBallInto(b, -0.5, 0.14, 0.3, 0.14, 2);
+});
+def('squeakyPile', 'low', 1.4, 0.8, 1.0, (b) => {
+  // a heap of squeaky toys: a rubber duck, a rope to tug and a red ring
+  b.sph(0.26, 0xffd23f, -0.3, 0.24, 0, 1.15, 0.9, 1, { seg: 10 }).sph(0.17, 0xffd23f, -0.3, 0.55, 0.12, 1, 1, 1, { seg: 9 }).cone(0.07, 0.14, 0xff8a1a, -0.3, 0.52, 0.32, PI / 2, 0, 0, { seg: 6 });
+  for (const sx of [-1, 1]) b.sph(0.03, IZ.eye, -0.3 + sx * 0.07, 0.6, 0.27, 1, 1, 0.6, { seg: 5 });
+  b.tor(0.2, 0.07, C.red, 0.32, 0.2, 0.1, 0.4, 0, 0, { seg: 14, tseg: 6 });
+  for (let i = 0; i < 6; i++) b.sph(0.07, i % 2 ? 0x2f8fe0 : 0xffffff, -0.05 + i * 0.09, 0.07, -0.25 + Math.sin(i) * 0.05, 1.3, 1, 1, { seg: 6 });
+  for (const sx of [-1, 1]) b.sph(0.1, sx > 0 ? 0x2f8fe0 : 0xffffff, 0.2 + sx * 0.33, 0.09, -0.25, 1, 1, 1, { seg: 6 });
+});
+def('dogBed', 'low', 1.4, 0.6, 1.1, (b) => {
+  // a round squashy dog bed with a blanket and a chewed slipper in it
+  b.tor(0.52, 0.18, IZ.purple, 0, 0.2, 0, PI / 2, 0, 0, { seg: 18, tseg: 8 }).cyl(0.52, 0.52, 0.16, 0xc8b0f0, 0, 0.1, 0, 0, 0, 0, { seg: 18 });
+  b.box(0.6, 0.04, 0.5, 0xffffff, -0.08, 0.2, 0.04, 0, 0.4, 0.05);
+  for (let i = 0; i < 4; i++) b.box(0.62, 0.045, 0.05, IZ.pink, -0.08, 0.205, -0.15 + i * 0.13, 0, 0.4, 0.05);
+  b.sph(0.12, 0x8fd0f0, 0.2, 0.26, -0.05, 1.8, 0.6, 0.9, { seg: 8 }).sph(0.07, 0xffffff, 0.06, 0.3, -0.05, 1.2, 0.7, 1.1, { seg: 6 });
+});
+def('hurdleBar', 'low', 1.4, 0.95, 0.5, (b) => {
+  // a jump from the agility course: two stripy posts and a bar
+  for (const sx of [-1, 1]) {
+    b.box(0.3, 0.06, 0.4, 0xffffff, sx * 0.6, 0.03, 0).cyl(0.04, 0.04, 0.9, 0xffffff, sx * 0.6, 0.48, 0, 0, 0, 0, { seg: 6 });
+    for (let i = 0; i < 4; i++) b.cyl(0.042, 0.042, 0.1, i % 2 ? IZ.blue : IZ.red, sx * 0.6, 0.15 + i * 0.22, 0, 0, 0, 0, { seg: 6 });
+    b.sph(0.06, IZ.gold, sx * 0.6, 0.95, 0, 1, 1, 1, { seg: 6 });
+  }
+  b.cyl(0.035, 0.035, 1.16, 0xffffff, 0, 0.62, 0, 0, 0, PI / 2, { seg: 6 });
+  for (let i = 0; i < 6; i++) b.cyl(0.037, 0.037, 0.1, i % 2 ? IZ.red : IZ.blue, -0.5 + i * 0.2, 0.62, 0, 0, 0, PI / 2, { seg: 6 });
+});
+def('kennelTall', 'tall', 1.5, 2.8, 1.4, (b) => {
+  // a big kennel with a weathervane in the shape of a bone
+  kennelInto(b, 0, 0, 0, 1.05);
+  b.cyl(0.025, 0.025, 0.9, IZ.gold, 0, 2.2, 0, 0, 0, 0, { seg: 4 });
+  boneInto(b, 0, 2.62, 0, 0.3, 0.05, IZ.gold);
+  b.sph(0.09, IZ.ball, 0.5, 0.09, 0.85, 1, 1, 1, { seg: 7 });
+  izziInto(b, -0.45, 0, 0.75, 0.55, { ry: 0.3 });
+});
+def('izziStatue', 'tall', 1.4, 2.9, 1.0, (b) => {
+  // a statue of Izzi on a plinth, with a rosette for Best in Show
+  b.box(1.0, 1.0, 0.9, IZ.blue, 0, 0.5, 0, 0, 0, 0, { grad: 0.88 }).box(1.12, 0.1, 1.0, 0xffffff, 0, 1.05, 0).box(1.12, 0.1, 1.0, 0xffffff, 0, 0.05, 0);
+  for (let i = 0; i < 10; i++) { const a = i * 0.628; b.sph(0.09, i % 2 ? IZ.red : IZ.gold, Math.cos(a) * 0.2, 0.55 + Math.sin(a) * 0.2, 0.46, 1, 1, 0.4, { seg: 5 }); }
+  b.cyl(0.13, 0.13, 0.03, IZ.gold, 0, 0.55, 0.47, PI / 2, 0, 0, { seg: 10 });
+  for (const sx of [-1, 1]) b.box(0.09, 0.3, 0.02, IZ.red, sx * 0.07, 0.26, 0.47, 0, 0, sx * 0.2);
+  izziInto(b, 0, 1.1, 0, 1.7);
+});
+def('ballTree', 'tall', 1.5, 3.0, 1.5, (b) => {
+  // a round little tree in a tub, full of lost tennis balls
+  b.cyl(0.46, 0.38, 0.5, IZ.red, 0, 0.25, 0, 0, 0, 0, { seg: 12, grad: 0.88 }).tor(0.46, 0.05, IZ.redD, 0, 0.5, 0, PI / 2, 0, 0, { seg: 12, tseg: 4 }).cyl(0.42, 0.42, 0.03, 0x6a4a30, 0, 0.5, 0, 0, 0, 0, { seg: 12 });
+  for (let i = 0; i < 6; i++) pawPrintInto(b, Math.cos(i * 1.047) * 0.43, 0.27, Math.sin(i * 1.047) * 0.43, 0.1, 0xffffff, -(i * 1.047) + PI / 2);
+  ballTreeInto(b, 0, 0.3, 0, 0.88);
+});
+def('boneTower', 'tall', 1.3, 2.9, 1.0, (b) => {
+  // a giant bone standing on end in a stand, with a ribbon round it
+  b.cyl(0.5, 0.56, 0.3, IZ.blue, 0, 0.15, 0, 0, 0, 0, { seg: 12, grad: 0.9 }).tor(0.5, 0.05, IZ.gold, 0, 0.3, 0, PI / 2, 0, 0, { seg: 12, tseg: 4 });
+  b.cyl(0.17, 0.17, 2.0, IZ.bone, 0, 1.4, 0, 0, 0, 0, { seg: 10 });
+  for (const sx of [-1, 1]) for (const y of [0.42, 2.38]) b.sph(0.26, IZ.bone, sx * 0.17, y, 0, 1, 1, 1, { seg: 10 });
+  b.cyl(0.19, 0.19, 0.16, IZ.red, 0, 1.4, 0, 0, 0, 0, { seg: 10 });
+  for (const sx of [-1, 1]) b.box(0.1, 0.4, 0.03, IZ.red, sx * 0.1, 1.2, 0.2, 0, 0, sx * 0.3);
+});
+def('treatJar', 'tall', 1.3, 2.8, 1.3, (b) => {
+  // a giant jar of dog biscuits with a bone on the lid
+  b.cyl(0.56, 0.56, 1.9, 0xd8f0ff, 0, 1.05, 0, 0, 0, 0, { seg: 16, glow: false, grad: 0.95 });
+  for (let i = 0; i < 26; i++) { const a = i * 2.4, q = 0.2 + (i % 3) * 0.14; boneInto(b, Math.cos(a) * q, 0.3 + i * 0.055, Math.sin(a) * q + 0.15, 0.14, 0.035, i % 3 ? 0xc8803a : 0xa8602a, a, 0.3 * (i % 2)); }
+  b.cyl(0.6, 0.6, 0.16, IZ.red, 0, 2.08, 0, 0, 0, 0, { seg: 16 }).cyl(0.62, 0.62, 0.12, IZ.red, 0, 0.06, 0, 0, 0, 0, { seg: 16 });
+  boneInto(b, 0, 2.32, 0, 0.36, 0.08, IZ.bone);
+  b.box(0.8, 0.36, 0.02, 0xffffff, 0, 1.2, 0.565).box(0.7, 0.26, 0.025, IZ.blue, 0, 1.2, 0.567);
+  for (const sx of [-1, 1]) pawPrintInto(b, sx * 0.2, 1.2, 0.585, 0.12, 0xffffff, 0);
+});
+def('rollTennis', 'low', 1.0, 1.0, 1.0, (b) => {
+  // an enormous tennis ball bowling down the lane
+  tennisBallInto(b, 0, 0, 0, 0.45);
+}, { center: true });
+def('sheepTrot', 'low', 1.2, 0.98, 0.9, (b) => {
+  // a sheep that has wandered off, hurrying back across to the flock; it faces +x
+  sheepInto(b, 0, 0, 0, 1.0);
+  b.tor(0.09, 0.025, C.red, 0.38, 0.52, 0, 0, PI / 2, 0, { seg: 8, tseg: 3 }).sph(0.05, IZ.gold, 0.44, 0.44, 0, 1, 1, 1, { seg: 5 });
+});
+def('bigAcorn', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the squirrel drops: an acorn the size of a football, rolling
+  b.sph(0.36, IZ.acorn, 0, -0.05, 0, 1, 1.1, 1, { seg: 12, grad: 0.85 }).sph(0.38, IZ.cap, 0, 0.17, 0, 1, 0.55, 1, { seg: 10 }).cyl(0.04, 0.05, 0.16, IZ.cap, 0, 0.42, 0, 0, 0, 0.3, { seg: 5 });
+  for (let i = 0; i < 8; i++) b.sph(0.06, 0x5a3a20, Math.cos(i * 0.785) * 0.3, 0.22, Math.sin(i * 0.785) * 0.3, 1, 0.6, 1, { seg: 4 });
+}, { center: true });
+def('flySquirrel', 'deco', 2.2, 1.1, 1.4, (b) => {
+  // a cheeky flying squirrel in goggles, carrying an acorn to drop
+  const F = 0xc8783a, FL = 0xf0c890;
+  b.sph(0.28, F, 0, 0, -0.05, 0.95, 0.75, 1.3, { seg: 9 }).sph(0.22, FL, 0, -0.1, 0.06, 0.8, 0.55, 1.1, { seg: 7 }).sph(0.21, F, 0, 0.14, 0.4, 1.05, 0.95, 1, { seg: 9 });
+  b.sph(0.12, FL, 0, 0.08, 0.56, 1.1, 0.8, 0.8, { seg: 7 }).sph(0.035, 0x2a1d14, 0, 0.12, 0.65, 1.2, 1, 1, { seg: 5 }).box(0.07, 0.06, 0.02, 0xffffff, 0, 0.0, 0.62);
+  for (const sx of [-1, 1]) {
+    b.cone(0.07, 0.16, F, sx * 0.13, 0.34, 0.36, 0, 0, -sx * 0.3, { seg: 5 }).sph(0.04, FL, sx * 0.13, 0.33, 0.39, 1, 1.3, 0.5, { seg: 4 });
+    b.tor(0.055, 0.016, 0x3a3a44, sx * 0.08, 0.22, 0.58, 0, 0, 0, { seg: 8, tseg: 3 }).cyl(0.05, 0.05, 0.02, 0x8fe0ff, sx * 0.08, 0.22, 0.585, PI / 2, 0, 0, { seg: 8, glow: true });
+    b.sph(0.035, IZ.pink, sx * 0.14, 0.06, 0.55, 1, 0.7, 0.5, { seg: 4 });
+  }
+  b.box(0.26, 0.03, 0.03, 0x3a3a44, 0, 0.22, 0.5);
+  // the big bushy tail, curling up behind
+  for (let i = 0; i < 5; i++) b.sph(0.17 - i * 0.012, i % 2 ? F : 0xd8884a, 0, 0.05 + i * 0.12, -0.42 - Math.sin(i * 0.6) * 0.18, 1, 1, 1.1, { seg: 7 });
+  bigAcornMini(b);
+}, {
+  wings: (b, sx) => { b.sph(0.36, 0xc8783a, sx * 0.34, 0, 0, 1.2, 0.07, 0.75, { seg: 9 }); b.sph(0.3, 0xf0c890, sx * 0.34, -0.012, 0, 1.05, 0.06, 0.62, { seg: 8 }); b.sph(0.06, 0xf0c890, sx * 0.72, -0.01, 0.2, 1, 0.6, 1, { seg: 5 }); }, wingAt: [0.18, 0.04, 0],
+});
+function bigAcornMini(b) { b.sph(0.13, IZ.acorn, 0, -0.33, 0.2, 1, 1.1, 1, { seg: 8 }).sph(0.14, IZ.cap, 0, -0.25, 0.2, 1, 0.55, 1, { seg: 7 }); }
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -3866,6 +4056,7 @@ export const TALL_TYPES = {
   28: ['paintRock', 'longNeckCalf', 'stoneTotem', 'cycadTree', 'rexHello', 'stoneTotem'],
   29: ['obelisk', 'camelCalf', 'potPalm', 'falconStatue', 'lotusColumn', 'obelisk'],
   30: ['eagleStandard', 'victoryColumn', 'togaStatue', 'pinePlanter', 'archDoor', 'eagleStandard'],
+  31: ['kennelTall', 'izziStatue', 'ballTree', 'boneTower', 'treatJar', 'kennelTall'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
 export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'],
@@ -3878,4 +4069,5 @@ export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'b
   27: ['amphorae', 'laurelPrize', 'lyreScrolls', 'oliveBaskets', 'colDrums', 'amphorae'],
   28: ['eggNest', 'babyTrike', 'boneXylo', 'stewPot', 'shellFossils', 'eggNest'],
   29: ['miniPyramid', 'catStatue', 'scarabChest', 'lotusPond', 'scribeDesk', 'miniPyramid'],
-  30: ['helmetPair', 'mosaicFountain', 'grapeBowl', 'shieldStack', 'gooseGuards', 'breadTray'] };
+  30: ['helmetPair', 'mosaicFountain', 'grapeBowl', 'shieldStack', 'gooseGuards', 'breadTray'],
+  31: ['bigBone', 'dogBowls', 'ballBasket', 'squeakyPile', 'dogBed', 'hurdleBar'] };

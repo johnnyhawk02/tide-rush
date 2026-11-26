@@ -675,4 +675,23 @@ THEMES[30] = theme('Hooray for the Parade', {
   drums: { thump: 'x.......x.......', snare: '....x.xx....x.xx', hat: 'x.x.x.x.x.x.x.x.' },
 });
 
+// ---- 31. Izzi World: "Walkies!", a bouncy tune for a dog who has just seen her lead (C major) ----
+THEMES[31] = theme('Walkies!', {
+  key: 0, scale: 'maj', base: 72, gain: 1.05, tempo: 1.06, swing: 0.3, voice: 'pluck', bassVoice: 'band', stab: 'pluck',
+  chords: 'I I IV I IV I V I',
+  tune: [
+    "5,:2 1:2 3:2 5:2 6:4 5:4",
+    "3:2 5:2 1':4 6:2 5:2 3:4",
+    "4:2 6:2 1':2 6:2 5:4 3:4",
+    "2:2 3:2 4:2 2:2 1:4 -:4",
+    "5:2 5:1 5:1 6:2 5:2 1':4 5:4",
+    "6:2 6:1 6:1 1':2 6:2 5:4 3:4",
+    "4:2 3:2 2:2 5,:2 7,:2 2:2 4:4",
+    "3:2 2:2 1:8 -:4",
+  ],
+  bass: [0, _, 7, _, 12, _, 7, _, 0, _, 7, _, 12, _, 7, _],
+  stabs: '..x...x...x...x.',
+  drums: { kick: 'x.......x.......', clap: '....x.......x...', hat: '..x...x...x...x.' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

@@ -2,7 +2,7 @@
 // The generator keeps one "safe" lane per row that only ever needs a lane change or a jump, so every run is fair.
 import * as THREE from 'three';
 import { Builder, C, makeRng, pick, plankTexture, sliceZ } from './kit.js';
-import { CHUNK, DECK_HALF, LANE_W, laneX, PLAT_H, ZONE_CHUNKS, ZONE_LEN, zoneOfLevel, JUMP_H, speedAt, diffAt, jumpTimeAt, lerp, clamp, ROOFED, GAPS } from './config.js';
+import { CHUNK, DECK_HALF, LANE_W, laneX, PLAT_H, ZONE_CHUNKS, ZONE_LEN, zoneOfLevel, IZZI, JUMP_H, speedAt, diffAt, jumpTimeAt, lerp, clamp, ROOFED, GAPS } from './config.js';
 import { surveyOverhead } from './camera.js';
 import { obtain, release, obstacleDef, portalMat, LOW_TYPES, LOW_BY_ZONE, TALL_TYPES } from './obstacles.js';
 import { populate, animate } from './scenery.js';
@@ -58,10 +58,11 @@ const FLYERS = {
   pegasus: { y: 4.7, size: 1.3, shot: 'goldApple' },
   ptero: { y: 4.7, size: 1.3, shot: 'rollEgg' },
   falcon: { y: 4.7, size: 1.3, shot: 'sunBall' },
+  flySquirrel: { y: 4.7, size: 1.3, shot: 'bigAcorn' },
   aquila: { y: 4.7, size: 1.3, shot: 'bigGrape' },
 };
 // Which attacker each level has, and how often a "roller" row is one of them rather than a plain rolling thing.
-const ATTACKER = { 0: ['gull', 0.6], 1: ['gull', 0.6], 2: ['gull', 0.6], 3: ['bat', 0.65], 4: ['stormcloud', 0.75], 5: ['gull', 0.6], 6: ['bat', 0.7], 7: ['snowcloud', 0.7], 8: ['bat', 0.5], 9: ['ufo', 1], 10: ['snowcloud', 0.3], 11: ['flosscloud', 0.65], 12: ['twister', 0.65], 13: ['eagle', 0.6], 14: ['bandit', 0.55], 15: ['inkOcto', 0.6], 16: ['chocJug', 0.6], 17: ['crow', 0.6], 18: ['flashMirror', 0.6], 19: ['pteroBones', 0.6], 20: ['nightOwl', 0.6], 21: ['blockBird', 0.6], 22: ['flyBox', 0.6], 23: ['flipGull', 0.6], 24: ['oxpecker', 0.6], 25: ['bumble', 0.6], 26: ['booFlyer', 0.6], 27: ['pegasus', 0.6], 28: ['ptero', 0.6], 29: ['falcon', 0.6], 30: ['aquila', 0.6] };
+const ATTACKER = { 0: ['gull', 0.6], 1: ['gull', 0.6], 2: ['gull', 0.6], 3: ['bat', 0.65], 4: ['stormcloud', 0.75], 5: ['gull', 0.6], 6: ['bat', 0.7], 7: ['snowcloud', 0.7], 8: ['bat', 0.5], 9: ['ufo', 1], 10: ['snowcloud', 0.3], 11: ['flosscloud', 0.65], 12: ['twister', 0.65], 13: ['eagle', 0.6], 14: ['bandit', 0.55], 15: ['inkOcto', 0.6], 16: ['chocJug', 0.6], 17: ['crow', 0.6], 18: ['flashMirror', 0.6], 19: ['pteroBones', 0.6], 20: ['nightOwl', 0.6], 21: ['blockBird', 0.6], 22: ['flyBox', 0.6], 23: ['flipGull', 0.6], 24: ['oxpecker', 0.6], 25: ['bumble', 0.6], 26: ['booFlyer', 0.6], 27: ['pegasus', 0.6], 28: ['ptero', 0.6], 29: ['falcon', 0.6], 30: ['aquila', 0.6], 31: ['flySquirrel', 0.6] };
 
 export class Track {
   constructor(scene) {
@@ -185,12 +186,13 @@ export class Track {
     if (g.waveLevel !== lvl0) {
       g.waveLevel = lvl0;
       // (on Christmas Pier it is Grumpy Santa in his sleigh instead, and he always turns up)
-      const santa = zone === 10;
+      // (and in Izzi World it is the giant Izzi head, who always turns up too)
+      const santa = zone === 10, izzi = zone === IZZI, star = santa || izzi;
       // (an optional wave needs two quiet levels since the last visitors, so that they stay a treat)
-      if (!ROOFED(zone) && (run > 520 || santa) && (zone === 9 || santa || this.waveAlways || (lvl0 - (g.lastWave ?? -9) >= 3 && rng() < 0.4))) {
+      if (!ROOFED(zone) && (run > 520 || star) && (zone === 9 || star || this.waveAlways || (lvl0 - (g.lastWave ?? -9) >= 3 && rng() < 0.4))) {
         // (Santa waits for the level's name to clear, and makes do with a shorter visit if the level is nearly over)
-        const s0 = s + (santa ? 40 : 14), room = (lvl0 + 1) * ZONE_LEN - 6 - s0, want = Math.min(v * (santa ? 9 : 7.5), 215), len = santa ? Math.min(want, room - 1) : want;
-        if (len < room && len > v * 5) { this.waves.push({ s0, s1: s0 + len, done: false, santa }); g.lastWave = lvl0; }
+        const s0 = s + (star ? 40 : 14), room = (lvl0 + 1) * ZONE_LEN - 6 - s0, want = Math.min(v * (santa ? 9 : izzi ? 10 : 7.5), 215), len = star ? Math.min(want, room - 1) : want;
+        if (len < room && len > v * 5) { this.waves.push({ s0, s1: s0 + len, done: false, santa, izzi }); g.lastWave = lvl0; }
       }
     }
     // while a wave is overhead its bombs take the place of rollers and flying attackers
@@ -209,7 +211,7 @@ export class Track {
         barrier: early || calm || g.last === 'barrier' || cl ? 0 : 7 + 6 * diff,
         gap: !GAPS || early || calm || s < this.noGapBefore || g.last === 'gap' || cl ? 0 : (9 + 5 * diff) * (zone === 4 || zone === 6 ? 1.3 : zone === 15 ? 0 : 1),     // (no holes in the floor of the Glass Tunnel)
         platform: run < 230 || calm || nearWave || g.last === 'platform' || cl ? 0 : 9,
-        roller: (run < 290 && !inWave) || calm || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 9 || inWave ? 3.5 : zone === 3 ? 1.3 : 1.8),
+        roller: (run < 290 && !inWave) || calm || g.last === 'gap' || g.last === 'roller' || cl ? 0 : (6 + 6 * diff) * (zone === 9 || (inWave && !wave.izzi) ? 3.5 : zone === 3 ? 1.3 : 1.8),
         trolley: run < 380 || calm || nearWave || g.last === 'trolley' || cl ? 0 : (5 + 4 * diff) * (zone === 8 ? 2 : 1.4),
         pad: run < 150 || calm || nearWave || g.last === 'pad' || g.last === 'gap' || cl ? 0 : zone === 3 || zone === 5 || zone === 11 ? 9 : 4.5,
       };
@@ -219,7 +221,7 @@ export class Track {
       // one chance per level of a warp portal, placed so that the tunnel comes out at the next level's gateway
       const level = Math.floor(s / ZONE_LEN), zoneEnd = (level + 1) * ZONE_LEN;
       // (never while Grumpy Santa is about: a warp tunnel would whisk Robyn straight past him)
-      if (!cl && g.portalLevel !== level && run > 240 && s >= zoneEnd - v * WARP_SPEED * WARP_TIME - 24 && !this.waves.some((q) => q.santa && s < q.s1 + 12)) {
+      if (!cl && g.portalLevel !== level && run > 240 && s >= zoneEnd - v * WARP_SPEED * WARP_TIME - 24 && !this.waves.some((q) => (q.santa || q.izzi) && s < q.s1 + 12)) {
         g.portalLevel = level;
         if (zoneEnd - s > 110 && rng() < 0.62) type = 'portal';
       }
@@ -251,9 +253,9 @@ export class Track {
       // something that crosses all three lanes: a runaway luggage trolley, or a giant crab on the beach levels
       // (a waddling penguin on the Frosty Pier)
       // (a scurrying giant rat in the sewers, a moon rover in space, a clockwork toy train on Christmas Pier, a runaway gingerbread man on Marshmallow Shore, a humming top in Spiral Bay, a mountain goat on Sky-High Mountain, a dodgem in Rollercoaster World, a cake trolley on Chocolate Coast, a calf on a scooter in Moo Town, a trolley with a looking-glass on it in the Land of Mirrors, a floor polisher in the Museum, a hopping sheep in Dream Time)
-      const rat = zone === 8, rover = zone === 9, train = zone === 10, ginger = zone === 11, top = zone === 12, goat = zone === 13, dodgem = zone === 14, cake = zone === 16, calf = zone === 17, cart = zone === 18, polish = zone === 19, sheep = zone === 20, pillar = zone === 21, boot = zone === 22, turtle = zone === 23, calfG = zone === 24, hedge = zone === 25, pup = zone === 26, horse = zone === 27, compy = zone === 28, camel = zone === 29, chariot = zone === 30;
+      const rat = zone === 8, rover = zone === 9, train = zone === 10, ginger = zone === 11, top = zone === 12, goat = zone === 13, dodgem = zone === 14, cake = zone === 16, calf = zone === 17, cart = zone === 18, polish = zone === 19, sheep = zone === 20, pillar = zone === 21, boot = zone === 22, turtle = zone === 23, calfG = zone === 24, hedge = zone === 25, pup = zone === 26, horse = zone === 27, compy = zone === 28, camel = zone === 29, chariot = zone === 30, stray = zone === 31;
       const crab = zone === 15 || (zone < 7 && rng() < (zone === 0 || zone === 4 || zone === 5 ? 0.75 : 0.2)), penguin = zone === 7 && rng() < 0.8;
-      this.spawnObstacle(rat ? 'ratRun' : rover ? 'rover' : train ? 'toyTrain' : ginger ? 'gingerMan' : top ? 'spinTop' : goat ? 'goat' : dodgem ? 'bumperCar' : cake ? 'cakeTrolley' : calf ? 'calfScoot' : cart ? 'mirrorCart' : polish ? 'polisher' : sheep ? 'sheepHop' : pillar ? 'cubePillar' : boot ? 'rollerBoot' : turtle ? 'turtleSkate' : calfG ? 'calfTrot' : hedge ? 'hedgeTrot' : pup ? 'ghostPup' : horse ? 'woodHorse' : compy ? 'compy' : camel ? 'babyCamel' : chariot ? 'gooseChariot' : crab ? 'crab' : penguin ? 'penguin' : 'trolley', 0, s, { mover: { type: 'cross', amp: LANE_W, w: crab ? 2.2 : penguin || rover || train || ginger || top || goat || dodgem || calf || cart || polish || sheep || pillar || boot || turtle || calfG || hedge || pup || horse || compy || camel || chariot ? 1.9 : 2.5, phase: rng() * 6.28, crab, penguin, rat, ginger, top, goat: goat || sheep } });
+      this.spawnObstacle(rat ? 'ratRun' : rover ? 'rover' : train ? 'toyTrain' : ginger ? 'gingerMan' : top ? 'spinTop' : goat ? 'goat' : dodgem ? 'bumperCar' : cake ? 'cakeTrolley' : calf ? 'calfScoot' : cart ? 'mirrorCart' : polish ? 'polisher' : sheep ? 'sheepHop' : pillar ? 'cubePillar' : boot ? 'rollerBoot' : turtle ? 'turtleSkate' : calfG ? 'calfTrot' : hedge ? 'hedgeTrot' : pup ? 'ghostPup' : horse ? 'woodHorse' : compy ? 'compy' : camel ? 'babyCamel' : chariot ? 'gooseChariot' : stray ? 'sheepTrot' : crab ? 'crab' : penguin ? 'penguin' : 'trolley', 0, s, { mover: { type: 'cross', amp: LANE_W, w: crab ? 2.2 : penguin || rover || train || ginger || top || goat || dodgem || calf || cart || polish || sheep || pillar || boot || turtle || calfG || hedge || pup || horse || compy || camel || chariot || stray ? 1.9 : 2.5, phase: rng() * 6.28, crab, penguin, rat, ginger, top, goat: goat || sheep || stray } });
       needJump = true;
     } else if (type === 'pad') {
       // a bounce pad on the safe path, with a high arc of shells and a pearl at the top
@@ -308,11 +310,11 @@ export class Track {
             // a present lobbed out of Grumpy Santa's sleigh: it drops to the deck and tumbles along the lane
             const o = this.spawnObstacle('giftBomb', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false, range: 27, shot: true, santa: true, wave, drop: 6.5, age: 0 } });
             o.mesh.visible = false;
-          } else if (inWave) {
+          } else if (inWave && !wave.izzi) {
             // a bomb from the invaders overhead: it falls to the deck and skims along the lane
             const o = this.spawnObstacle('plasma', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6, on: false, range: 32, shot: true, plasma: true, bomb: true, drop: 7, age: 0 } });
             o.mesh.visible = false;
-          } else if (k === 0 && s >= (g.nextFlyer || 0) && rng() < chance * lerp(0.5, 1, clamp((run - 280) / 560, 0, 1))) {
+          } else if (k === 0 && !inWave && s >= (g.nextFlyer || 0) && rng() < chance * lerp(0.5, 1, clamp((run - 280) / 560, 0, 1))) {
             // a flying attacker waits over the lane and lets fly as Robyn comes into range (in space it is always a UFO)
             // (one at a time, and a few seconds apart)
             g.nextFlyer = s + v * (zone === 9 ? 3 : 5);
@@ -321,7 +323,7 @@ export class Track {
             o.mesh.visible = false; this.addUfo(l, o.s, o, kind);
           } else if (zone === 14) this.spawnObstacle('runawayCar', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6.5, on: false, run: true } });     // a runaway coaster car full of screaming riders
           else if (zone === 8) this.spawnObstacle('ratCharge', l, s + 2 + k * 3, { mover: { type: 'roll', v: 6.5, on: false, run: true } });     // a rat charging down the lane
-          else this.spawnObstacle(zone === 5 ? 'beachball' : zone === 7 || zone === 13 ? 'snowball' : zone === 10 ? 'bauble' : zone === 11 ? 'gobstopper' : zone === 12 ? 'marble' : zone === 15 ? 'puffer' : zone === 16 ? 'truffle' : zone === 17 ? 'roundBale' : zone === 18 ? 'mirrorBall' : zone === 19 ? 'globe' : zone === 20 ? 'woolBall' : zone === 21 ? 'rollCube' : zone === 22 ? 'glitterBall' : zone === 23 ? 'beachball' : zone === 24 ? 'spottyBall' : zone === 25 ? 'rollApple' : zone === 26 ? 'rollPumpkin' : zone === 27 ? 'rollDrum' : zone === 28 ? 'stoneWheel' : zone === 29 ? 'scarabBall' : zone === 30 ? 'chariotWheel' : 'barrel', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false } });
+          else this.spawnObstacle(zone === 5 ? 'beachball' : zone === 7 || zone === 13 ? 'snowball' : zone === 10 ? 'bauble' : zone === 11 ? 'gobstopper' : zone === 12 ? 'marble' : zone === 15 ? 'puffer' : zone === 16 ? 'truffle' : zone === 17 ? 'roundBale' : zone === 18 ? 'mirrorBall' : zone === 19 ? 'globe' : zone === 20 ? 'woolBall' : zone === 21 ? 'rollCube' : zone === 22 ? 'glitterBall' : zone === 23 ? 'beachball' : zone === 24 ? 'spottyBall' : zone === 25 ? 'rollApple' : zone === 26 ? 'rollPumpkin' : zone === 27 ? 'rollDrum' : zone === 28 ? 'stoneWheel' : zone === 29 ? 'scarabBall' : zone === 30 ? 'chariotWheel' : zone === 31 ? 'rollTennis' : 'barrel', l, s + 2 + k * 3, { mover: { type: 'roll', v: 5, on: false } });
           skip.push(l);
         });
         extra = (count - 1) * 3;   // the second roller trails the row, so leave room to cut back in behind it
