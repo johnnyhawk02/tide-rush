@@ -694,4 +694,23 @@ THEMES[31] = theme('Walkies!', {
   drums: { kick: 'x.......x.......', clap: '....x.......x...', hat: '..x...x...x...x.' },
 });
 
+// ---- 32. Pixel World: "Sunbeam Nap", a lazy tiptoeing tune on a clarinet for a cat stretching out in a warm spot (F major) ----
+THEMES[32] = theme('Sunbeam Nap', {
+  key: 5, scale: 'maj', base: 72, gain: 1.08, tempo: 0.94, swing: 0.4, voice: 'clarinet', bassVoice: 'pizz', stab: 'pluck',
+  chords: 'I vi IV V I vi ii V',
+  tune: [
+    "3:2 5:2 6:2 5:2 3:4 1:4",
+    "6,:2 1:2 3:2 1:2 6,:4 -:4",
+    "4:2 6:2 1':2 6:2 4:4 6:4",
+    "5:2 4:2 3:2 2:2 5,:4 -:4",
+    "3:2 5:2 1':4 7:2 6:2 5:4",
+    "6:2 5:2 3:2 1:2 6,:8",
+    "2:2 4:2 6:2 4:2 2:2 4:2 6:4",
+    "5:2 7,:2 2:2 5:2 1:8",
+  ],
+  bass: [0, _, _, _, 7, _, _, _, 0, _, _, _, 7, _, 5, _],
+  stabs: '....x.......x...',
+  drums: { thump: 'x.......x.......', rim: '....x.......x...', shake: '..x...x...x...x.' },
+});
+
 export const THEME_NAMES = Object.fromEntries(Object.entries(THEMES).map(([k, t]) => [k, t.name]));

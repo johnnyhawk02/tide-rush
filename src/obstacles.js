@@ -3448,6 +3448,221 @@ def('flySquirrel', 'deco', 2.2, 1.1, 1.4, (b) => {
 });
 function bigAcornMini(b) { b.sph(0.13, IZ.acorn, 0, -0.33, 0.2, 1, 1.1, 1, { seg: 8 }).sph(0.14, IZ.cap, 0, -0.25, 0.2, 1, 0.55, 1, { seg: 7 }); }
 
+// ---------- Pixel World ----------
+// Pixel the cat's own world: a cosy cottage garden at golden hour, with cushions, cardboard boxes, balls of wool, goldfish
+// ponds and a great many cats having a lovely time doing nothing at all.
+export const PXW = { grass: 0x86c25a, grassL: 0xa0d478, grassD: 0x6aa848, fur: 0x2a2a33, furL: 0x41414f, white: 0xf7f5ef, green: 0x8fdc50, eyeK: 0x0b0b0f, pink: 0xf59aa8,
+  teal: 0x2fb8b0, tealD: 0x1f8a86, gold: 0xf2c230, ginger: 0xf0954a, gingerD: 0xc8702e, grey: 0x9aa0ac, greyD: 0x6f7480, cream: 0xf6e6c8,
+  box: 0xd2a46a, boxD: 0xa87a44, wool: [0xff6fa8, 0x6fb8ff, 0xffd23f, 0x9a6fe0, 0x6fd88a], cushion: 0x9a6fe0, cushionL: 0xc8a8f0, rope: 0xd8b880, ropeD: 0xb08e58,
+  fish: 0xff8a2a, fishL: 0xffb35a, water: 0x8fd8f8, milk: 0xfffdf6, brick: 0xc8785a, brickD: 0xa85a40, wood: 0xc8964a, woodD: 0x9a6a3a, blossom: 0xffb8d8, lav: 0xb89ae8 };
+// A cat sitting up nicely and facing +z, about 1 s high (to the tips of its ears). o.coat: 'pixel' (black with a white bib,
+// socks and blaze, green eyes, a teal collar with a bell, like Pixel), 'ginger', 'grey' or 'cream'. o.asleep curls it up
+// into a sleeping loaf with its eyes shut. (Simple shapes, so that it can be copied all over the world cheaply; the Pixel
+// who runs with Robyn is in pets.js.)
+export function catInto(b, x, y, z, s = 1, o = {}) {
+  const coat = o.coat || 'pixel', px = coat === 'pixel';
+  const K = px ? PXW.fur : coat === 'ginger' ? PXW.ginger : coat === 'grey' ? PXW.grey : PXW.cream;
+  const W = px ? PXW.white : coat === 'ginger' ? 0xfff0dc : coat === 'grey' ? 0xe8eaf0 : 0xffffff;
+  const S = px ? PXW.furL : coat === 'ginger' ? PXW.gingerD : coat === 'grey' ? PXW.greyD : 0xe8d4b0;   // stripes and shading
+  b.at(x, y, z, o.ry || 0, () => {
+    if (o.asleep) {
+      // curled up: a round loaf of a body, the tail wrapped round the front, head tucked down, eyes shut
+      b.sph(0.32, K, 0, 0.2, 0, 1.15, 0.65, 1, { seg: 10 }).sph(0.2, W, 0, 0.14, 0.18, 1.1, 0.6, 0.7, { seg: 8 });
+      b.tor(0.3, 0.055, K, 0, 0.07, 0.02, PI / 2, 0, 0, { arc: PI * 1.3, seg: 12, tseg: 4 }).sph(0.06, W, -0.29, 0.07, 0.1, 1, 1, 1, { seg: 5 });
+      b.sph(0.16, K, 0.12, 0.32, 0.2, 1.1, 0.92, 1, { seg: 10 }).sph(0.07, W, 0.12, 0.28, 0.33, 1.2, 0.8, 0.6, { seg: 7 });
+      for (const sx of [-1, 1]) {
+        b.cone(0.055, 0.12, K, 0.12 + sx * 0.09, 0.46, 0.18, -0.2, 0, -sx * 0.3, { seg: 5 });
+        b.tor(0.028, 0.008, PXW.eyeK, 0.12 + sx * 0.055, 0.34, 0.345, 0, 0, PI, { arc: PI, seg: 5 });
+      }
+      if (o.zzz) for (let i = 0; i < 3; i++) b.box(0.08 + i * 0.03, 0.02, 0.02, 0xffffff, 0.3 + i * 0.12, 0.55 + i * 0.16, 0.2, 0, 0, 0, { glow: true });
+      return;
+    }
+    // body, sitting: haunches, a tummy, and front legs with paws
+    b.sph(0.24, K, 0, 0.24, -0.06, 1.05, 0.95, 1.1, { seg: 10 }).sph(0.18, K, 0, 0.46, 0.0, 0.95, 1.2, 0.9, { seg: 10 }).sph(0.15, W, 0, 0.42, 0.1, 0.85, 1.2, 0.6, { seg: 9 });
+    for (const sx of [-1, 1]) {
+      b.sph(0.13, K, sx * 0.16, 0.15, -0.05, 0.8, 0.9, 1.3, { seg: 7 }).cyl(0.045, 0.05, 0.32, K, sx * 0.08, 0.18, 0.12, 0, 0, 0, { seg: 6 }).sph(0.058, W, sx * 0.08, 0.035, 0.16, 1, 0.6, 1.3, { seg: 6 });
+    }
+    if (!px) for (let i = 0; i < 3; i++) b.tor(0.19 - i * 0.01, 0.018, S, 0, 0.32 + i * 0.12, -0.04, PI / 2 - 0.2, 0, 0, { arc: PI, seg: 8, tseg: 3 });   // tabby stripes
+    // a long tail curling up round one side, with a white tip on Pixel
+    b.tor(0.2, 0.04, K, 0.12, 0.08, 0.04, PI / 2, 0, 0.3, { arc: PI * 0.9, seg: 10, tseg: 4 }).sph(0.045, px ? W : K, -0.06, 0.08, 0.2, 1, 1, 1, { seg: 5 });
+    // collar and bell
+    b.tor(0.115, 0.022, px ? PXW.teal : o.collar || 0xe5383b, 0, 0.6, 0.02, PI / 2 - 0.3, 0, 0, { seg: 12, tseg: 4 }).sph(0.03, PXW.gold, 0, 0.55, 0.13, 1, 1, 1, { seg: 6 });
+    // head: round, with fluffy cheeks, whisker pads, a pink nose and big eyes
+    b.sph(0.16, K, 0, 0.76, 0.03, 1.15, 0.95, 1.0, { seg: 12 });
+    for (const sx of [-1, 1]) b.sph(0.07, K, sx * 0.14, 0.72, 0.04, 0.8, 0.8, 0.9, { seg: 6 });
+    b.sph(0.05, W, -0.035, 0.705, 0.165, 1, 0.8, 0.8, { seg: 7 }).sph(0.05, W, 0.035, 0.705, 0.165, 1, 0.8, 0.8, { seg: 7 }).sph(0.04, W, 0, 0.67, 0.14, 1, 0.8, 1, { seg: 6 });
+    if (px) b.sph(0.03, W, 0, 0.82, 0.17, 0.7, 1.7, 0.5, { seg: 6 });
+    b.sph(0.02, PXW.pink, 0, 0.735, 0.2, 1.3, 0.8, 0.8, { seg: 5 });
+    for (const sx of [-1, 1]) {
+      b.sph(0.045, o.eyes || PXW.green, sx * 0.065, 0.79, 0.145, 1, 1.15, 0.5, { seg: 7, glow: !!o.eyes }).sph(0.02, PXW.eyeK, sx * 0.065, 0.79, 0.165, 0.5, 1.2, 0.5, { seg: 5 }).sph(0.011, 0xffffff, sx * 0.065 + 0.012, 0.81, 0.17, 1, 1, 0.5, { seg: 4 });
+      b.cone(0.065, 0.15, K, sx * 0.1, 0.92, 0.0, 0, 0, -sx * 0.25, { seg: 5 }).cone(0.035, 0.09, PXW.pink, sx * 0.1, 0.905, 0.025, 0, 0, -sx * 0.25, { seg: 4 });
+      for (const k of [-1, 1]) b.box(0.16, 0.006, 0.006, 0xffffff, sx * 0.13, 0.7 + k * 0.012, 0.15, 0, 0, sx * k * 0.15);
+    }
+  }, s);
+}
+// A ball of wool r across, wound in colour c, with a loose strand trailing off it.
+export function yarnBallInto(b, x, y, z, r, c, o = {}) {
+  b.sph(r, c, x, y, z, 1, 1, 1, { seg: o.lo ? 8 : 12, grad: 0.85 });
+  const d = new THREE.Color(c).multiplyScalar(0.78).getHex();
+  const n = o.lo ? 3 : 5;
+  for (let i = 0; i < n; i++) b.tor(r * 1.01, r * 0.045, d, x, y, z, i * 0.7, i * 1.3, 0.4 + i * 0.5, { seg: o.lo ? 10 : 16, tseg: 3 });
+  if (o.strand !== false) b.tor(r * 0.8, r * 0.05, c, x + r * 0.7, y - r * 0.85, z + r * 0.2, PI / 2, 0, 0, { arc: PI * 1.2, seg: 8, tseg: 3 });
+}
+// A goldfish facing +x, about 0.5 s long.
+export function goldfishInto(b, x, y, z, s = 1, c = PXW.fish) {
+  b.at(x, y, z, 0, () => {
+    b.sph(0.16, c, 0, 0, 0, 1.4, 1, 0.7, { seg: 9 }).cone(0.14, 0.2, PXW.fishL, -0.27, 0, 0, 0, 0, PI / 2, { seg: 6 });
+    b.sph(0.04, 0xffffff, 0.14, 0.04, 0.07, 1, 1, 0.6, { seg: 5 }).sph(0.022, PXW.eyeK, 0.155, 0.04, 0.09, 1, 1, 0.6, { seg: 4 });
+    b.cone(0.06, 0.1, PXW.fishL, 0, 0.14, 0, 0, 0, -0.4, { seg: 4 });
+  }, s);
+}
+// A cardboard box, w x h x d, with its flaps open.
+export function cardBoxInto(b, x, y, z, w, h, d, ry = 0) {
+  b.at(x, y, z, ry, () => {
+    b.box(w, h, d, PXW.box, 0, h / 2, 0, 0, 0, 0, { grad: 0.8 }).box(w * 0.94, 0.02, d * 0.94, PXW.boxD, 0, h - 0.01, 0);
+    b.box(w * 0.3, 0.03, 0.02, 0xc8a070, 0, h * 0.6, d / 2 + 0.005);
+    for (const sz of [-1, 1]) b.box(w, 0.02, d * 0.42, PXW.box, 0, h + d * 0.14, sz * (d / 2 + d * 0.14), sz * 0.9, 0, 0);
+    for (const sx of [-1, 1]) b.box(w * 0.4, 0.02, d, PXW.boxD, sx * (w / 2 + w * 0.12), h + w * 0.1, 0, 0, 0, -sx * 0.8);
+  });
+}
+// A squashy square cushion, w across, with a button in the middle and tassels at the corners.
+export function cushionInto(b, x, y, z, w, c, ry = 0, o = {}) {
+  b.at(x, y, z, ry, () => {
+    b.sph(w / 2, c, 0, w * 0.13, 0, 1, 0.26, 1, { seg: 12, grad: 0.85 }).box(w * 0.86, w * 0.14, w * 0.86, c, 0, w * 0.12, 0, 0, 0, 0, { grad: 0.85 });
+    b.sph(w * 0.05, o.button || PXW.gold, 0, w * 0.26, 0, 1, 0.5, 1, { seg: 6 });
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.cone(w * 0.04, w * 0.12, o.button || PXW.gold, sx * w * 0.46, w * 0.08, sz * w * 0.46, PI, 0, 0, { seg: 4 });
+  });
+}
+// A pot of catnip: a terracotta pot with a bushy green plant and little lilac flowers. About 1 s high.
+export function catnipInto(b, x, y, z, s = 1) {
+  b.at(x, y, z, 0, () => {
+    b.cyl(0.26, 0.2, 0.36, PXW.brick, 0, 0.18, 0, 0, 0, 0, { seg: 10, grad: 0.85 }).cyl(0.29, 0.29, 0.08, PXW.brickD, 0, 0.36, 0, 0, 0, 0, { seg: 10 }).cyl(0.25, 0.25, 0.02, 0x6a4a30, 0, 0.4, 0, 0, 0, 0, { seg: 10 });
+    // soft heart-shaped leaves in pairs up short stems, and spikes of little lilac flowers poking out of the top
+    for (let i = 0; i < 5; i++) {
+      const a = i * 1.26, q = i ? 0.13 : 0, sx = Math.cos(a) * q, sz = Math.sin(a) * q, h = 0.32 + (i % 2) * 0.08;
+      b.cyl(0.012, 0.016, h, PXW.grassD, sx, 0.4 + h / 2, sz, 0, 0, Math.cos(a) * 0.2, { seg: 4 });
+      for (let k = 0; k < 3; k++) for (const side of [-1, 1]) { const la = a + side * 1.4 + k * 0.6; b.sph(0.1 - k * 0.015, k % 2 ? PXW.grass : PXW.grassL, sx + Math.cos(la) * 0.09, 0.46 + k * 0.1, sz + Math.sin(la) * 0.09, 1, 0.35, 0.7, { seg: 5 }); }
+      if (i % 2 === 0) for (let k = 0; k < 5; k++) b.sph(0.03 - k * 0.003, k % 2 ? PXW.lav : 0xd8c0f8, sx, 0.4 + h + 0.02 + k * 0.045, sz, 1, 0.8, 1, { seg: 4 });
+    }
+  }, s);
+}
+
+def('yarnBasket', 'low', 1.4, 0.92, 1.0, (b) => {
+  // a knitting basket full of balls of wool, two needles stuck in the top one
+  b.cyl(0.55, 0.46, 0.45, PXW.wood, 0, 0.225, 0, 0, 0, 0, { seg: 14, grad: 0.85 });
+  for (let i = 0; i < 3; i++) b.tor(0.52 - i * 0.03, 0.03, PXW.woodD, 0, 0.08 + i * 0.16, 0, PI / 2, 0, 0, { seg: 14, tseg: 3 });
+  yarnBallInto(b, -0.2, 0.52, 0, 0.22, PXW.wool[0], { strand: false }); yarnBallInto(b, 0.22, 0.5, 0.06, 0.2, PXW.wool[1], { strand: false });
+  yarnBallInto(b, 0.02, 0.68, -0.08, 0.2, PXW.wool[2], { strand: false });
+  for (const sx of [-1, 1]) b.cyl(0.015, 0.015, 0.5, 0xd8d8e0, sx * 0.06, 0.82, -0.08, 0, 0, sx * 0.4, { seg: 4 }).sph(0.03, PXW.teal, sx * 0.16, 1.03, -0.08, 1, 1, 1, { seg: 5 });
+  b.tor(0.3, 0.03, PXW.wool[0], 0.45, 0.04, 0.3, PI / 2, 0, 0, { arc: PI, seg: 8, tseg: 3 });
+});
+def('fishBowl', 'low', 1.3, 0.95, 1.0, (b) => {
+  // a round goldfish bowl on a little stand, with a goldfish who is not at all worried about the cats
+  b.cyl(0.3, 0.36, 0.14, PXW.teal, 0, 0.07, 0, 0, 0, 0, { seg: 12 });
+  b.sph(0.4, 0xbfeeff, 0, 0.5, 0, 1, 0.9, 1, { seg: 14, glow: false, grad: 0.95 }).cyl(0.36, 0.36, 0.02, PXW.water, 0, 0.74, 0, 0, 0, 0, { seg: 14, glow: true, grad: 1 });
+  b.tor(0.28, 0.035, 0xe8f8ff, 0, 0.84, 0, PI / 2, 0, 0, { seg: 14, tseg: 4 });
+  goldfishInto(b, 0.02, 0.5, 0.18, 0.7);
+  for (let i = 0; i < 3; i++) b.sph(0.03, 0xffffff, 0.12 + i * 0.03, 0.62 + i * 0.07, 0.3, 1, 1, 1, { seg: 4, glow: true });
+  for (let i = 0; i < 5; i++) b.sph(0.05, [0xffd23f, 0xff6fa8, 0x6fb8ff][i % 3], -0.2 + i * 0.1, 0.22, -0.1 + (i % 2) * 0.12, 1, 0.6, 1, { seg: 4 });
+});
+def('catBox', 'low', 1.4, 0.98, 1.0, (b) => {
+  // a cardboard box with a cat in it, of course: just her ears and her big green eyes peeping over the edge
+  cardBoxInto(b, 0, 0, 0, 1.2, 0.62, 0.85);
+  b.sph(0.2, PXW.fur, 0, 0.7, 0.18, 1.15, 0.9, 0.9, { seg: 10 }).sph(0.07, PXW.white, 0, 0.66, 0.34, 1.2, 0.7, 0.6, { seg: 6 });
+  for (const sx of [-1, 1]) {
+    b.cone(0.07, 0.16, PXW.fur, sx * 0.13, 0.88, 0.16, 0, 0, -sx * 0.3, { seg: 5 }).cone(0.04, 0.1, PXW.pink, sx * 0.13, 0.87, 0.19, 0, 0, -sx * 0.3, { seg: 4 });
+    b.sph(0.055, PXW.green, sx * 0.08, 0.75, 0.33, 1, 1.1, 0.5, { seg: 7 }).sph(0.025, PXW.eyeK, sx * 0.08, 0.75, 0.355, 0.5, 1.2, 0.5, { seg: 5 });
+    b.sph(0.06, PXW.white, sx * 0.17, 0.64, 0.42, 1, 0.6, 1.2, { seg: 6 });    // two white paws over the edge
+  }
+  b.box(0.36, 0.14, 0.01, 0xffffff, 0, 0.32, 0.43).box(0.3, 0.08, 0.012, 0xc8342c, 0, 0.32, 0.432);
+});
+def('cushionPile', 'low', 1.4, 0.8, 1.1, (b) => {
+  // a stack of squashy cushions with a cat asleep on the top one
+  cushionInto(b, 0, 0, 0, 1.25, PXW.cushion, 0.1); cushionInto(b, 0.04, 0.22, 0.02, 1.05, PXW.teal, -0.3, { button: 0xffffff });
+  catInto(b, 0.02, 0.42, 0, 0.62, { asleep: true, coat: 'ginger', ry: 0.4 });
+});
+def('milkSaucer', 'low', 1.4, 0.85, 1.0, (b) => {
+  // a giant saucer of milk and the bottle it came out of
+  b.cyl(0.42, 0.3, 0.08, 0xffffff, -0.2, 0.04, 0.05, 0, 0, 0, { seg: 16 }).tor(0.42, 0.03, PXW.teal, -0.2, 0.08, 0.05, PI / 2, 0, 0, { seg: 16, tseg: 3 }).cyl(0.37, 0.37, 0.02, PXW.milk, -0.2, 0.08, 0.05, 0, 0, 0, { seg: 16, glow: true });
+  b.cyl(0.17, 0.17, 0.55, 0xf4fbff, 0.42, 0.275, -0.05, 0, 0, 0, { seg: 12, grad: 0.95 }).cyl(0.17, 0.1, 0.16, 0xf4fbff, 0.42, 0.63, -0.05, 0, 0, 0, { seg: 12 }).cyl(0.105, 0.105, 0.07, 0xc8342c, 0.42, 0.74, -0.05, 0, 0, 0, { seg: 12 });
+  b.box(0.2, 0.18, 0.01, PXW.teal, 0.42, 0.3, 0.12);
+  for (let i = 0; i < 3; i++) b.sph(0.03, PXW.milk, -0.5 + i * 0.12, 0.012, 0.4 + (i % 2) * 0.06, 1.5, 0.2, 1, { seg: 5 });
+});
+def('toyMice', 'low', 1.4, 0.7, 0.9, (b) => {
+  // two giant clockwork toy mice with keys in their backs
+  for (const sx of [-1, 1]) b.at(sx * 0.35, 0, 0, sx * 0.3, () => {
+    b.sph(0.26, sx > 0 ? PXW.grey : 0xffb0c8, 0, 0.22, 0, 0.85, 0.8, 1.3, { seg: 10 }).sph(0.04, PXW.pink, 0, 0.2, 0.34, 1, 1, 1, { seg: 5 });
+    for (const ex of [-1, 1]) b.cyl(0.1, 0.1, 0.02, PXW.pink, ex * 0.13, 0.4, 0.12, PI / 2, 0, 0, { seg: 8 }).sph(0.025, PXW.eyeK, ex * 0.07, 0.3, 0.27, 1, 1, 0.6, { seg: 4 });
+    b.cyl(0.02, 0.02, 0.18, PXW.gold, 0, 0.45, -0.12, 0, 0, 0, { seg: 4 }).tor(0.07, 0.02, PXW.gold, 0, 0.58, -0.12, 0, 0, 0, { seg: 8, tseg: 3 });
+    b.tor(0.18, 0.015, PXW.pink, 0, 0.05, -0.4, PI / 2, 0, 0, { arc: PI, seg: 8, tseg: 3 });
+  });
+});
+def('scratchPost', 'tall', 1.5, 2.9, 1.4, (b) => {
+  // a cat tree: a rope-wrapped post with a carpeted platform, a hidey-hole and a dangling pompom, and Pixel on top
+  b.box(1.3, 0.12, 1.2, PXW.cushion, 0, 0.06, 0);
+  b.cyl(0.18, 0.18, 2.1, PXW.rope, 0, 1.1, 0, 0, 0, 0, { seg: 10 });
+  for (let i = 0; i < 10; i++) b.tor(0.185, 0.02, PXW.ropeD, 0, 0.2 + i * 0.2, 0, PI / 2, 0, 0, { seg: 10, tseg: 3 });
+  b.box(0.8, 0.6, 0.8, PXW.cushionL, 0.2, 0.42, 0.05).cyl(0.18, 0.18, 0.02, 0x3a2a4a, 0.2, 0.45, 0.46, PI / 2, 0, 0, { seg: 12 });
+  b.cyl(0.55, 0.55, 0.1, PXW.cushion, 0, 2.18, 0, 0, 0, 0, { seg: 14 }).cyl(0.012, 0.012, 0.5, 0xffffff, 0.45, 1.88, 0.2, 0, 0, 0, { seg: 3 }).sph(0.09, PXW.wool[0], 0.45, 1.6, 0.2, 1, 1, 1, { seg: 6 });
+  catInto(b, 0, 2.23, 0.05, 0.68);
+});
+def('pixelStatue', 'tall', 1.4, 2.9, 1.0, (b) => {
+  // a statue of Pixel on a plinth, with a golden fish trophy
+  b.box(1.0, 1.0, 0.9, PXW.teal, 0, 0.5, 0, 0, 0, 0, { grad: 0.88 }).box(1.12, 0.1, 1.0, 0xffffff, 0, 1.05, 0).box(1.12, 0.1, 1.0, 0xffffff, 0, 0.05, 0);
+  goldfishInto(b, 0, 0.6, 0.47, 0.9, PXW.gold);
+  catInto(b, 0, 1.1, 0, 1.75);
+});
+def('catnipTall', 'tall', 1.4, 2.8, 1.4, (b) => {
+  // a giant pot of catnip in flower
+  catnipInto(b, 0, 0, 0, 2.6);
+  b.sph(0.12, 0xffd23f, 0.3, 2.5, 0.45, 1.4, 0.3, 1, { seg: 6 }).sph(0.05, 0x2a2a33, 0.3, 2.52, 0.45, 2, 0.6, 0.6, { seg: 4 });   // a butterfly having a rest
+});
+def('boxTower', 'tall', 1.4, 2.9, 1.2, (b) => {
+  // a wobbly tower of cardboard boxes, with a cat looking out of the top one
+  cardBoxInto(b, 0, 0, 0, 1.3, 0.9, 1.1, 0.05);
+  cardBoxInto(b, 0.05, 0.92, 0, 1.1, 0.8, 0.95, -0.12);
+  b.box(0.95, 0.65, 0.85, PXW.box, -0.02, 2.07, 0, 0, 0.1, 0, { grad: 0.8 }).cyl(0.2, 0.2, 0.02, 0x2a1d14, -0.02, 2.1, 0.43, PI / 2, 0, 0, { seg: 12 });
+  b.sph(0.14, PXW.grey, -0.02, 2.1, 0.37, 1.1, 1, 0.9, { seg: 8 });
+  for (const sx of [-1, 1]) b.sph(0.035, PXW.green, -0.02 + sx * 0.05, 2.13, 0.48, 1, 1.1, 0.5, { seg: 5 }).cone(0.045, 0.1, PXW.grey, -0.02 + sx * 0.08, 2.24, 0.36, 0, 0, -sx * 0.3, { seg: 4 });
+});
+def('fishTins', 'tall', 1.3, 2.8, 1.2, (b) => {
+  // a pyramid of tins of fish, each with a smiling fish on the label
+  const tin = (x, y, z) => { b.cyl(0.3, 0.3, 0.5, 0xd8dce4, x, y + 0.25, z, 0, 0, 0, { seg: 12 }).cyl(0.305, 0.305, 0.34, PXW.teal, x, y + 0.25, z, 0, 0, 0, { seg: 12 }); goldfishInto(b, x, y + 0.25, z + 0.3, 0.5); };
+  for (let row = 0; row < 4; row++) for (let i = 0; i <= 3 - row; i++) tin((i - (3 - row) / 2) * 0.62, row * 0.52, 0);
+  b.cyl(0.32, 0.32, 0.04, PXW.gold, 0, 2.1, 0, 0, 0, 0, { seg: 12 }).cyl(0.03, 0.03, 0.3, PXW.gold, 0, 2.27, 0, 0, 0, 0, { seg: 4 });
+  goldfishInto(b, 0, 2.5, 0, 0.9, PXW.gold);
+});
+def('rollYarn', 'low', 1.0, 1.0, 1.0, (b) => {
+  // an enormous ball of wool rolling down the lane, trailing its loose end
+  yarnBallInto(b, 0, 0, 0, 0.45, PXW.wool[0], { strand: false });
+}, { center: true });
+def('mouseRun', 'low', 1.3, 0.8, 0.9, (b) => {
+  // a clockwork toy mouse scurrying across, its key going round; it faces +x
+  b.sph(0.34, PXW.grey, 0, 0.3, 0, 1.3, 0.85, 0.85, { seg: 12 }).sph(0.05, PXW.pink, 0.45, 0.28, 0, 1, 1, 1, { seg: 6 });
+  for (const sz of [-1, 1]) b.cyl(0.14, 0.14, 0.02, PXW.pink, 0.2, 0.55, sz * 0.16, 0, 0, PI / 2 - 0.3, { seg: 10 }).sph(0.035, PXW.eyeK, 0.35, 0.38, sz * 0.1, 1, 1, 0.6, { seg: 5 });
+  b.cyl(0.025, 0.025, 0.2, PXW.gold, -0.1, 0.62, 0, 0, 0, 0, { seg: 4 }).tor(0.09, 0.025, PXW.gold, -0.1, 0.78, 0, 0, PI / 2, 0, { seg: 8, tseg: 3 });
+  b.tor(0.25, 0.02, PXW.pink, -0.55, 0.1, 0, PI / 2, 0, 0, { arc: PI, seg: 8, tseg: 3 });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.sph(0.06, 0x3a3a44, sx * 0.22, 0.05, sz * 0.18, 1, 1, 0.5, { seg: 6 });
+});
+def('cheeseWheel', 'low', 1.0, 1.0, 1.0, (b) => {
+  // what the mouse drops: a round of cheese full of holes, bowling along
+  b.cyl(0.44, 0.44, 0.4, 0xffd23f, 0, 0, 0, 0, 0, PI / 2, { seg: 16, grad: 0.88 });
+  for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) b.cyl(0.07 - i * 0.008, 0.07 - i * 0.008, 0.02, 0xe0a020, sx * 0.205, Math.sin(i * 1.7) * 0.25, Math.cos(i * 1.7) * 0.25, 0, 0, PI / 2, { seg: 8 });
+}, { center: true });
+def('planeMouse', 'deco', 2.2, 1.1, 1.4, (b) => {
+  // a cheeky mouse flying a paper aeroplane, with a round of cheese to drop
+  b.box(0.3, 0.06, 1.0, 0xffffff, 0, -0.08, 0.05).prism(0.3, 0.2, 1.0, 0xf0f4fa, 0, -0.3, 0.05, 0);
+  b.sph(0.2, PXW.grey, 0, 0.12, 0.05, 0.9, 0.95, 1.1, { seg: 9 }).sph(0.04, PXW.pink, 0, 0.12, 0.3, 1, 1, 1, { seg: 5 });
+  for (const sx of [-1, 1]) {
+    b.cyl(0.11, 0.11, 0.02, PXW.pink, sx * 0.14, 0.3, 0.02, PI / 2, 0, 0, { seg: 8 });
+    b.tor(0.05, 0.015, 0x3a3a44, sx * 0.07, 0.2, 0.22, 0, 0, 0, { seg: 8, tseg: 3 }).cyl(0.045, 0.045, 0.02, 0x8fe0ff, sx * 0.07, 0.2, 0.225, PI / 2, 0, 0, { seg: 8, glow: true });
+  }
+  b.box(0.2, 0.03, 0.03, 0x3a3a44, 0, 0.2, 0.18).cone(0.05, 0.4, 0xe5383b, 0, 0.12, -0.25, -PI / 2 - 0.4, 0, 0, { seg: 5 });   // goggles and a red scarf streaming back
+  b.cyl(0.13, 0.13, 0.1, 0xffd23f, 0, -0.33, 0.25, 0, 0, PI / 2, { seg: 10 });
+}, {
+  wings: (b, sx) => { b.box(0.8, 0.025, 0.55, 0xffffff, sx * 0.4, 0, -0.05, 0, sx * 0.35, 0).box(0.5, 0.03, 0.04, 0xd8e0ea, sx * 0.3, 0.01, 0.05, 0, sx * 0.35, 0); }, wingAt: [0.12, -0.06, 0],
+});
+
 // ---------- movers ----------
 def('crab', 'low', 1.5, 0.95, 1.0, (b) => {
   // a giant crab that scuttles from side to side; it faces the player
@@ -4057,6 +4272,7 @@ export const TALL_TYPES = {
   29: ['obelisk', 'camelCalf', 'potPalm', 'falconStatue', 'lotusColumn', 'obelisk'],
   30: ['eagleStandard', 'victoryColumn', 'togaStatue', 'pinePlanter', 'archDoor', 'eagleStandard'],
   31: ['kennelTall', 'izziStatue', 'ballTree', 'boneTower', 'treatJar', 'kennelTall'],
+  32: ['scratchPost', 'pixelStatue', 'catnipTall', 'boxTower', 'fishTins', 'scratchPost'],
 };
 // the sewers and space have their own low obstacles in place of the seaside ones
 export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'barrier'], 9: ['moonRock', 'starCrate', 'moonRock', 'starCrate', 'barrier', 'crate'], 10: ['gift', 'pudding', 'sledge', 'gift', 'pudding', 'barrier'], 11: ['mallow', 'donut', 'jellyLow', 'toffees', 'chocBar', 'mallow'], 12: ['snail', 'springLow', 'ammonite', 'whelk', 'snail', 'springLow'], 13: ['log', 'boulder', 'cheese', 'hay', 'log', 'boulder'], 14: ['coasterCar', 'turnstile', 'duckTub', 'coasterCar', 'barrier', 'duckTub'], 15: ['clam', 'wetSign', 'bucket', 'clam', 'wetSign', 'bucket'], 16: ['chocBar', 'truffleBox', 'cocoaMug', 'cookies', 'chocBar', 'cocoaMug'], 17: ['churns', 'hay', 'milkCrate', 'trough', 'cheese', 'churns'], 18: ['handMirror', 'gemPile', 'glassBricks', 'miniBall', 'gemPile', 'handMirror'], 19: ['ropeBarrier', 'displayCase', 'dinoEggs', 'noTouch', 'artCrate', 'ropeBarrier'], 20: ['pillowPile', 'sleepyTeddy', 'slippers', 'nightLight', 'toyBlocks', 'pillowPile'],
@@ -4070,4 +4286,5 @@ export const LOW_BY_ZONE = { 8: ['rat', 'pipeLow', 'crate', 'rat', 'pipeLow', 'b
   28: ['eggNest', 'babyTrike', 'boneXylo', 'stewPot', 'shellFossils', 'eggNest'],
   29: ['miniPyramid', 'catStatue', 'scarabChest', 'lotusPond', 'scribeDesk', 'miniPyramid'],
   30: ['helmetPair', 'mosaicFountain', 'grapeBowl', 'shieldStack', 'gooseGuards', 'breadTray'],
-  31: ['bigBone', 'dogBowls', 'ballBasket', 'squeakyPile', 'dogBed', 'hurdleBar'] };
+  31: ['bigBone', 'dogBowls', 'ballBasket', 'squeakyPile', 'dogBed', 'hurdleBar'],
+  32: ['yarnBasket', 'fishBowl', 'catBox', 'cushionPile', 'milkSaucer', 'toyMice'] };
